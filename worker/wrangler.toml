@@ -1,0 +1,20 @@
+name = "sap-research-trigger"
+main = "src/index.js"
+compatibility_date = "2026-09-01"
+
+[vars]
+# The repository holding the research workflow.
+GITHUB_REPO = "ceekay-munshot/sap"
+GITHUB_BRANCH = "main"
+# Lock this to the Pages origin once it exists, e.g. "https://sap-8nz.pages.dev".
+ALLOWED_ORIGIN = "*"
+# Maximum research runs per day. Only enforced when the BUDGET namespace below
+# is uncommented and created — without it the passphrase is the only guard.
+DAILY_LIMIT = "5"
+
+# Optional, recommended. Create with:
+#   npx wrangler kv namespace create BUDGET
+# then paste the id here and uncomment.
+# [[kv_namespaces]]
+# binding = "BUDGET"
+# id = "<paste the id wrangler prints>"

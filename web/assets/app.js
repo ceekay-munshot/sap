@@ -63,6 +63,9 @@ const fmtDate = (iso) => {
 const state = {
   data: null,
   trend: null,
+  site: { workerUrl: '' },
+  running: {},
+  runNote: {},
   topics: [],
   metric: 'pctPositive',
   historyTopic: 'overall',
@@ -201,9 +204,22 @@ function topicCard(topic) {
        </div>`
     : '';
 
-  const runBtn = `<a class="run-btn" href="${esc(WORKFLOW_URL)}" target="_blank" rel="noopener noreferrer"
-      style="display:block;text-align:center;text-decoration:none"
-      title="Opens the GitHub Actions workflow that researches and scores every topic">▶ Run Research</a>`;
+  const running = Boolean(state.running[topic.id]);
+  const note = state.runNote[topic.id];
+  const runBtn = running
+    ? `<button class="run-btn loading" type="button" disabled style="opacity:.75">
+         <span class="loading-label">RESEARCHING…</span>
+       </button>
+       <div class="shimmer-bar"><div class="shimmer-inner"></div></div>`
+    : state.site.workerUrl
+      ? `<button class="run-btn" type="button" data-research="${esc(topic.id)}"
+           title="Runs a fresh paid research pass for this topic">▶ Run Research</button>`
+      : `<a class="run-btn" href="${esc(WORKFLOW_URL)}" target="_blank" rel="noopener noreferrer"
+           style="display:block;text-align:center;text-decoration:none"
+           title="Opens the GitHub Actions workflow that researches and scores every topic">▶ Run Research</a>`;
+  const noteHTML = note
+    ? `<div class="${note.error ? 'tlc-error-msg' : 'loading-sub'}">${esc(note.text)}</div>`
+    : '';
   const viewBtn = score
     ? `<button class="tlc-view-btn" data-open="${esc(topic.id)}" type="button">VIEW REPORT →</button>`
     : '';
@@ -219,8 +235,85 @@ function topicCard(topic) {
     <div class="tlc-desc">${esc(desc)}</div>
     ${scorePill}
     ${runBtn}
+    ${noteHTML}
     ${viewBtn}
   </div>`;
+}
+
+/** The passphrase guards someone else's money; keep it out of the markup. */
+function passphrase(forget = false) {
+  try {
+    if (forget) localStorage.removeItem('sap-research-pass');
+    let value = localStorage.getItem('sap-research-pass');
+    if (!value) {
+      value = window.prompt('Research passphrase (set on the Worker):');
+      if (value) localStorage.setItem('sap-research-pass', value);
+    }
+    return value;
+  } catch {
+    return window.prompt('Research passphrase:');
+  }
+}
+
+/**
+ * Research runs in GitHub Actions and takes minutes, so the page watches for the
+ * committed result rather than holding a connection open.
+ */
+async function pollForResult(topicId, before) {
+  const deadline = Date.now() + 12 * 60 * 1000;
+  while (Date.now() < deadline) {
+    await new Promise((r) => setTimeout(r, 20000));
+    const fresh = await loadJson('./data/dashboard.json', null);
+    const ranAt = fresh?.topics?.[topicId]?.ranAt;
+    if (ranAt && ranAt !== before) {
+      state.data = fresh;
+      state.running[topicId] = false;
+      state.runNote[topicId] = { text: 'Updated just now.' };
+      render();
+      return true;
+    }
+  }
+  state.running[topicId] = false;
+  state.runNote[topicId] = {
+    text: 'Still running, or the deploy has not refreshed yet. Reload in a minute.',
+  };
+  render();
+  return false;
+}
+
+async function startResearch(topicId) {
+  const pass = passphrase();
+  if (!pass) return;
+
+  const before = reportFor(topicId)?.ranAt || null;
+  state.running[topicId] = true;
+  state.runNote[topicId] = null;
+  render();
+
+  try {
+    const res = await fetch(`${state.site.workerUrl.replace(/\/$/, '')}/api/research`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ topic: topicId, passphrase: pass }),
+    });
+    const body = await res.json().catch(() => ({}));
+
+    if (res.status === 401) {
+      passphrase(true);
+      throw new Error('Wrong passphrase — it has been cleared, try again.');
+    }
+    if (!res.ok) throw new Error(body.error || `request failed (${res.status})`);
+
+    state.runNote[topicId] = {
+      text: `Started${body.dailyLimit ? ` · ${body.runsToday}/${body.dailyLimit} today` : ''} · takes a few minutes`,
+    };
+    render();
+    pollForResult(topicId, before);
+  } catch (err) {
+    state.running[topicId] = false;
+    state.runNote[topicId] = { error: true, text: err.message };
+    render();
+  }
 }
 
 /* ─── the report view ──────────────────────────────────────────────────────── */
@@ -738,6 +831,9 @@ function render() {
 
   main.innerHTML = body;
 
+  for (const btn of main.querySelectorAll('[data-research]')) {
+    btn.addEventListener('click', () => startResearch(btn.dataset.research));
+  }
   for (const btn of main.querySelectorAll('[data-metric]')) {
     btn.addEventListener('click', () => { state.metric = btn.dataset.metric; render(); });
   }
@@ -799,11 +895,13 @@ async function loadJson(url, fallback) {
 
 async function boot() {
   wireTheme();
-  const [topics, data, trend] = await Promise.all([
+  const [topics, data, trend, site] = await Promise.all([
     loadJson('./data/topics.json', { topics: [] }),
     loadJson('./data/dashboard.json', null),
     loadJson('./data/trend.json', { days: [] }),
+    loadJson('./data/site.json', { workerUrl: '' }),
   ]);
+  state.site = site || { workerUrl: '' };
   state.topics = topics.topics || [];
   state.data = data;
   state.trend = trend;
