@@ -120,13 +120,29 @@ function mentions(hay, term) {
   return re.test(hay);
 }
 
+/*
+ * Adverts dressed as posts. Training outfits flood dev.to and Medium with
+ * "Best SAP Datasphere Course | Training In Hyderabad", which mentions the
+ * product, reads as enthusiastic to a lexicon, and is nobody's opinion of
+ * anything. They were being counted as positive sentiment.
+ */
+const PROMO = /\b(training (in|institute)|course online|online (course|training)|certification (course|training)|enroll now|free demo|placement assistance|batch starts|book your seat|register (now|today) for)\b/i;
+
+/*
+ * A joule is also a unit of energy. "Joule" alone let a heat calculator into a
+ * tracker about SAP's assistant, so the name only counts as an SAP artifact
+ * when something else in the text places it in that world.
+ */
+const AMBIGUOUS = { joule: /\bsap\b|erp|s\/?4hana|abap|btp|fiori|business ai|copilot|assistant/i };
+
 export function isRelevant(text) {
   const hay = lower(text);
+  if (PROMO.test(hay)) return false;
   // Named SAP artifacts count even where the vendor's name does not appear —
   // a paper on RPT-1 is about SAP whether or not its abstract says so.
   const mentionsSap = ['sap', 's/4hana', 's4hana', 'joule', 'abap', 'datasphere', 'btp',
     'rpt-1', 'rpt1', 'relational foundation model', 'relational transformer']
-    .some((m) => mentions(hay, m));
+    .some((m) => mentions(hay, m) && (!AMBIGUOUS[m] || AMBIGUOUS[m].test(hay)));
   if (!mentionsSap) return false;
   const mentionsSubject = [...PILLARS, ...TAGS].some((g) => g.match.some((m) => mentions(hay, m)));
   const mentionsAi = ['ai', 'genai', 'llm', 'machine learning', 'agent', 'agents', 'agentic',
