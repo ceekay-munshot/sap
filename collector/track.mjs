@@ -53,10 +53,15 @@ export function rollupTopic(items, now) {
   // over the items that actually express a view; the share that did not is
   // reported separately rather than hidden.
   const opinionated = stance.positive + stance.negative + stance.mixed;
-  const pct = (part) => (opinionated === 0 ? 0 : Math.round((part / opinionated) * 100));
+  const opinionItems = items.filter((i) => typeof i.sentiment === 'number' && i.sentiment !== 0).length;
+  // Below a handful of opinions the percentages are noise dressed as measurement.
+  const thin = opinionItems < 3;
+  const pct = (part) => (opinionated === 0 ? null : Math.round((part / opinionated) * 100));
 
   return {
-    score: opinionDen === 0 ? 3 : toFiveScale(opinionNum / opinionDen),
+    thin,
+    opinionItems,
+    score: opinionDen === 0 ? null : toFiveScale(opinionNum / opinionDen),
     scoreAllItems: toFiveScale(num / den),
     pctPositive: pct(stance.positive),
     pctNegative: pct(stance.negative),

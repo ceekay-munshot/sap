@@ -53,6 +53,12 @@ jobs:
           STACKEXCHANGE_KEY: ${{ secrets.STACKEXCHANGE_KEY }}
         run: node collector/track.mjs ${{ inputs.only && format('--only={0}', inputs.only) || '' }}
 
+      # Rebuild the weekly history from the enriched corpus. Live points are
+      # never overwritten; only the reconstructed ones are recomputed.
+      - name: Rebuild weekly history
+        if: github.event_name != 'push'
+        run: node collector/backfill.mjs
+
       - name: Commit the day's data
         if: github.event_name != 'push'
         run: |

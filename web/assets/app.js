@@ -26,9 +26,6 @@ const CATEGORIES = [
   { id: 'history', label: 'Sentiment History', icon: '📈' },
 ];
 
-const WORKFLOW_URL =
-  'https://github.com/ceekay-munshot/sap/actions/workflows/collect.yml';
-
 const CAT_LABEL = { product: 'PRODUCT', ecosystem: 'ECOSYSTEM', competitive: 'COMPETITIVE' };
 
 function scoreColor(s) {
@@ -65,9 +62,10 @@ const state = {
   trend: null,
   site: { workerUrl: '' },
   running: {},
+  ticker: null,
   runNote: {},
   topics: [],
-  metric: 'pctPositive',
+  metric: 'score',
   historyTopic: 'overall',
   now: new Date(),
   category: 'all',
@@ -207,19 +205,13 @@ function topicCard(topic) {
   const running = Boolean(state.running[topic.id]);
   const note = state.runNote[topic.id];
   const runBtn = running
-    ? `<button class="run-btn loading" type="button" disabled style="opacity:.75">
-         <span class="loading-label">RESEARCHING…</span>
-       </button>
-       <div class="shimmer-bar"><div class="shimmer-inner"></div></div>`
-    : state.site.workerUrl
-      ? `<button class="run-btn" type="button" data-research="${esc(topic.id)}"
-           title="Runs a fresh paid research pass for this topic">▶ Run Research</button>`
-      : `<a class="run-btn" href="${esc(WORKFLOW_URL)}" target="_blank" rel="noopener noreferrer"
-           style="display:block;text-align:center;text-decoration:none"
-           title="Opens the GitHub Actions workflow that researches and scores every topic">▶ Run Research</a>`;
-  const noteHTML = note
+    ? loadingBlock(topic)
+    : `<button class="run-btn" type="button" data-research="${esc(topic.id)}"
+         title="Runs a fresh research pass for this topic">▶ Run Research</button>`;
+  const noteHTML = !running && note
     ? `<div class="${note.error ? 'tlc-error-msg' : 'loading-sub'}">${esc(note.text)}</div>`
     : '';
+
   const viewBtn = score
     ? `<button class="tlc-view-btn" data-open="${esc(topic.id)}" type="button">VIEW REPORT →</button>`
     : '';
@@ -240,77 +232,146 @@ function topicCard(topic) {
   </div>`;
 }
 
-/** The passphrase guards someone else's money; keep it out of the markup. */
+const apiBase = () => (state.site.workerUrl || '').replace(/\/$/, '');
+
+/** Only asked for when the server says a passphrase is required. */
 function passphrase(forget = false) {
   try {
     if (forget) localStorage.removeItem('sap-research-pass');
     let value = localStorage.getItem('sap-research-pass');
     if (!value) {
-      value = window.prompt('Research passphrase (set on the Worker):');
+      value = window.prompt('Passphrase to run research:');
       if (value) localStorage.setItem('sap-research-pass', value);
     }
     return value;
   } catch {
-    return window.prompt('Research passphrase:');
+    return window.prompt('Passphrase to run research:');
   }
 }
 
-/**
- * Research runs in GitHub Actions and takes minutes, so the page watches for the
- * committed result rather than holding a connection open.
- */
-async function pollForResult(topicId, before) {
-  const deadline = Date.now() + 12 * 60 * 1000;
+const STAGES = [
+  'Preparing',
+  'Checking the pipeline',
+  'Searching the web and reading sources',
+  'Saving the results',
+  'Finishing up',
+];
+
+/** The loader: real stage, real elapsed time, no fake spinner. */
+function loadingBlock(topic) {
+  const run = state.running[topic.id] || {};
+  const stage = run.step || 'Starting the run';
+  const seconds = run.startedAt ? Math.round((Date.now() - run.startedAt) / 1000) : 0;
+  const mins = Math.floor(seconds / 60);
+  const elapsed = mins ? `${mins}m ${String(seconds % 60).padStart(2, '0')}s` : `${seconds}s`;
+  const reached = STAGES.findIndex((s) => s === stage);
+  const pips = STAGES.map((s, i) => {
+    const state_ = reached === -1 ? (i === 0 ? 'now' : 'todo')
+      : i < reached ? 'done' : i === reached ? 'now' : 'todo';
+    return `<span class="pip pip-${state_}" title="${esc(s)}"></span>`;
+  }).join('');
+
+  return `<div class="research-loader">
+    <div class="rl-head">
+      <span class="rl-spinner" aria-hidden="true"></span>
+      <span class="rl-stage">${esc(stage)}</span>
+      <span class="rl-elapsed">${esc(elapsed)}</span>
+    </div>
+    <div class="shimmer-bar"><div class="shimmer-inner"></div></div>
+    <div class="rl-pips">${pips}</div>
+    <div class="rl-foot">Reading live sources · usually 1–3 minutes</div>
+  </div>`;
+}
+
+/** Keep the elapsed clock and stage moving while a run is in flight. */
+function startTicker() {
+  if (state.ticker) return;
+  state.ticker = setInterval(() => {
+    if (!Object.keys(state.running).some((id) => state.running[id])) {
+      clearInterval(state.ticker);
+      state.ticker = null;
+      return;
+    }
+    if (!state.open && state.category !== 'history') render();
+  }, 1000);
+}
+
+/** Poll real workflow progress, then swap in the fresh data when it lands. */
+async function watchRun(topicId, before) {
+  const deadline = Date.now() + 15 * 60 * 1000;
+  let sawRunning = false;
+
   while (Date.now() < deadline) {
-    await new Promise((r) => setTimeout(r, 20000));
-    const fresh = await loadJson('./data/dashboard.json', null);
-    const ranAt = fresh?.topics?.[topicId]?.ranAt;
-    if (ranAt && ranAt !== before) {
-      state.data = fresh;
-      state.running[topicId] = false;
-      state.runNote[topicId] = { text: 'Updated just now.' };
+    await new Promise((r) => setTimeout(r, 5000));
+    const status = await loadJson(`${apiBase()}/api/status`, null);
+
+    if (status?.state === 'running') {
+      sawRunning = true;
+      if (state.running[topicId]) state.running[topicId].step = status.step || null;
+    }
+
+    if (sawRunning && status && status.state !== 'running') {
+      // The workflow finished; wait for the rebuilt page to carry the new data.
+      for (let i = 0; i < 12; i += 1) {
+        const fresh = await loadJson('./data/dashboard.json', null);
+        const ranAt = fresh?.topics?.[topicId]?.ranAt;
+        if (ranAt && ranAt !== before) {
+          state.data = fresh;
+          state.running[topicId] = null;
+          state.runNote[topicId] = { text: `Updated ${fmtDate(ranAt)} · just now` };
+          render();
+          return;
+        }
+        await new Promise((r) => setTimeout(r, 10000));
+      }
+      state.running[topicId] = null;
+      state.runNote[topicId] = status.state === 'failed'
+        ? { error: true, text: 'The run did not finish. Try again in a few minutes.' }
+        : { text: 'Run finished — the page updates shortly after publishing.' };
       render();
-      return true;
+      return;
     }
   }
-  state.running[topicId] = false;
-  state.runNote[topicId] = {
-    text: 'Still running, or the deploy has not refreshed yet. Reload in a minute.',
-  };
+  state.running[topicId] = null;
+  state.runNote[topicId] = { error: true, text: 'Still running — reload in a minute.' };
   render();
-  return false;
 }
 
 async function startResearch(topicId) {
-  const pass = passphrase();
-  if (!pass) return;
-
   const before = reportFor(topicId)?.ranAt || null;
-  state.running[topicId] = true;
+  state.running[topicId] = { startedAt: Date.now(), step: null };
   state.runNote[topicId] = null;
   render();
+  startTicker();
+
+  const send = async (pass) => fetch(`${apiBase()}/api/research`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ topic: topicId, ...(pass ? { passphrase: pass } : {}) }),
+  });
 
   try {
-    const res = await fetch(`${state.site.workerUrl.replace(/\/$/, '')}/api/research`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ topic: topicId, passphrase: pass }),
-    });
-    const body = await res.json().catch(() => ({}));
+    let res = await send(null);
+    let body = await res.json().catch(() => ({}));
 
-    if (res.status === 401) {
-      passphrase(true);
-      throw new Error('Wrong passphrase — it has been cleared, try again.');
+    // Only prompt when the server actually requires a passphrase.
+    if (res.status === 401 && body.needsPassphrase) {
+      const pass = passphrase();
+      if (!pass) throw new Error('Cancelled.');
+      res = await send(pass);
+      body = await res.json().catch(() => ({}));
+      if (res.status === 401) {
+        passphrase(true);
+        throw new Error('Wrong passphrase — cleared, try again.');
+      }
     }
-    if (!res.ok) throw new Error(body.error || `request failed (${res.status})`);
 
-    state.runNote[topicId] = {
-      text: `Started${body.dailyLimit ? ` · ${body.runsToday}/${body.dailyLimit} today` : ''} · takes a few minutes`,
-    };
-    render();
-    pollForResult(topicId, before);
+    if (res.status === 503) throw new Error(body.error || 'Research is not configured yet.');
+    if (!res.ok) throw new Error(body.error || `Could not start (${res.status}).`);
+
+    watchRun(topicId, before);
   } catch (err) {
-    state.running[topicId] = false;
+    state.running[topicId] = null;
     state.runNote[topicId] = { error: true, text: err.message };
     render();
   }
@@ -517,10 +578,7 @@ function reportView(topic) {
 /* ─── sentiment history ────────────────────────────────────────────────────── */
 
 const METRICS = {
-  pctPositive: { label: '% positive', short: 'positive', max: 100, minSpan: 15, pad: 5, fmt: (v) => `${Math.round(v)}%` },
-  pctNegative: { label: '% negative', short: 'negative', max: 100, minSpan: 15, pad: 5, fmt: (v) => `${Math.round(v)}%` },
-  pctNoView: { label: '% no clear view', short: 'no view', max: 100, minSpan: 15, pad: 5, fmt: (v) => `${Math.round(v)}%` },
-  score: { label: 'score /5', short: 'score', max: 5, minSpan: 1, pad: 0.3, fmt: (v) => v.toFixed(1) },
+  score: { label: 'sentiment score', short: 'score', max: 5, minSpan: 1, pad: 0.3, fmt: (v) => v.toFixed(1) },
 };
 
 /**
@@ -551,6 +609,7 @@ function series(topicId, metric) {
   return (state.trend?.days || []).map((day) => {
     const bucket = topicId === 'overall' ? day.overall : day.topics?.[topicId];
     const value = bucket?.[metric];
+    if (bucket?.thin) return null;          // too few opinions to plot honestly
     return typeof value === 'number'
       ? { date: day.date, value, items: bucket.items, bucket, reconstructed: Boolean(day.reconstructed) }
       : null;
@@ -564,7 +623,11 @@ function series(topicId, metric) {
 function trendChart(points, metric, { width = 860, height = 260 } = {}) {
   const spec = METRICS[metric];
   if (points.length === 0) {
-    return `<div class="no-history-text">No points yet for this metric.</div>`;
+    return `<div class="no-history"><div class="no-history-icon">◌</div>
+      <div class="no-history-title">Not enough opinion yet</div>
+      <div class="no-history-text">This topic has fewer than three items expressing a clear
+      view, so there is nothing honest to plot. It fills in as the weekly tracker and
+      research runs collect more.</div></div>`;
   }
 
   const m = { t: 16, r: 54, b: 28, l: 42 };
@@ -700,12 +763,12 @@ function wireCrosshair(root) {
 
     const tip = $('tooltip');
     tip.innerHTML = `<div class="t-title">${esc(topicLabel)} · ${esc(fmtDate(point.date))}</div>`
-      + row(typeof b.score === 'number' ? `${b.score.toFixed(1)}/5` : '—', 'score', scoreColor(b.score))
+      + row(typeof b.score === 'number' ? `${b.score.toFixed(1)}/5` : 'n/a', 'score', scoreColor(b.score))
       + row(`${b.pctPositive ?? '—'}%`, 'positive', '#22c55e')
       + row(`${b.pctNegative ?? '—'}%`, 'negative', '#ef4444')
       + row(`${b.pctMixed ?? '—'}%`, 'mixed')
-      + row(`${b.pctNoView ?? '—'}%`, 'no clear view')
-      + row(b.items ?? '—', 'items counted')
+      + row(b.opinionItems ?? '—', 'people with a view')
+      + row(b.items ?? '—', 'items scanned')
       + (b.tiers ? row(`${b.tiers.current}/${b.tiers.prior}/${b.tiers.legacy}`,
         'current / prior / legacy') : '');
     tip.style.opacity = '1';
@@ -747,11 +810,6 @@ function historyView() {
         ${Math.abs(delta) < (metric === 'score' ? 0.15 : 2) ? 'STABLE' : `${delta > 0 ? '▲' : '▼'} ${spec.fmt(Math.abs(delta))}`}
         over ${points.length} week${points.length === 1 ? '' : 's'}</span>`;
 
-  const metricBtns = Object.entries(METRICS).map(([key, def]) =>
-    `<button class="filter-btn${metric === key ? ' active' : ''}" data-metric="${key}" type="button"
-      style="display:inline-flex;width:auto;margin:0 6px 0 0">
-      <span class="filter-btn-text">${esc(def.label)}</span></button>`).join('');
-
   const topicOptions = ['overall', ...state.topics.map((t) => t.id)].map((id) => {
     const label = id === 'overall' ? 'All topics' : state.topics.find((t) => t.id === id)?.label || id;
     return `<option value="${esc(id)}"${id === state.historyTopic ? ' selected' : ''}>${esc(label)}</option>`;
@@ -759,6 +817,17 @@ function historyView() {
 
   const smalls = state.topics.map((topic) => {
     const tp = series(topic.id, metric);
+    if (tp.length === 0) {
+      return `<button class="timeline-card" data-history="${esc(topic.id)}" type="button"
+          style="text-align:left;cursor:pointer;width:100%;opacity:.55">
+        <div class="timeline-row">
+          <span class="tlc-icon">${topic.icon}</span>
+          <span class="card-title" style="font-size:12px">${esc(topic.label)}</span>
+          <span class="change-badge" style="margin-left:auto;color:var(--text5)">no data</span>
+        </div>
+        <div class="card-meta">too few opinions to plot</div>
+      </button>`;
+    }
     const cur = tp.length ? tp[tp.length - 1].value : null;
     const prev = tp.length > 1 ? tp[0].value : null;
     const dir = cur === null || prev === null ? '' :
@@ -783,10 +852,10 @@ function historyView() {
     if (!bucket) return '';
     return `<tr>
       <td>${esc(fmtDate(day.date))}</td>
-      <td class="num">${bucket.score?.toFixed(1) ?? '—'}</td>
+      <td class="num">${typeof bucket.score === 'number' ? bucket.score.toFixed(1) : '—'}</td>
       <td class="num">${bucket.pctPositive ?? '—'}%</td>
       <td class="num">${bucket.pctNegative ?? '—'}%</td>
-      <td class="num">${bucket.pctNoView ?? '—'}%</td>
+      <td class="num">${bucket.opinionItems ?? '—'}</td>
       <td class="num">${bucket.items ?? '—'}</td>
     </tr>`;
   }).join('');
@@ -796,16 +865,21 @@ function historyView() {
       <span class="tlc-icon">📈</span>
       <div style="flex:1;min-width:0">
         <div class="card-title">Sentiment over time — ${esc(topicLabel)}</div>
-        <div class="card-meta">${esc(spec.label.toUpperCase())} · ${days.length} WEEKLY POINT${days.length === 1 ? '' : 'S'} · FREE TRACKER</div>
-        <div class="card-meta" style="color:var(--text5)">percentages are of items that express a view, not of everything collected</div>
+        <div class="card-meta">SENTIMENT SCORE 1.0–5.0 · ${days.length} WEEKLY POINT${days.length === 1 ? '' : 'S'}</div>
       </div>
       ${deltaHTML}
     </div>
     <div class="card-body">
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px">
-        ${metricBtns}
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px">
         <select id="historyTopic" class="history-select" aria-label="Topic">${topicOptions}</select>
+        <span class="scale-key">
+          <span class="sk-dot" style="background:#ef4444"></span>1 mostly criticism
+          <span class="sk-dot" style="background:#f59e0b;margin-left:10px"></span>3 divided
+          <span class="sk-dot" style="background:#22c55e;margin-left:10px"></span>5 strong advocates
+        </span>
       </div>
+      <p class="scale-note">Each week's score is the recency-weighted average view of everyone
+        who expressed one. Hover any week for the split behind it.</p>
       ${trendChart(points, metric)}
       <div class="card-meta" style="margin-top:6px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap">
         <span>${(() => {
@@ -824,7 +898,7 @@ function historyView() {
       <details style="margin-top:16px">
         <summary style="cursor:pointer;font-size:11px;color:var(--text3);font-family:'DM Mono',monospace">TABLE VIEW</summary>
         <div class="scroll"><table class="trend-table">
-          <thead><tr><th>Date</th><th class="num">Score</th><th class="num">% pos</th><th class="num">% neg</th><th class="num">% no view</th><th class="num">Items</th></tr></thead>
+          <thead><tr><th>Week</th><th class="num">Score</th><th class="num">% positive</th><th class="num">% negative</th><th class="num">With a view</th><th class="num">Scanned</th></tr></thead>
           <tbody>${rows}</tbody>
         </table></div>
       </details>
@@ -879,9 +953,6 @@ function render() {
 
   for (const btn of main.querySelectorAll('[data-research]')) {
     btn.addEventListener('click', () => startResearch(btn.dataset.research));
-  }
-  for (const btn of main.querySelectorAll('[data-metric]')) {
-    btn.addEventListener('click', () => { state.metric = btn.dataset.metric; render(); });
   }
   for (const btn of main.querySelectorAll('[data-history]')) {
     btn.addEventListener('click', () => { state.historyTopic = btn.dataset.history; render(); });

@@ -70,28 +70,40 @@ so the weighting is visible at the evidence rather than buried in a methodology 
 | What | Scrapes Hacker News, Reddit (posts *and* comments), Stack Overflow, press/news RSS, YouTube, SAP's own pages. Buckets each post into the nine topics, scores it with a keyword lexicon. | Claude reads the web and writes the scored report: summary, key findings, attributed quotes, sources. |
 | Cost | **Nothing.** No API key. | Anthropic API, billed per run. |
 | When | Weekly, Mondays 06:00 UTC (`track.yml`) | Only when someone asks (`research.yml`) |
-| Feeds | The **Sentiment History** time series | The topic report cards |
+| Feeds | The **Sentiment History** trend | The topic report cards |
 
 The trend line comes from the free pass, so it stays dense without spending
 anything; the expensive pass only runs when someone wants depth on a topic.
 
 ## The Run Research button
 
-A static page cannot hold an Anthropic key — anything shipped to the browser is
-public. So the button works one of two ways:
+Clicking it runs a real pass and the page updates itself — no GitHub, no leaving
+the dashboard. It is served by two Cloudflare Pages Functions in
+`web/functions/api/`, which deploy with the site and share its origin:
 
-- **No Worker configured** (default): it links to the GitHub Actions workflow.
-- **Worker configured**: it triggers a real run. Deploy `worker/`, set
-  `workerUrl` in `web/data/site.json`, and the button asks for a passphrase,
-  fires the workflow, and polls until the new report lands.
+- `POST /api/research` starts the run
+- `GET /api/status` reports the stage it is on, so the loader shows real progress
+  rather than a spinner that means nothing
 
-The Worker deliberately does not call Anthropic itself: a research pass runs for
-minutes, longer than a Worker invocation lives. It fires the Actions workflow
-that already does the job. See [`worker/README.md`](worker/README.md).
+They do not run the research themselves — a pass makes a dozen web fetches and a
+long model call, which outlives a function invocation. They start the Actions
+workflow that does.
 
-**It guards spend.** A public button spends your money on every click, so the
-Worker requires a shared passphrase and enforces a daily run cap (`DAILY_LIMIT`,
-default 5) when a KV namespace is bound. Set both before making the URL public.
+**One setup step.** In Cloudflare → your Pages project → Settings → Environment
+variables, add:
+
+| Variable | Value |
+|---|---|
+| `GITHUB_TOKEN` | fine-grained PAT for this repo, Actions: read and write |
+| `RESEARCH_PASSPHRASE` | optional — when set, the page asks for it before running |
+| `MIN_MINUTES_BETWEEN` | optional — cooldown between runs, default 10 |
+
+Without `GITHUB_TOKEN` the button reports that research is not configured yet.
+
+**Spend control needs no extra storage.** The function asks GitHub for the last
+run: it refuses while one is in flight and for a cooldown afterwards, so a public
+button cannot be clicked into a large bill. `worker/` holds a standalone Worker
+doing the same job, for anyone not hosting on Pages.
 
 ## Running it
 
