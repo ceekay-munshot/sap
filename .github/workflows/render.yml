@@ -1,0 +1,38 @@
+name: Render check (does the page still work)
+
+# A dashboard is only as good as the last commit that did not break it. This
+# opens the real page in a real browser against the committed data and clicks
+# through every view, because a single undefined function has emptied a whole
+# view twice, and both times it reached the published site.
+on:
+  push:
+    paths:
+      - 'web/**'
+      - 'tools/rendercheck.mjs'
+      - '.github/workflows/render.yml'
+  workflow_dispatch:
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Playwright and a browser
+        run: |
+          npm install --no-save --no-audit --no-fund playwright@1.49.1
+          npx playwright install --with-deps chromium
+
+      - name: Serve the site
+        run: |
+          python3 -m http.server 8099 --directory web &
+          for i in $(seq 1 20); do
+            curl -sf -o /dev/null http://127.0.0.1:8099/index.html && break
+            sleep 0.5
+          done
+
+      - name: Click through every view
+        run: node tools/rendercheck.mjs http://127.0.0.1:8099
