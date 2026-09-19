@@ -6,5 +6,7 @@ import * as youtube from './youtube.mjs';
 import * as vendorpages from './vendorpages.mjs';
 import * as arxiv from './arxiv.mjs';
 import * as huggingface from './huggingface.mjs';
+import * as bluesky from './bluesky.mjs';
+import * as github from './github.mjs';
 
-export const SOURCES = [hackernews, reddit, stackexchange, rss, youtube, vendorpages, arxiv, huggingface];
+export const SOURCES = [hackernews, reddit, stackexchange, rss, youtube, vendorpages, arxiv, huggingface, bluesky, github];
