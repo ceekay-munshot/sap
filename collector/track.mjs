@@ -151,6 +151,30 @@ async function main() {
   writeJson(TREND, trend);
   writeJson('data/track-report.json', report);
 
+  // Surface what the tracker scanned on the page itself: a reader should be able
+  // to see which sources fed the trend and which ones failed.
+  const feedCount = (config.rss?.feeds || []).length;
+  writeJson('web/data/sources.json', {
+    updatedAt: report.finishedAt,
+    corpusSize: all.length,
+    itemsWithView: all.filter((i) => typeof i.sentiment === 'number' && i.sentiment !== 0).length,
+    feedCount,
+    sources: report.sources.map((src) => ({
+      id: src.id,
+      status: src.status,
+      items: src.items ?? 0,
+      errors: (src.errors || []).length,
+    })),
+    byLabel: Object.entries(all.reduce((acc, item) => {
+      const key = item.sourceLabel || item.source;
+      acc[key] = acc[key] || { items: 0, views: 0 };
+      acc[key].items += 1;
+      if (item.sentiment) acc[key].views += 1;
+      return acc;
+    }, {})).map(([label, v]) => ({ label, ...v }))
+      .sort((a, b) => b.views - a.views || b.items - a.items),
+  });
+
   log(`\nwrote ${TREND} — ${trend.days.length} day(s) of history`);
   log(`corpus ${all.length} items · ${Object.keys(perTopic).length}/${topics.length} topics have data`);
   if (overall) log(`overall ${overall.score}/5 · ${overall.pctPositive}% positive · ${overall.pctNegative}% negative`);

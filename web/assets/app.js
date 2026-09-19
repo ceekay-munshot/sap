@@ -61,6 +61,7 @@ const state = {
   data: null,
   trend: null,
   site: { workerUrl: '' },
+  sources: null,
   running: {},
   ticker: null,
   runNote: {},
@@ -784,6 +785,39 @@ function wireCrosshair(root) {
   });
 }
 
+/** What the tracker scanned this week, and what it got back. */
+function coveragePanel() {
+  const c = state.sources;
+  if (!c) return '';
+  const rows = (c.byLabel || []).slice(0, 14).map((row) => `<tr>
+      <td>${esc(row.label)}</td>
+      <td class="num">${row.items}</td>
+      <td class="num">${row.views}</td>
+    </tr>`).join('');
+  const failed = (c.sources || []).filter((s) => s.status === 'error' || s.errors > 0);
+
+  return `<div class="result-card" style="margin-top:18px">
+    <div class="card-header" style="cursor:default">
+      <span class="tlc-icon">📡</span>
+      <div style="flex:1;min-width:0">
+        <div class="card-title">Where this comes from</div>
+        <div class="card-meta">${(c.sources || []).length} SOURCES · ${c.feedCount || 0} FEEDS ·
+          ${fmtNum(c.corpusSize || 0)} ITEMS · ${fmtNum(c.itemsWithView || 0)} WITH A CLEAR VIEW</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="scroll"><table class="trend-table">
+        <thead><tr><th>Source</th><th class="num">Items</th><th class="num">With a view</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table></div>
+      ${failed.length
+    ? `<div class="card-meta" style="margin-top:10px">Not reachable this run: ${
+      esc(failed.map((f) => f.id).join(', '))}</div>`
+    : '<div class="card-meta" style="margin-top:10px">All sources reachable this run.</div>'}
+    </div>
+  </div>`;
+}
+
 function historyView() {
   const days = state.trend?.days || [];
   if (days.length === 0) {
@@ -933,7 +967,7 @@ function render() {
   let body = '';
 
   if (state.category === 'history') {
-    body = methodStrip() + historyView();
+    body = methodStrip() + historyView() + coveragePanel();
   } else if (state.open) {
     const topic = state.topics.find((t) => t.id === state.open);
     body = methodStrip() + (topic ? reportView(topic) : emptyState());
@@ -1018,6 +1052,7 @@ async function boot() {
     loadJson('./data/trend.json', { days: [] }),
     loadJson('./data/site.json', { workerUrl: '' }),
   ]);
+  state.sources = await loadJson('./data/sources.json', null);
   state.site = site || { workerUrl: '' };
   state.topics = topics.topics || [];
   state.data = data;
