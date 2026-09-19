@@ -11,6 +11,12 @@ on:
       - 'tools/rendercheck.mjs'
       - '.github/workflows/render.yml'
   workflow_dispatch:
+    inputs:
+      url:
+        description: 'Check a published site instead of this commit (e.g. https://sap-8nz.pages.dev)'
+        required: false
+        default: ''
+        type: string
 
 jobs:
   render:
@@ -26,7 +32,9 @@ jobs:
           npm install --no-save --no-audit --no-fund playwright@1.49.1
           npx playwright install --with-deps chromium
 
+      # Only when checking this commit; a published site serves itself.
       - name: Serve the site
+        if: ${{ !inputs.url }}
         run: |
           python3 -m http.server 8099 --directory web &
           for i in $(seq 1 20); do
@@ -35,4 +43,4 @@ jobs:
           done
 
       - name: Click through every view
-        run: node tools/rendercheck.mjs http://127.0.0.1:8099
+        run: node tools/rendercheck.mjs "${{ inputs.url || 'http://127.0.0.1:8099' }}"
