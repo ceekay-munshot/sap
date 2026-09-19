@@ -18,8 +18,36 @@ import { classifyHeuristic } from './lib/classify.mjs';
 
 const OUT = (process.argv.find((a) => a.startsWith('--json=')) || '').split('=')[1];
 
+/*
+ * Round two: the four topics still running on almost nothing — Joule, Business
+ * Data Cloud, RPT-1 and customer satisfaction. Round one fixed the general
+ * mix; these are narrow products, and a general feed will not carry them.
+ */
+const ROUND_TWO = [
+  ['hn-joule', 'https://hnrss.org/newest?q=SAP+Joule&count=50'],
+  ['hn-bdc', 'https://hnrss.org/newest?q=%22Business+Data+Cloud%22+OR+Datasphere&count=50'],
+  ['hn-tabpfn', 'https://hnrss.org/newest?q=TabPFN+OR+%22tabular+foundation%22&count=50'],
+  ['hn-erp-gripes', 'https://hnrss.org/newest?q=SAP+migration+OR+SAP+licensing&count=50'],
+  ['r/SAP-joule-only', 'https://www.reddit.com/r/SAP/search.rss?q=Joule&restrict_sr=1&sort=new&t=year'],
+  ['r/SAP-bdc', 'https://www.reddit.com/r/SAP/search.rss?q=%22Business+Data+Cloud%22+OR+Datasphere&restrict_sr=1&sort=new&t=year'],
+  ['r/MachineLearning-tabpfn', 'https://www.reddit.com/r/MachineLearning/search.rss?q=TabPFN+OR+%22tabular+foundation+model%22&restrict_sr=1&sort=new&t=year'],
+  ['r/SAP-satisfaction', 'https://www.reddit.com/r/SAP/search.rss?q=worth+it+OR+regret+OR+disappointed+OR+love+it&restrict_sr=1&sort=new&t=year'],
+  ['r/ExperiencedDevs-sap', 'https://www.reddit.com/r/ExperiencedDevs/search.rss?q=SAP&restrict_sr=1&sort=new&t=year'],
+  ['community-joule', 'https://news.google.com/rss/search?q=site:community.sap.com+Joule&hl=en-US&gl=US&ceid=US:en'],
+  ['community-bdc', 'https://news.google.com/rss/search?q=site:community.sap.com+%22Business+Data+Cloud%22&hl=en-US&gl=US&ceid=US:en'],
+  ['community-rpt1', 'https://news.google.com/rss/search?q=site:community.sap.com+RPT-1+OR+TabPFN&hl=en-US&gl=US&ceid=US:en'],
+  ['so-joule', 'https://stackoverflow.com/feeds/tag/sap-joule'],
+  ['so-datasphere', 'https://stackoverflow.com/feeds/tag/sap-datasphere'],
+  ['devto-joule', 'https://dev.to/feed/tag/joule'],
+  ['devto-datasphere', 'https://dev.to/feed/tag/datasphere'],
+  ['medium-datasphere', 'https://medium.com/feed/tag/sap-datasphere'],
+  ['medium-bdc', 'https://medium.com/feed/tag/business-data-cloud'],
+  ['arxiv-tabular', 'https://export.arxiv.org/api/query?search_query=all:%22tabular+foundation+model%22&sortBy=submittedDate&sortOrder=descending&max_results=40'],
+  ['hf-tabpfn', 'https://huggingface.co/api/models?search=tabpfn&limit=20'],
+];
+
 /* Candidates, grouped by the bet each one represents. */
-const CANDIDATES = [
+const ROUND_ONE = [
   // Practitioners writing at length. SAP Community is where SAP's own
   // ecosystem argues with itself, and it is missing entirely.
   ['sap-community-blogs', 'https://community.sap.com/t5/s/lpgnf16017/rss/Community?interaction.style=blog'],
@@ -70,6 +98,9 @@ const CANDIDATES = [
   ['itpro-sap', 'https://www.itpro.com/feeds/tag/sap'],
   ['sapinsider', 'https://sapinsider.org/feed/'],
 ];
+
+// --round=2 tries the topic-specific batch instead of the general one.
+const CANDIDATES = process.argv.includes('--round=2') ? ROUND_TWO : ROUND_ONE;
 
 const tag = (block, name) => {
   const m = block.match(new RegExp(`<${name}[^>]*>([\\s\\S]*?)</${name}>`, 'i'));

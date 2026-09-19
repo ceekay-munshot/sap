@@ -5,6 +5,12 @@ name: Source scout (which feeds carry opinion)
 # writes nothing, costs nothing.
 on:
   workflow_dispatch:
+    inputs:
+      round:
+        description: 'Which batch: 1 = general mix, 2 = the topics still running thin'
+        required: false
+        default: '1'
+        type: string
 
 jobs:
   scout:
@@ -15,7 +21,7 @@ jobs:
         with:
           node-version: '22'
       - name: Try every candidate
-        run: node collector/sourcescout.mjs --json=scout.json
+        run: node collector/sourcescout.mjs --round=${{ inputs.round || '1' }} --json=scout.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
