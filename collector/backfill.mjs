@@ -50,19 +50,18 @@ function main() {
 
   const existing = readJson(TREND, { days: [] });
   /*
-   * A live point is kept as collected — except one computed under a different
-   * window, which would sit on the same line as points that mean something
-   * else. Mixing a cumulative point with windowed ones is what produced the
-   * cliff at the right edge that looked like sentiment collapsing and was only
-   * the sample changing size. Those get recomputed from the corpus, which is
-   * the collected data; the rollup is just arithmetic over it.
+   * Every point is recomputed from the corpus, live ones included.
+   *
+   * The corpus is the record — four years of the actual posts — and a point is
+   * arithmetic over it. Freezing a live point meant that when the rules
+   * changed, one week on the line still counted SAP's press releases while the
+   * twenty-one either side of it did not. Mixing points that mean different
+   * things is what produced the cliff at the right edge that read as sentiment
+   * collapsing and was only the sample changing.
+   *
+   * What is preserved is which weeks a collection actually ran, because that
+   * is a fact about the past that cannot be recomputed.
    */
-  const live = new Map((existing.days || [])
-    .filter((d) => !d.reconstructed && d.windowDays === WINDOW_DAYS)
-    .map((d) => [d.date, d]));
-  const restated = (existing.days || [])
-    .filter((d) => !d.reconstructed && d.windowDays !== WINDOW_DAYS).length;
-  if (restated) console.log(`restating ${restated} live point(s) computed under a different window`);
 
   const liveDates = new Set((existing.days || []).filter((d) => !d.reconstructed).map((d) => d.date));
   const days = [];
@@ -89,7 +88,6 @@ function main() {
       ...Object.fromEntries(Object.entries(perTopic).map(([id, r]) => [id, r.evidence])),
     };
 
-    if (live.has(key)) { days.push(live.get(key)); continue; }   // never overwrite a real run
     days.push({
       date: key,
       topics: Object.fromEntries(Object.entries(perTopic).map(([id, r]) => [id, withoutEvidence(r)])),
@@ -101,8 +99,9 @@ function main() {
     });
   }
 
-  for (const day of live.values()) {
-    if (!days.some((d) => d.date === day.date)) days.push(day);
+  // A live collection that landed off the weekly grid keeps its own point.
+  for (const day of (existing.days || [])) {
+    if (!day.reconstructed && !days.some((d) => d.date === day.date)) days.push(day);
   }
   days.sort((a, b) => a.date.localeCompare(b.date));
 

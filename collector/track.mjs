@@ -170,7 +170,22 @@ async function main() {
     topics: topicsFor(`${item.title} ${item.text}`),
   }));
   const byId = new Map(scoredNew.map((r) => [r.id, r]));
-  const all = pruneCorpus(merged.map((item) => byId.get(item.id) || item));
+
+  /*
+   * Everything stored is restated, not just the newcomers.
+   *
+   * Stance, voice and topic are derived from the text by rules that change —
+   * when the vendor check started working, four hundred items already in the
+   * corpus still carried the label it gave them before. The text is the
+   * record; these are arithmetic over it, so they are recomputed every run and
+   * items the relevance rules would no longer admit are dropped.
+   */
+  const restated = classifyHeuristic(merged.map((item) => byId.get(item.id) || item))
+    .map((item) => ({ ...item, topics: topicsFor(`${item.title} ${item.text}`) }));
+  const kept = restated.filter((item) => isRelevant(`${item.title} ${item.text}`));
+  const dropped = restated.length - kept.length;
+  if (dropped) log(`  restated ${restated.length} stored items, dropped ${dropped} no longer on topic`);
+  const all = pruneCorpus(kept);
 
   /* 3. One weighted point per topic, plus an overall ----------------------- */
   // A point describes the eight weeks ending today, not everything ever
