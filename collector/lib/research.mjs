@@ -36,6 +36,20 @@ Search the web before answering. Ground every quote in a real, findable source.
 If the evidence is thin, say so in the summary and lower your confidence — do not invent
 quotes, names, companies or URLs. A fabricated quote is worse than no quote.
 
+WRITING STYLE — this is read by investors, not engineers:
+- Plain English. Short sentences. Explain jargon the first time you use it.
+- Write prose, not notes. No markdown at all: no asterisks, no bold markers, no
+  hyphens starting a line, no "---", no headings. The page does the formatting.
+- Every finding is ONE sentence, under 30 words, that states something concrete.
+  Say what happened and why it matters. Do not label findings "CURRENT" or "RECENT" —
+  the date does that.
+- The summary is 2-3 sentences a non-technical reader understands on first pass.
+- Never write a number without saying what it counts.
+
+LINKS — every url must be one you actually opened during this search. Copy it exactly.
+If you do not have the real link for a quote or source, leave the url as an empty
+string. An empty url is fine; a guessed or constructed one is not.
+
 Return ONLY a JSON object, no prose around it, in exactly this shape:
 {
   "score": <number 1.0-5.0>,
@@ -72,6 +86,35 @@ export function extractJson(text) {
   return JSON.parse(body.slice(start, end + 1));
 }
 
+/** Models leak markdown even when told not to; strip it rather than render it. */
+export function cleanText(value) {
+  return String(value ?? '')
+    .replace(/\*\*/g, '')
+    .replace(/(^|\n)\s*[-*\u2022]\s+/g, '$1')
+    .replace(/(^|\n)\s*#{1,6}\s*/g, '$1')
+    .replace(/^\s*-{3,}\s*$/gm, '')
+    // A horizontal rule can also land mid-sentence; 3+ hyphens are never prose.
+    .replace(/(^|\s)-{3,}(?=\s|$)/g, ' ')
+    .replace(/`/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/** Only a real absolute http(s) link survives; anything else becomes empty. */
+export function cleanUrl(value) {
+  const raw = String(value ?? '').trim();
+  if (!raw) return '';
+  try {
+    const u = new URL(raw);
+    if (u.protocol !== 'http:' && u.protocol !== 'https:') return '';
+    if (!u.hostname.includes('.')) return '';
+    if (/^(example|test|placeholder|your-?site)\./i.test(u.hostname)) return '';
+    return u.href;
+  } catch {
+    return '';
+  }
+}
+
 const clampScore = (n) => {
   const v = Number(n);
   if (!Number.isFinite(v)) return null;
@@ -92,19 +135,20 @@ export function normalise(raw, topic, now) {
     .filter((q) => q && typeof q.text === 'string' && q.text.trim().length > 20)
     .slice(0, 8)
     .map((q) => ({
-      text: String(q.text).trim(),
-      name: String(q.name || '').trim(),
-      title: String(q.title || '').trim(),
-      company: String(q.company || '').trim(),
-      platform: String(q.platform || '').trim(),
+      text: cleanText(q.text),
+      name: cleanText(q.name),
+      title: cleanText(q.title),
+      company: cleanText(q.company),
+      platform: cleanText(q.platform),
       date: String(q.date || '').trim() || null,
-      context: String(q.context || '').trim(),
-      url: String(q.url || '').trim(),
+      context: cleanText(q.context),
+      url: cleanUrl(q.url),
     }));
   const sources = (Array.isArray(raw.sources) ? raw.sources : [])
     .filter((s) => s && (s.url || s.title))
     .slice(0, 12)
-    .map((s) => ({ title: String(s.title || '').trim(), url: String(s.url || '').trim() }));
+    .map((s) => ({ title: cleanText(s.title), url: cleanUrl(s.url) }))
+    .filter((s) => s.url || s.title);
 
   return {
     id: topic.id,
@@ -119,8 +163,9 @@ export function normalise(raw, topic, now) {
       legacy: Number(mix.legacy) || 0,
     },
     confidence: Number(raw.confidence) || null,
-    summary: String(raw.summary || '').trim(),
-    findings: (Array.isArray(raw.findings) ? raw.findings : []).map((f) => String(f).trim()).filter(Boolean).slice(0, 8),
+    summary: cleanText(raw.summary),
+    findings: (Array.isArray(raw.findings) ? raw.findings : [])
+      .map(cleanText).filter(Boolean).slice(0, 8),
     quotes,
     sources,
     ranAt: now.toISOString(),

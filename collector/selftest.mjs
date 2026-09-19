@@ -6,7 +6,7 @@
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { extractJson, normalise } from './lib/research.mjs';
+import { extractJson, normalise, cleanText, cleanUrl } from './lib/research.mjs';
 import { rollupTopic, appendDay } from './track.mjs';
 import { topicsFor, toFiveScale } from './lib/topicmatch.mjs';
 import { frameFor, weightFor, tierFor, explainWeight } from '../web/lib/recency.mjs';
@@ -81,6 +81,29 @@ const buckets = topicsFor('Joule on S/4HANA is fine but Accenture oversold the a
 assert.ok(buckets.includes('joule_sentiment') && buckets.includes('partner_views'),
   'an item can count for several topics');
 assert.deepEqual(topicsFor('unrelated gardening post'), [], 'no false buckets');
+
+/* ── output must reach the page as plain prose with real links ──────────── */
+assert.equal(cleanText('- **CURRENT (Q1 2026)** — Joule is useful.\n--- '),
+  'CURRENT (Q1 2026) — Joule is useful.', 'markdown must be stripped, not rendered');
+assert.equal(cleanText('## Heading\n- one\n* two'), 'Heading one two');
+assert.equal(cleanUrl('https://community.sap.com/t5/x/1'), 'https://community.sap.com/t5/x/1');
+assert.equal(cleanUrl('javascript:alert(1)'), '', 'only http(s) survives');
+assert.equal(cleanUrl('https://example.invalid/a'), '', 'placeholder hosts rejected');
+assert.equal(cleanUrl('notaurl'), '', 'a non-url is dropped rather than rendered');
+
+const dirty = normalise({
+  score: 3,
+  sub: {},
+  summary: '**Bold** claim --- here',
+  findings: ['- a finding', '**another**'],
+  quotes: [{ text: 'x'.repeat(40), url: 'not-a-link', name: '**Anna**' }],
+  sources: [{ title: 'ok', url: 'https://real.example.com/a' }, { title: '', url: 'nope' }],
+}, topic, NOW);
+assert.equal(dirty.summary, 'Bold claim here');
+assert.deepEqual(dirty.findings, ['a finding', 'another']);
+assert.equal(dirty.quotes[0].url, '', 'an unusable quote link becomes empty, never fake');
+assert.equal(dirty.quotes[0].name, 'Anna');
+assert.equal(dirty.sources.length, 1, 'a source with neither title nor real url is dropped');
 
 /* ── the shipped scaffold must not carry invented numbers ───────────────── */
 const shipped = JSON.parse(fs.readFileSync('web/data/dashboard.json', 'utf8'));
