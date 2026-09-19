@@ -153,10 +153,14 @@ try {
     let body = {};
     try { body = JSON.parse(text); } catch { /* reported below */ }
     if (body.status === 'ready') {
-      line(true, 'Run Research button', `ready · ${body.repo}`);
+      line(true, 'Run Research button', `ready · ${body.repo} @ ${body.branch}`);
     } else {
-      line(false, 'Run Research button', `${body.hint || body.error || text.slice(0, 120)}`
-        + (body.githubStatus ? ` (GitHub ${body.githubStatus})` : ''));
+      line(false, 'Run Research button', body.hint || body.error || text.slice(0, 120));
+      // The probe reports each GitHub call separately, so print them: the one
+      // that refused is the one to fix.
+      for (const [name, c] of Object.entries(body.checks || {})) {
+        console.log(`       ${name.padEnd(9)} GitHub ${c.status}${c.detail ? ` — ${c.detail.replace(/\s+/g, ' ').slice(0, 100)}` : ''}`);
+      }
     }
   }
 } catch (err) {

@@ -67,29 +67,51 @@ export async function onRequestPost({ request, env }) {
   const { repo, headers } = gh(env);
 
   /**
-   * A readiness probe must never start a paid run, so it stops here: it checks
-   * the token can actually reach the workflow and reports what GitHub said.
+   * A readiness probe must never start a paid run, so it never dispatches for
+   * real. It answers the three things that can break the button, in order:
+   * can the token see the workflow, does the branch it would run on exist,
+   * and may the token start runs at all.
+   *
+   * The last one has no read-only equivalent, so it asks GitHub to dispatch a
+   * ref that cannot exist. A token allowed to start runs gets 422 (no such
+   * ref) and nothing runs; one that is not gets 401, 403 or 404 first. The
+   * refusal is the answer.
    */
   if (body.probe === true) {
-    try {
-      const res = await fetch(
-        `https://api.github.com/repos/${repo}/actions/workflows/${WORKFLOW}`, { headers },
-      );
-      if (res.ok) return json({ status: 'ready', repo });
-      return json({
-        status: 'not_ready',
-        repo,
-        githubStatus: res.status,
-        detail: (await res.text()).slice(0, 200),
-        hint: res.status === 404
-          ? 'Token cannot see this repo or workflow — check the repository it is scoped to.'
-          : res.status === 403 || res.status === 401
-            ? 'Token lacks Actions: Read and write on this repository.'
-            : 'Unexpected response from GitHub.',
-      }, 200);
-    } catch (err) {
-      return json({ status: 'not_ready', detail: String(err.message || err) }, 200);
-    }
+    const branch = env.GITHUB_BRANCH || 'main';
+    const checks = {};
+    const ask = async (label, url, init) => {
+      try {
+        const res = await fetch(url, init);
+        checks[label] = { status: res.status, detail: res.ok ? '' : (await res.text()).slice(0, 160) };
+        return res.status;
+      } catch (err) {
+        checks[label] = { status: 0, detail: String(err.message || err).slice(0, 160) };
+        return 0;
+      }
+    };
+
+    const base = `https://api.github.com/repos/${repo}`;
+    const seen = await ask('workflow', `${base}/actions/workflows/${WORKFLOW}`, { headers });
+    const ref = await ask('branch', `${base}/branches/${encodeURIComponent(branch)}`, { headers });
+    const may = await ask('dispatch', `${base}/actions/workflows/${WORKFLOW}/dispatches`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ ref: '__readiness_probe_no_such_ref__' }),
+    });
+
+    let hint = '';
+    if (seen === 404) hint = `The token cannot see ${repo} or its ${WORKFLOW} workflow. Check the repository the token is scoped to.`;
+    else if (seen === 401) hint = 'The token is expired or invalid.';
+    else if (seen !== 200) hint = `GitHub answered ${seen} when asked for the workflow.`;
+    else if (ref === 404) hint = `The branch "${branch}" does not exist. Set GITHUB_BRANCH to a branch that does, or leave it unset for main.`;
+    else if (may === 403 || may === 401) hint = 'The token can read the repository but not start runs. Regenerate it with Actions: Read and write.';
+    else if (may === 404) hint = 'The token can read the repository but not start runs — GitHub hides the dispatch endpoint from tokens without Actions: Read and write.';
+    else if (may === 204) hint = 'Unexpected: GitHub accepted a run on a ref that does not exist.';
+    else if (may !== 422) hint = `GitHub answered ${may} to a dispatch. See detail.`;
+
+    const ready = seen === 200 && ref === 200 && may === 422;
+    return json({ status: ready ? 'ready' : 'not_ready', repo, branch, checks, ...(hint ? { hint } : {}) });
   }
 
   // Spend control without extra storage: GitHub itself remembers the last run.
