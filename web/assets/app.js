@@ -705,10 +705,21 @@ function scorecard(report) {
     { color: '#ef4444', label: '1.0–1.9 BEARISH' },
   ].map((l) => `<span class="sc-legend-item"><span class="sc-legend-dot" style="background:${l.color}"></span>${l.label}</span>`).join('');
 
+  const isTelemetryTopic = state.sdk && (report.id === 'btp_ai' || report.id === 'joule_sentiment');
+  const sdkFootnote = isTelemetryTopic ? `
+    <div style="margin-top:12px;padding:8px 12px;background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.22);border-radius:6px;font-size:10px;color:var(--text3);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+      <div style="display:flex;align-items:center;gap:6px">
+        <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#3b82f6;box-shadow:0 0 6px rgba(59,130,246,0.7)"></span>
+        <span><strong>Telemetry Grounding:</strong> Adoption subscore corroborated by <code>${fmtK(state.sdk.summary?.weeklyGrandTotal || 0)}</code> weekly downloads across official <code>@sap-ai-sdk</code> packages (10M+ all-time).</span>
+      </div>
+      <button class="tlc-telemetry-pill" data-nav-tab="adoption" type="button" style="padding:3px 8px;font-size:9px">View Telemetry Series →</button>
+    </div>` : '';
+
   return `<div class="scorecard">
     <div class="scorecard-title">📊 HOW SCORES ARE COMPUTED — ${frame.currentYear} TEMPORAL WEIGHTING<span style="font-size:8px;color:var(--text4);font-family:'Lora',serif;font-style:italic;font-weight:400"> · Hover cells for definitions · Scale 1.0–5.0</span></div>
     <div class="scorecard-grid">${cells}</div>
     <div class="scorecard-legend">${legend}</div>
+    ${sdkFootnote}
   </div>`;
 }
 
