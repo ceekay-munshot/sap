@@ -58,14 +58,21 @@ try {
 } catch (err) { line(false, 'Anthropic API', err.message); }
 
 // 2. Bedrock bearer token (AWS's long-lived API key)
-for (const model of ['anthropic.claude-opus-5', 'anthropic.claude-sonnet-5']) {
+const REGION_PREFIX = /^eu-/.test(REGION) ? 'eu.' : /^ap-/.test(REGION) ? 'apac.' : 'us.';
+const CANDIDATES = [
+  `${REGION_PREFIX}anthropic.claude-opus-5`,
+  `${REGION_PREFIX}anthropic.claude-sonnet-5`,
+  `${REGION_PREFIX}anthropic.claude-haiku-4-5`,
+  'anthropic.claude-opus-5',
+];
+for (const model of CANDIDATES) {
   try {
     const res = await fetch(`https://bedrock-runtime.${REGION}.amazonaws.com/model/${model}/invoke`, {
       method: 'POST',
       headers: { authorization: `Bearer ${AI_KEY}`, 'content-type': 'application/json' },
       body: JSON.stringify({ anthropic_version: 'bedrock-2023-05-31', max_tokens: 8, messages: [{ role: 'user', content: 'say ok' }] }),
     });
-    line(res.ok, `Bedrock bearer ${model}`, res.ok ? 'works' : `HTTP ${res.status} ${(await res.text()).slice(0, 110)}`);
+    line(res.ok, `Bedrock ${model}`, res.ok ? 'WORKS — use this id' : `HTTP ${res.status} ${(await res.text()).slice(0, 130)}`);
   } catch (err) { line(false, `Bedrock bearer ${model}`, err.message); }
 }
 

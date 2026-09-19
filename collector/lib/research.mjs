@@ -34,8 +34,23 @@ export const PROVIDER = process.env.AI_PROVIDER || (
       : 'anthropic'
 );
 
+/**
+ * Bedrock will not serve these models by bare id — it wants a cross-region
+ * inference profile, which is the same id behind a geography prefix. The prefix
+ * follows the region, so it is derived rather than hardcoded.
+ */
+export function bedrockModelId(base, region = process.env.AWS_REGION || 'us-east-1') {
+  if (/^(us|eu|apac|us-gov)\./.test(base)) return base;   // already a profile id
+  const geo = /^eu-/.test(region) ? 'eu.'
+    : /^ap-/.test(region) ? 'apac.'
+      : /^us-gov-/.test(region) ? 'us-gov.'
+        : 'us.';
+  return `${geo}${base.startsWith('anthropic.') ? base : `anthropic.${base}`}`;
+}
+
 export const MODEL = process.env.RESEARCH_MODEL
-  || (PROVIDER === 'bedrock' ? 'anthropic.claude-opus-5' : 'claude-opus-5');
+  ? (PROVIDER === 'bedrock' ? bedrockModelId(process.env.RESEARCH_MODEL) : process.env.RESEARCH_MODEL)
+  : (PROVIDER === 'bedrock' ? bedrockModelId('anthropic.claude-opus-5') : 'claude-opus-5');
 
 /** Page text is capped so a single long page cannot dominate the bill. */
 const MAX_PAGE_CHARS = Number(process.env.MAX_PAGE_CHARS || 6000);
