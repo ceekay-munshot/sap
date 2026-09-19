@@ -76,6 +76,33 @@ for (const model of CANDIDATES) {
   } catch (err) { line(false, `Bedrock bearer ${model}`, err.message); }
 }
 
+// The SDK's Mantle client talks to a different endpoint than raw bedrock-runtime
+// above, and takes different model ids. Probe the exact path the collector uses.
+console.log('\nMANTLE CLIENT (what the collector actually uses)');
+try {
+  const { AnthropicBedrockMantle } = await import('@anthropic-ai/bedrock-sdk');
+  const client = new AnthropicBedrockMantle({ awsRegion: REGION, apiKey: AI_KEY });
+  for (const model of [
+    'anthropic.claude-opus-5',
+    `${REGION_PREFIX}anthropic.claude-opus-5`,
+    'claude-opus-5',
+    'anthropic.claude-sonnet-5',
+    'claude-sonnet-5',
+  ]) {
+    try {
+      const r = await client.messages.create({
+        model, max_tokens: 8, messages: [{ role: 'user', content: 'say ok' }],
+      });
+      const out = r.content.filter((b) => b.type === 'text').map((b) => b.text).join('').trim();
+      line(true, model, `WORKS — replied ${JSON.stringify(out)}`);
+    } catch (err) {
+      line(false, model, String(err.message || err).slice(0, 120));
+    }
+  }
+} catch (err) {
+  line(false, 'bedrock-sdk import', String(err.message || err).slice(0, 160));
+}
+
 console.log('\nVERDICT');
 console.log(`  Firecrawl version to use: ${fcVersion || 'NONE WORKED'}`);
 console.log('  Use whichever MODEL line says OK above.');
