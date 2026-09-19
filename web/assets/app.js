@@ -51,6 +51,14 @@ const TIER_COLOR = { current: '#22c55e', prior: '#3b82f6', legacy: '#f59e0b' };
 
 const fmtNum = (n) => (typeof n === 'number' ? n.toLocaleString() : '—');
 
+const fmtK = (n) => {
+  if (typeof n !== 'number') return '—';
+  if (n >= 1000000) return (n / 1000000).toFixed(2) + 'M';
+  if (n >= 10000) return Math.round(n / 1000) + 'k';
+  if (n >= 1000) return (n / 1000).toFixed(1) + 'k';
+  return n.toLocaleString();
+};
+
 const fmtDate = (iso) => {
   if (!iso) return '—';
   const d = new Date(iso);
@@ -107,10 +115,10 @@ function renderStatus() {
 
 function renderMiniTracker() {
   const scored = state.topics.map((t) => reportFor(t.id)).filter((r) => r?.score);
-  if (!scored.length) { $('miniTracker').innerHTML = ''; return; }
-  const mean = scored.reduce((a, r) => a + r.score, 0) / scored.length;
+  if (!scored.length && !state.sdk) { $('miniTracker').innerHTML = ''; return; }
+  const mean = scored.length ? (scored.reduce((a, r) => a + r.score, 0) / scored.length) : 0;
   const band = scoreBand(mean);
-  const rows = `
+  const rows = scored.length ? `
     <div class="tracker-row">
       <span class="tracker-label">OVERALL</span>
       <span class="tracker-score" style="color:${band.color}">${mean.toFixed(1)}/5</span>
@@ -118,8 +126,22 @@ function renderMiniTracker() {
     <div class="tracker-row">
       <span class="tracker-label">${esc(band.label)}</span>
       <span class="tracker-score" style="color:var(--text4)">${scored.length} topics</span>
-    </div>`;
-  $('miniTracker').innerHTML = `<div class="tracker-box"><div class="section-label">TRACKER</div>${rows}</div>`;
+    </div>` : '';
+  const sdkRow = state.sdk?.summary?.weeklyGrandTotal ? `
+    <div class="tracker-row" data-nav-tab="adoption" style="cursor:pointer;margin-top:6px;padding-top:6px;border-top:1px dashed var(--border2)" title="View hard developer adoption telemetry">
+      <span class="tracker-label" style="color:#60a5fa">⚡ SDK RUN-RATE</span>
+      <span class="tracker-score" style="color:#60a5fa;font-weight:700">${fmtK(state.sdk.summary.weeklyGrandTotal)}/wk ↗</span>
+    </div>` : '';
+  const host = $('miniTracker');
+  host.innerHTML = `<div class="tracker-box"><div class="section-label">TRACKER</div>${rows}${sdkRow}</div>`;
+  for (const btn of host.querySelectorAll('[data-nav-tab]')) {
+    btn.addEventListener('click', () => {
+      state.category = btn.dataset.navTab;
+      state.open = null;
+      render();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
 }
 
 function renderFilters() {
@@ -189,6 +211,12 @@ function methodStrip() {
   const frame = frameFor(state.now);
   const [current, prior, legacy] = frame.tiers;
   const sep = '<span style="color:var(--border3)">|</span>';
+  const sdkTelemetry = state.sdk?.summary?.weeklyGrandTotal ? `
+    ${sep}
+    <button data-nav-tab="adoption" type="button" style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.25);border-radius:4px;padding:2px 7px;color:#60a5fa;font-family:'DM Mono',monospace;font-size:9px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;transition:all 0.15s" title="View official npm download telemetry time series">
+      <span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:#3b82f6;box-shadow:0 0 5px rgba(59,130,246,0.8)"></span>
+      <span>⚡ SDK Telemetry: ${fmtK(state.sdk.summary.weeklyGrandTotal)}/wk →</span>
+    </button>` : '';
   return `<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 14px;background:var(--tracker-bg);border:1px solid var(--border);border-radius:8px;margin-bottom:14px;font-family:'DM Mono',monospace;font-size:9px;color:var(--text5)">
     <span style="color:var(--text4);font-weight:700;letter-spacing:0.08em">ℹ️ METHOD</span>
     ${sep}
@@ -199,6 +227,7 @@ function methodStrip() {
     <span>Sub-scores: Adoption · Maturity · Satisfaction · Competitive</span>
     ${sep}
     <span>Pre-${prior.label} = <span style="color:#f59e0b">[LEGACY]</span> ${legacy.multiplier}</span>
+    ${sdkTelemetry}
   </div>`;
 }
 
@@ -235,6 +264,15 @@ function topicCard(topic) {
     ? `<button class="tlc-view-btn" data-open="${esc(topic.id)}" type="button">VIEW REPORT →</button>`
     : '';
 
+  const sdkPill = (state.sdk && (topic.id === 'btp_ai' || topic.id === 'joule_sentiment'))
+    ? `<div style="margin-bottom:8px">
+         <button class="tlc-telemetry-pill" data-nav-tab="adoption" type="button" title="View official npm download telemetry time series">
+           <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#3b82f6;box-shadow:0 0 6px rgba(59,130,246,0.7)"></span>
+           <span>⚡ SDK: ${fmtK(state.sdk.summary?.weeklyGrandTotal || 0)}/wk telemetry ↗</span>
+         </button>
+       </div>`
+    : '';
+
   return `<div class="topic-launch-card ${cardClass}">
     <div class="tlc-header">
       <span class="tlc-icon">${topic.icon}</span>
@@ -245,6 +283,7 @@ function topicCard(topic) {
     </div>
     <div class="tlc-desc">${esc(desc)}</div>
     ${scorePill}
+    ${sdkPill}
     ${runBtn}
     ${noteHTML}
     ${viewBtn}
@@ -1291,14 +1330,6 @@ function historyView() {
 }
 
 /* ─── sdk adoption telemetry ────────────────────────────────────────────────── */
-
-const fmtK = (n) => {
-  if (typeof n !== 'number') return '—';
-  if (n >= 1000000) return (n / 1000000).toFixed(2) + 'M';
-  if (n >= 10000) return Math.round(n / 1000) + 'k';
-  if (n >= 1000) return (n / 1000).toFixed(1) + 'k';
-  return n.toLocaleString();
-};
 
 function sdkDomainFor(points) {
   const values = points.map((p) => p.value);
