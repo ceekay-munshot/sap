@@ -30,7 +30,7 @@ jobs:
 
       - name: Install Playwright
         run: |
-          npm install playwright --no-audit --no-fund
+          npm install --no-save playwright --no-audit --no-fund
           npx playwright install --with-deps chromium
 
       - name: Capture the reference page
@@ -42,16 +42,29 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # Anything the install touched must not block the rebase.
+          git checkout -- package.json package-lock.json 2>/dev/null || true
           git add -f reference
           if git diff --staged --quiet; then
             echo "reference capture unchanged"
-          else
-            git commit -m "reference: capture ${{ inputs.url || 'sap-dashboard-bh1.pages.dev' }}"
-            for i in 1 2 3 4; do
-              git pull --rebase origin ${{ github.ref_name }} && \
-              git push origin HEAD:${{ github.ref_name }} && break
-              echo "push attempt $i failed; retrying"; sleep $((2 ** i))
-            done
+            exit 0
+          fi
+          git commit -m "reference: capture ${{ inputs.url || 'sap-dashboard-bh1.pages.dev' }}"
+          pushed=0
+          for i in 1 2 3 4; do
+            if git pull --rebase origin ${{ github.ref_name }} && \
+               git push origin HEAD:${{ github.ref_name }}; then
+              pushed=1
+              break
+            fi
+            echo "push attempt $i failed; retrying"
+            sleep $((2 ** i))
+          done
+          # A silent failure here looks identical to success from the outside.
+          if [ "$pushed" -ne 1 ]; then
+            echo "::error::capture committed but could not be pushed"
+            git status --short
+            exit 1
           fi
 
       - name: Summary
