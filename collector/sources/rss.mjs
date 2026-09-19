@@ -42,6 +42,16 @@ function parseFeed(xml) {
   });
 }
 
+/** Reddit rate-limits hard; space requests to the same host rather than racing them. */
+const HOST_DELAY = [
+  [/reddit\.com/i, 4000],
+  [/news\.google\.com/i, 600],
+];
+const delayFor = (url) => {
+  for (const [pattern, ms] of HOST_DELAY) if (pattern.test(url)) return ms;
+  return 400;
+};
+
 export async function collect(cfg) {
   const items = [];
   const errors = [];
@@ -68,7 +78,7 @@ export async function collect(cfg) {
     } catch (err) {
       errors.push(`${feed.id}: ${err.message}`);
     }
-    await pace(400);
+    await pace(delayFor(feed.url));
   }
   if (errors.length) items.errors = errors;
   return items;
