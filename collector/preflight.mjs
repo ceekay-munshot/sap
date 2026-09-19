@@ -153,7 +153,7 @@ try {
     let body = {};
     try { body = JSON.parse(text); } catch { /* reported below */ }
     if (body.status === 'ready') {
-      line(true, 'Run Research button', `ready · ${body.repo} @ ${body.branch}`);
+      line(true, 'Run Research button', `ready · ${body.repo} @ ${body.branch} · via ${body.route}`);
     } else {
       line(false, 'Run Research button', body.hint || body.error || text.slice(0, 120));
       // The probe reports each GitHub call separately, so print them: the one

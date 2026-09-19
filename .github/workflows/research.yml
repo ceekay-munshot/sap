@@ -15,6 +15,12 @@ on:
         default: ''
         type: string
 
+  # The dashboard's Run Research button prefers workflow_dispatch, but falls
+  # back to this when its token may write contents and not Actions. Same job,
+  # different doorway.
+  repository_dispatch:
+    types: [research]
+
 permissions:
   contents: write
 
@@ -25,6 +31,10 @@ concurrency:
 jobs:
   research:
     runs-on: ubuntu-latest
+    # The two doorways name their arguments differently; the job reads one pair.
+    env:
+      ONLY: ${{ inputs.only || github.event.client_payload.only || '' }}
+      MODEL: ${{ inputs.model || github.event.client_payload.model || vars.RESEARCH_MODEL || '' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -49,8 +59,15 @@ jobs:
           AWS_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           AI_PROVIDER: ${{ vars.AI_PROVIDER || '' }}
-          RESEARCH_MODEL: ${{ inputs.model || vars.RESEARCH_MODEL || '' }}
-        run: node collector/run.mjs ${{ inputs.only && format('--only={0}', inputs.only) || '' }}
+          RESEARCH_MODEL: ${{ env.MODEL }}
+        # Passed as a shell variable, not interpolated into the command: a
+        # repository_dispatch payload comes from outside.
+        run: |
+          if [ -n "$ONLY" ]; then
+            node collector/run.mjs --only="$ONLY"
+          else
+            node collector/run.mjs
+          fi
 
       - name: Commit the reports
         run: |
