@@ -110,20 +110,49 @@ console.log(`\nLIVE SITE (${SITE})`);
 try {
   const res = await fetch(`${SITE}/api/status`, { headers: { accept: 'application/json' } });
   const text = await res.text();
+  const ctype = res.headers.get('content-type') || '';
+
   if (!res.ok) {
-    line(false, '/api/status', `HTTP ${res.status} — is the site deployed with web/functions?`);
+    line(false, '/api/status', `HTTP ${res.status}`);
+  } else if (!ctype.includes('json')) {
+    // A Pages Function returns JSON. HTML here means the request fell through
+    // to the static asset handler, i.e. the function is not deployed.
+    line(false, '/api/status', `returned ${ctype.split(';')[0] || 'no content-type'}, not JSON `
+      + '— the Function is not deployed (functions/ must be at the repo root)');
   } else {
-    let body = {};
-    try { body = JSON.parse(text); } catch { /* not json */ }
-    if (body.configured === false) {
-      line(false, '/api/status', 'reachable but GITHUB_TOKEN is not set in Pages env vars');
+    let body = null;
+    try { body = JSON.parse(text); } catch { /* handled below */ }
+    if (!body || typeof body.configured !== 'boolean') {
+      line(false, '/api/status', `unexpected payload: ${text.slice(0, 80)}`);
+    } else if (!body.configured) {
+      line(false, '/api/status', 'deployed, but GITHUB_TOKEN is not set in the Pages env vars');
     } else {
       line(true, '/api/status', `configured · last run ${body.state || 'unknown'}`);
-      line(true, 'Run Research button', 'will start a real run');
     }
   }
 } catch (err) {
   line(false, '/api/status', String(err.message || err).slice(0, 110));
+}
+
+// The button POSTs, so check the method the button actually uses.
+try {
+  const res = await fetch(`${SITE}/api/research`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ probe: true }),
+  });
+  const ctype = res.headers.get('content-type') || '';
+  if (res.status === 405) {
+    line(false, 'POST /api/research', '405 — hitting the static handler, not a Function');
+  } else if (!ctype.includes('json')) {
+    line(false, 'POST /api/research', `returned ${ctype.split(';')[0] || 'no content-type'}, not JSON`);
+  } else {
+    // 400/401/429 all mean the Function ran and made a decision, which is what
+    // we are checking for here.
+    line(true, 'POST /api/research', `Function is live (HTTP ${res.status})`);
+  }
+} catch (err) {
+  line(false, 'POST /api/research', String(err.message || err).slice(0, 110));
 }
 
 console.log('\nVERDICT');

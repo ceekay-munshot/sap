@@ -79,7 +79,7 @@ anything; the expensive pass only runs when someone wants depth on a topic.
 
 Clicking it runs a real pass and the page updates itself — no GitHub, no leaving
 the dashboard. It is served by two Cloudflare Pages Functions in
-`web/functions/api/`, which deploy with the site and share its origin:
+`functions/api/`, which deploy with the site and share its origin:
 
 - `POST /api/research` starts the run
 - `GET /api/status` reports the stage it is on, so the loader shows real progress
@@ -155,6 +155,8 @@ is left untouched rather than overwritten with nothing.
 ## Layout
 
 ```
+functions/api/           Pages Functions: /api/research and /api/status
+                         (must sit at the repository root, not inside web/)
 web/                     the deployed site (Cloudflare Pages output directory)
   index.html             nav · sidebar · method strip · topic grid
   assets/styles.css      design system carried over from the previous build
