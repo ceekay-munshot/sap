@@ -78,8 +78,10 @@ export async function onRequestPost({ request, env }) {
     return json({ error: 'Wrong passphrase.', needsPassphrase: true }, 401);
   }
 
+  // Topic ids are hyphenated (data-readiness), and this value reaches a shell
+  // variable in the workflow, so keep it to the characters an id can contain.
   const topic = String(body.topic || '').trim();
-  if (topic && !/^[a-z0-9_]{1,40}$/.test(topic)) {
+  if (topic && !/^[a-z0-9][a-z0-9_-]{0,39}$/.test(topic)) {
     return json({ error: 'Unknown topic.' }, 400);
   }
 
