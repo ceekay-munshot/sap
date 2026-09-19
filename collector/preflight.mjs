@@ -103,6 +103,29 @@ try {
   line(false, 'bedrock-sdk import', String(err.message || err).slice(0, 160));
 }
 
+// The dashboard's Run Research button depends on these two endpoints being
+// live and configured. This sandbox cannot reach the site; CI can.
+const SITE = process.env.SITE_URL || 'https://sap-8nz.pages.dev';
+console.log(`\nLIVE SITE (${SITE})`);
+try {
+  const res = await fetch(`${SITE}/api/status`, { headers: { accept: 'application/json' } });
+  const text = await res.text();
+  if (!res.ok) {
+    line(false, '/api/status', `HTTP ${res.status} — is the site deployed with web/functions?`);
+  } else {
+    let body = {};
+    try { body = JSON.parse(text); } catch { /* not json */ }
+    if (body.configured === false) {
+      line(false, '/api/status', 'reachable but GITHUB_TOKEN is not set in Pages env vars');
+    } else {
+      line(true, '/api/status', `configured · last run ${body.state || 'unknown'}`);
+      line(true, 'Run Research button', 'will start a real run');
+    }
+  }
+} catch (err) {
+  line(false, '/api/status', String(err.message || err).slice(0, 110));
+}
+
 console.log('\nVERDICT');
 console.log(`  Firecrawl version to use: ${fcVersion || 'NONE WORKED'}`);
 console.log('  Use whichever MANTLE CLIENT line says OK — that is the path the collector takes.');
