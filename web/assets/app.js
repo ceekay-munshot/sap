@@ -519,6 +519,7 @@ function reportView(topic) {
 const METRICS = {
   pctPositive: { label: '% positive', short: 'positive', max: 100, minSpan: 15, pad: 5, fmt: (v) => `${Math.round(v)}%` },
   pctNegative: { label: '% negative', short: 'negative', max: 100, minSpan: 15, pad: 5, fmt: (v) => `${Math.round(v)}%` },
+  pctNoView: { label: '% no clear view', short: 'no view', max: 100, minSpan: 15, pad: 5, fmt: (v) => `${Math.round(v)}%` },
   score: { label: 'score /5', short: 'score', max: 5, minSpan: 1, pad: 0.3, fmt: (v) => v.toFixed(1) },
 };
 
@@ -763,6 +764,7 @@ function historyView() {
       <td class="num">${bucket.score?.toFixed(1) ?? '—'}</td>
       <td class="num">${bucket.pctPositive ?? '—'}%</td>
       <td class="num">${bucket.pctNegative ?? '—'}%</td>
+      <td class="num">${bucket.pctNoView ?? '—'}%</td>
       <td class="num">${bucket.items ?? '—'}</td>
     </tr>`;
   }).join('');
@@ -773,6 +775,7 @@ function historyView() {
       <div style="flex:1;min-width:0">
         <div class="card-title">Sentiment over time — ${esc(topicLabel)}</div>
         <div class="card-meta">${esc(spec.label.toUpperCase())} · ${days.length} COLLECTION DAY${days.length === 1 ? '' : 'S'} · FREE DAILY TRACKER</div>
+        <div class="card-meta" style="color:var(--text5)">percentages are of items that express a view, not of everything collected</div>
       </div>
       ${deltaHTML}
     </div>
@@ -792,7 +795,7 @@ function historyView() {
       <details style="margin-top:16px">
         <summary style="cursor:pointer;font-size:11px;color:var(--text3);font-family:'DM Mono',monospace">TABLE VIEW</summary>
         <div class="scroll"><table class="trend-table">
-          <thead><tr><th>Date</th><th class="num">Score</th><th class="num">% pos</th><th class="num">% neg</th><th class="num">Items</th></tr></thead>
+          <thead><tr><th>Date</th><th class="num">Score</th><th class="num">% pos</th><th class="num">% neg</th><th class="num">% no view</th><th class="num">Items</th></tr></thead>
           <tbody>${rows}</tbody>
         </table></div>
       </details>

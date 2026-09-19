@@ -63,29 +63,75 @@ Return exactly one verdict per input, echoing its ref.`;
 
 /* ---------------------------------------------------------------- heuristic */
 
-const POSITIVE = ['impressive', 'impressed', 'works well', 'game changer', 'solid', 'great',
-  'love', 'excellent', 'huge win', 'saves us', 'time saver', 'delivers', 'mature', 'reliable',
-  'smooth', 'seamless', 'productive', 'worth it', 'recommend', 'promising', 'finally'];
-const NEGATIVE = ['disappointing', 'disappointed', 'useless', 'garbage', 'vaporware', 'slideware',
-  'overpriced', 'expensive', 'nightmare', 'broken', 'buggy', 'fails', 'failed', 'terrible',
-  'frustrating', 'oversold', 'hype', 'half-baked', 'immature', 'clunky', 'painful', 'lacking',
-  'not ready', "doesn't work", 'does not work', 'regret', 'avoid', 'lipstick', 'rebrand'];
-const HEDGE = ['but ', 'however', 'although', 'mixed', 'depends', 'in theory', 'on paper'];
+const POSITIVE = [
+  'impressive', 'impressed', 'works well', 'works great', 'game changer', 'solid', 'great',
+  'love', 'loved', 'excellent', 'huge win', 'saves us', 'saved us', 'time saver', 'delivers',
+  'delivered', 'mature', 'reliable', 'smooth', 'seamless', 'productive', 'worth it',
+  'recommend', 'promising', 'finally', 'genuinely useful', 'useful', 'valuable', 'strong',
+  'powerful', 'intuitive', 'easy to use', 'straightforward', 'well designed', 'robust',
+  'stable', 'fast', 'efficient', 'improvement', 'improved', 'better than', 'pleased',
+  'satisfied', 'happy with', 'success', 'successful', 'pays off', 'paid off', 'no issues',
+  'good experience', 'positive', 'excited', 'adopting', 'rolled out', 'in production',
+];
+
+const NEGATIVE = [
+  'disappointing', 'disappointed', 'useless', 'garbage', 'vaporware', 'slideware',
+  'overpriced', 'expensive', 'nightmare', 'broken', 'buggy', 'bug', 'fails', 'failed',
+  'failure', 'terrible', 'awful', 'frustrating', 'frustrated', 'oversold', 'hype', 'hyped',
+  'half-baked', 'immature', 'clunky', 'painful', 'pain', 'lacking', 'lacks', 'not ready',
+  "doesn't work", 'does not work', 'regret', 'avoid', 'lipstick', 'rebrand', 'struggle',
+  'struggling', 'difficult', 'hard to', 'confusing', 'confused', 'unreliable', 'slow',
+  'sluggish', 'limited', 'limitation', 'shortcoming', 'gap', 'missing', 'cannot', "can't",
+  'blocker', 'blocked', 'complaint', 'complain', 'criticism', 'concern', 'worried', 'risk',
+  'hallucinat', 'wrong answer', 'inaccurate', 'misleading', 'downtime', 'outage', 'delay',
+  'delayed', 'postponed', 'abandoned', 'rip out', 'ripped out', 'churn', 'waste',
+];
+
+/** Flipping words invert the polarity of a nearby match. */
+const NEGATORS = ['not ', "n't", 'never ', 'no ', 'without ', 'hardly ', 'barely ', 'far from '];
+const INTENSIFIERS = ['very ', 'extremely ', 'incredibly ', 'really ', 'massively ', 'hugely '];
+const HEDGE = ['but ', 'however', 'although', 'though', 'mixed', 'depends', 'in theory',
+  'on paper', 'that said', 'caveat', 'yet '];
+
+/** Is this match negated by something just before it? */
+function negatedAt(hay, index) {
+  const window = hay.slice(Math.max(0, index - 24), index);
+  return NEGATORS.some((n) => window.includes(n));
+}
 
 function heuristicScore(text) {
   const hay = (text || '').toLowerCase();
   let score = 0;
   let hits = 0;
-  for (const w of POSITIVE) if (hay.includes(w)) { score += 1; hits += 1; }
-  for (const w of NEGATIVE) if (hay.includes(w)) { score -= 1; hits += 1; }
+
+  const tally = (words, polarity) => {
+    for (const word of words) {
+      const at = hay.indexOf(word);
+      if (at === -1) continue;
+      hits += 1;
+      const flipped = negatedAt(hay, at) ? -polarity : polarity;
+      const before = hay.slice(Math.max(0, at - 16), at);
+      score += flipped * (INTENSIFIERS.some((i) => before.includes(i)) ? 1.5 : 1);
+    }
+  };
+  tally(POSITIVE, 1);
+  tally(NEGATIVE, -1);
+
+  if (hits === 0) return { sentiment: 0, stance: 'neutral', confidence: 0.1 };
+
   const hedged = HEDGE.some((h) => hay.includes(h));
-  if (hits === 0) return { sentiment: 0, stance: 'neutral', confidence: 0.15 };
-  let normalised = Math.max(-1, Math.min(1, score / Math.max(2, hits)));
-  if (hedged) normalised *= 0.6;
-  const stance = normalised > 0.2 ? 'positive'
-    : normalised < -0.2 ? 'negative'
+  // Divide by a soft count so a long rant does not peg at -1 on volume alone.
+  let normalised = Math.max(-1, Math.min(1, score / Math.max(1.5, Math.sqrt(hits) * 1.4)));
+  if (hedged) normalised *= 0.65;
+
+  const stance = normalised > 0.15 ? 'positive'
+    : normalised < -0.15 ? 'negative'
       : hedged || hits > 1 ? 'mixed' : 'neutral';
-  return { sentiment: Number(normalised.toFixed(3)), stance, confidence: Math.min(0.45, 0.15 + hits * 0.08) };
+  return {
+    sentiment: Number(normalised.toFixed(3)),
+    stance,
+    confidence: Math.min(0.5, 0.15 + hits * 0.07),
+  };
 }
 
 function heuristicVoice(item) {

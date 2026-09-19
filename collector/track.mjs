@@ -40,12 +40,21 @@ export function rollupTopic(items, now) {
   }
   if (den === 0) return null;
 
+  // Most press headlines are genuinely neutral, so a share taken over everything
+  // is ~90% neutral and never moves. The headline percentages are therefore taken
+  // over the items that actually express a view; the share that did not is
+  // reported separately rather than hidden.
+  const opinionated = stance.positive + stance.negative + stance.mixed;
+  const pct = (part) => (opinionated === 0 ? 0 : Math.round((part / opinionated) * 100));
+
   return {
     score: toFiveScale(num / den),
-    pctPositive: Math.round((stance.positive / den) * 100),
-    pctNegative: Math.round((stance.negative / den) * 100),
-    pctNeutral: Math.round(((stance.neutral + stance.mixed) / den) * 100),
+    pctPositive: pct(stance.positive),
+    pctNegative: pct(stance.negative),
+    pctMixed: pct(stance.mixed),
+    pctNoView: Math.round((stance.neutral / den) * 100),
     items: items.length,
+    opinionatedWeight: Math.round(opinionated * 10) / 10,
     tiers,
   };
 }
