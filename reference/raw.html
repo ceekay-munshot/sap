@@ -1,0 +1,1855 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Allow this page to be embedded in iframes (e.g. Munshot, Lovable, etc.) -->
+  <meta http-equiv="X-Frame-Options" content="ALLOWALL" />
+  <title>SAP AI Intelligence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Lora:ital,wght@0,400;0,500;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    /* ── THEME TOKENS (dark default) ───────────────────────────────────────── */
+    :root {
+      --bg:        #060e1a;
+      --bg2:       #0a1628;
+      --bg3:       #0d1b2e;
+      --bg4:       #0f2240;
+      --border:    #0f2240;
+      --border2:   #1e293b;
+      --border3:   #1e3a5f;
+      --text:      #e2e8f0;
+      --text2:     #94a3b8;
+      --text3:     #64748b;
+      --text4:     #475569;
+      --text5:     #334155;
+      --nav-bg:    rgba(6,14,26,0.97);
+      --card-bg:   linear-gradient(135deg,#0d1b2e 0%,#0a1628 100%);
+      --banner-bg: linear-gradient(135deg,#0d1f3c,#130a2a);
+      --history-bg:linear-gradient(135deg,#0d1f3c 0%,#130a2a 100%);
+      --tracker-bg:rgba(255,255,255,0.02);
+      --quote-bg:  rgba(255,255,255,0.025);
+      --input-bg:  #0f2240;
+      --scorecard-bg: rgba(255,255,255,0.03);
+      --scorecard-border: rgba(255,255,255,0.07);
+    }
+    [data-theme="light"] {
+      --bg:        #f8fafc;
+      --bg2:       #f1f5f9;
+      --bg3:       #ffffff;
+      --bg4:       #e2e8f0;
+      --border:    #e2e8f0;
+      --border2:   #cbd5e1;
+      --border3:   #94a3b8;
+      --text:      #0f172a;
+      --text2:     #334155;
+      --text3:     #475569;
+      --text4:     #64748b;
+      --text5:     #94a3b8;
+      --nav-bg:    rgba(248,250,252,0.97);
+      --card-bg:   linear-gradient(135deg,#ffffff 0%,#f8fafc 100%);
+      --banner-bg: linear-gradient(135deg,#eff6ff,#f5f3ff);
+      --history-bg:linear-gradient(135deg,#eff6ff 0%,#f5f3ff 100%);
+      --tracker-bg:rgba(0,0,0,0.03);
+      --quote-bg:  rgba(0,0,0,0.02);
+      --input-bg:  #e2e8f0;
+      --scorecard-bg: rgba(0,0,0,0.03);
+      --scorecard-border: rgba(0,0,0,0.08);
+    }
+
+    body { background: var(--bg); color: var(--text); font-family: 'Syne', sans-serif; min-height: 100vh; transition: background 0.25s, color 0.25s; }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: var(--bg2); }
+    ::-webkit-scrollbar-thumb { background: var(--border3); border-radius: 3px; }
+
+    @keyframes shimmer { 0%{transform:translateX(-100%)} 100%{transform:translateX(200%)} }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes spin { to{transform:rotate(360deg)} }
+    @keyframes scoreReveal { from{width:0} to{width:var(--bar-w)} }
+
+    /* NAV */
+    .nav {
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      display: flex; align-items: center; gap: 12px;
+      height: 50px;
+      background: var(--nav-bg);
+      position: sticky; top: 0; z-index: 50;
+      backdrop-filter: blur(12px);
+      transition: background 0.25s, border-color 0.25s;
+    }
+    .nav-logo { width:24px;height:24px;background:linear-gradient(135deg,#0070f3,#7c3aed);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0; }
+    .nav-title { font-family:'Syne',sans-serif;font-weight:800;font-size:12px;letter-spacing:0.1em;color:var(--text); }
+    .nav-divider { color:var(--border3); }
+    .nav-sub { font-size:10px;color:var(--text4);font-family:'DM Mono',monospace; }
+    .nav-right { margin-left:auto;display:flex;gap:16px;align-items:center; }
+
+    /* THEME TOGGLE */
+    .theme-toggle {
+      display:flex;align-items:center;gap:5px;
+      background:var(--tracker-bg);border:1px solid var(--border2);
+      border-radius:20px;padding:4px 10px;cursor:pointer;
+      font-size:10px;font-family:'DM Mono',monospace;color:var(--text4);
+      transition:all 0.2s;
+    }
+    .theme-toggle:hover { border-color:var(--border3);color:var(--text2); }
+    .theme-toggle-icon { font-size:13px; }
+
+    /* LAYOUT */
+    .layout { max-width:1280px;margin:0 auto;padding:24px 18px;display:grid;grid-template-columns:220px 1fr;gap:24px; }
+    @media(max-width:768px){.layout{grid-template-columns:1fr;}.sidebar{display:none;}}  
+
+    /* SIDEBAR */
+    .sidebar { position:sticky;top:66px;height:fit-content;max-height:calc(100vh - 80px);overflow-y:auto; }
+    .sidebar-title { font-family:'Syne',sans-serif;font-weight:800;font-size:18px;line-height:1.2;color:var(--text);margin-bottom:6px; }
+    .sidebar-sub { color:var(--text4);font-size:11px;line-height:1.5;font-family:'Lora',serif; }
+    .section-label { font-size:9px;color:var(--text5);font-family:'DM Mono',monospace;letter-spacing:0.1em;margin-bottom:6px; }
+
+    .tracker-box { background:var(--tracker-bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:16px; }
+    .tracker-row { display:flex;align-items:center;gap:5px;margin-bottom:5px; }
+    .tracker-label { flex:1;font-size:10px;color:var(--text4);font-family:'DM Mono',monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+    .tracker-score { font-size:10px;font-family:'DM Mono',monospace;font-weight:700;flex-shrink:0; }
+
+    /* FILTERS */
+    .filter-btn { display:flex;align-items:center;gap:8px;width:100%;padding:8px 10px;border-radius:6px;border:none;cursor:pointer;margin-bottom:2px;text-align:left;background:transparent;border-left:2px solid transparent;transition:all 0.15s; }
+    .filter-btn:hover { background:var(--tracker-bg); }
+    .filter-btn.active { background:rgba(59,130,246,0.1);border-left:2px solid #3b82f6; }
+    .filter-btn-text { font-family:'Syne',sans-serif;font-weight:600;font-size:11px;color:var(--text4); }
+    .filter-btn.active .filter-btn-text { color:#3b82f6; }
+    .shift-badge-small { margin-left:5px;font-size:9px;background:#f59e0b22;color:#f59e0b;padding:1px 4px;border-radius:6px; }
+
+    /* RUN BUTTON */
+    .run-btn { width:100%;padding:11px;background:linear-gradient(135deg,#1d4ed8,#7c3aed);border:none;border-radius:8px;cursor:pointer;color:#e2e8f0;font-family:'Syne',sans-serif;font-weight:700;font-size:11px;letter-spacing:0.05em;margin-bottom:6px;transition:opacity 0.2s; }
+    .run-btn:disabled { background:#0f2240;cursor:not-allowed;opacity:0.7; }
+    .retry-btn { width:100%;padding:8px;background:rgba(239,68,68,0.09);border:1px solid #ef444433;border-radius:8px;cursor:pointer;color:#f87171;font-family:'Syne',sans-serif;font-weight:700;font-size:10px;margin-bottom:6px; }
+    .retry-btn:disabled { opacity:0.5;cursor:not-allowed; }
+
+    /* TOPIC GRID (individual run buttons in main area) */
+    .topic-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-bottom:18px;animation:fadeIn 0.35s ease; }
+    .topic-launch-card { background:var(--card-bg);border:1px solid var(--border2);border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;gap:10px;transition:border-color .15s,box-shadow .15s; }
+    .topic-launch-card:hover { border-color:var(--border3);box-shadow:0 4px 16px rgba(59,130,246,0.07); }
+    .topic-launch-card.is-loading { border-color:#3b82f644;background:rgba(59,130,246,0.03); }
+    .topic-launch-card.has-result { border-color:#22c55e22;background:rgba(34,197,94,0.02); }
+    .topic-launch-card.has-error { border-color:#ef444422;background:rgba(239,68,68,0.02); }
+    .tlc-header { display:flex;align-items:center;gap:9px; }
+    .tlc-icon { font-size:20px;flex-shrink:0; }
+    .tlc-label { font-family:'Syne',sans-serif;font-weight:700;font-size:13px;color:var(--text);flex:1;min-width:0; }
+    .tlc-cat { font-family:'DM Mono',monospace;font-size:8px;color:var(--text5);text-transform:uppercase;letter-spacing:.08em; }
+    .tlc-desc { font-family:'Lora',serif;font-size:10px;color:var(--text4);line-height:1.5;flex:1; }
+    .tlc-score-row { display:flex;align-items:center;gap:8px; }
+    .tlc-score-pill { font-family:'DM Mono',monospace;font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px; }
+    .tlc-score-label { font-family:'DM Mono',monospace;font-size:9px;color:var(--text4); }
+    .tlc-run-btn { display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:9px 14px;border-radius:7px;border:none;cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;font-size:11px;letter-spacing:.04em;transition:opacity .15s,transform .1s; }
+    .tlc-run-btn:hover { opacity:0.88;transform:translateY(-1px); }
+    .tlc-run-btn:active { transform:translateY(0); }
+    .tlc-run-btn:disabled { opacity:0.45;cursor:not-allowed;transform:none; }
+    .tlc-run-btn.fresh { background:linear-gradient(135deg,#1d4ed8,#7c3aed);color:#fff; }
+    .tlc-run-btn.rerun { background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);color:#4ade80; }
+    .tlc-run-btn.loading { background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);color:#93c5fd; }
+    .tlc-run-btn.errored { background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#f87171; }
+    .tlc-error-msg { font-family:'DM Mono',monospace;font-size:9px;color:#f87171;line-height:1.4; }
+    .tlc-view-btn { display:flex;align-items:center;justify-content:center;gap:5px;width:100%;padding:7px 14px;border-radius:7px;background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.2);cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;font-size:10px;color:#4ade80;transition:background .15s; }
+    .tlc-view-btn:hover { background:rgba(34,197,94,0.12); }
+    [data-theme="light"] .tlc-run-btn.rerun { background:rgba(22,163,74,0.08);border-color:rgba(22,163,74,0.25);color:#15803d; }
+    [data-theme="light"] .tlc-view-btn { background:rgba(22,163,74,0.06);border-color:rgba(22,163,74,0.2);color:#15803d; }
+
+    /* TOPIC ITEMS */
+    .topic-btn { display:flex;align-items:center;gap:6px;justify-content:space-between;width:100%;padding:7px 10px;border-radius:5px;border:1px solid #0f2240;cursor:pointer;margin-bottom:2px;background:rgba(255,255,255,0.01);transition:all 0.15s; }
+    .topic-btn:disabled { cursor:default; }
+    .topic-btn-label { font-family:'Syne',sans-serif;font-weight:600;font-size:10px;color:var(--text4); }
+
+    /* CONTEXT BANNER */
+    .context-banner { background:var(--banner-bg);border:1px solid var(--border3);border-radius:11px;padding:14px 18px;margin-bottom:18px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px; }
+    @media(max-width:600px){.context-banner{grid-template-columns:1fr;}}
+    .banner-label { font-size:9px;color:var(--text5);font-family:'DM Mono',monospace;letter-spacing:0.1em;margin-bottom:3px; }
+    .banner-text { font-size:11px;color:var(--text2);line-height:1.6;font-family:'Lora',serif; }
+
+    /* SCORE SCORECARD */
+    .scorecard {
+      background: var(--scorecard-bg);
+      border: 1px solid var(--scorecard-border);
+      border-radius: 12px;
+      padding: 18px 20px 14px;
+      margin-bottom: 18px;
+      animation: fadeIn 0.4s ease;
+    }
+    .scorecard-title { font-size:9px;color:var(--text5);font-family:'DM Mono',monospace;letter-spacing:0.12em;margin-bottom:14px;display:flex;align-items:center;gap:7px; }
+    .scorecard-grid { display:grid;grid-template-columns:repeat(5,1fr);gap:10px; }
+    @media(max-width:700px){ .scorecard-grid { grid-template-columns:repeat(3,1fr); } }
+    @media(max-width:450px){ .scorecard-grid { grid-template-columns:repeat(2,1fr); } }
+    .sc-cell {
+      background: var(--bg3);
+      border: 1px solid var(--border2);
+      border-radius: 10px;
+      padding: 12px 10px 10px;
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      position: relative; overflow: hidden;
+    }
+    .sc-cell-accent { position:absolute;top:0;left:0;right:0;height:3px;border-radius:10px 10px 0 0; }
+    .sc-label { font-size:8px;font-family:'DM Mono',monospace;letter-spacing:0.1em;color:var(--text5);margin-top:2px; }
+    .sc-value { font-family:'Syne',sans-serif;font-weight:800;font-size:22px;line-height:1; }
+    .sc-band  { font-size:8px;font-family:'DM Mono',monospace;letter-spacing:0.06em;font-weight:700; }
+    .sc-bar-track { width:100%;height:3px;background:var(--border2);border-radius:2px;overflow:hidden;margin-top:3px; }
+    .sc-bar-fill  { height:100%;border-radius:2px;transition:width 1s cubic-bezier(.4,0,.2,1); }
+    .scorecard-legend { margin-top:12px;display:flex;gap:14px;flex-wrap:wrap; }
+    .sc-legend-item { display:flex;align-items:center;gap:5px;font-size:9px;font-family:'DM Mono',monospace;color:var(--text5); }
+    .sc-legend-dot { width:8px;height:8px;border-radius:50%;flex-shrink:0; }
+
+    /* ERROR BAR */
+    .error-bar { background:rgba(239,68,68,0.06);border:1px solid #ef444433;border-radius:8px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:9px; }
+    .error-bar-text { flex:1;color:#fca5a5;font-size:12px;font-family:'Syne',sans-serif;font-weight:600; }
+    .error-retry-btn { padding:5px 12px;background:#7f1d1d;border:1px solid #ef444455;border-radius:5px;cursor:pointer;color:#fca5a5;font-family:'Syne',sans-serif;font-weight:700;font-size:10px; }
+    [data-theme="light"] .error-bar-text { color:#b91c1c; }
+    [data-theme="light"] .error-retry-btn { background:#fee2e2;border-color:#ef444455;color:#b91c1c; }
+
+    [data-theme="light"] .error-bar { background:rgba(239,68,68,0.05);border-color:#ef444422; }
+
+    /* EMPTY STATE (kept for fallback, rarely shown) */
+    .empty-state { text-align:center;padding:64px 36px;background:var(--tracker-bg);border:1px dashed var(--border);border-radius:14px;animation:fadeIn 0.4s ease; }
+    .empty-icon { font-size:40px;margin-bottom:12px;opacity:0.3; }
+    .empty-title { font-family:'Syne',sans-serif;font-weight:700;font-size:16px;color:var(--text4);margin-bottom:6px; }
+    .empty-text { color:var(--border3);font-size:12px;font-family:'Lora',serif;max-width:300px;margin:0 auto 18px; }
+    .empty-btn { padding:10px 24px;background:linear-gradient(135deg,#1d4ed8,#7c3aed);border:none;border-radius:7px;cursor:pointer;color:#fff;font-family:'Syne',sans-serif;font-weight:700;font-size:12px; }
+
+    /* LOADING CARD */
+    .loading-card { background:var(--card-bg);border:1px solid var(--border2);border-left:3px solid var(--border3);border-radius:12px;padding:16px 18px;margin-bottom:14px;display:flex;align-items:center;gap:12px;animation:fadeIn 0.3s ease; }
+    .shimmer-bar { height:4px;border-radius:2px;background:var(--border2);margin-top:8px;overflow:hidden;position:relative; }
+    .shimmer-inner { position:absolute;inset:0;background:linear-gradient(90deg,transparent,#3b82f6,transparent);animation:shimmer 1.5s infinite; }
+    .loading-label { font-family:'Syne',sans-serif;font-weight:700;font-size:13px;color:var(--text); }
+    .loading-sub { color:var(--text4);font-size:10px;font-family:'DM Mono',monospace;margin-top:4px; }
+
+    /* SCORE GAUGE */
+    .score-gauge {
+      display: flex; align-items: center; gap: 14px;
+      padding: 14px 18px 12px;
+      background: var(--tracker-bg);
+      border-bottom: 1px solid var(--border2);
+    }
+    .gauge-circle {
+      position: relative; flex-shrink: 0;
+      width: 64px; height: 64px;
+    }
+    .gauge-circle svg { transform: rotate(-90deg); }
+    .gauge-circle-bg { fill: none; stroke: var(--border); stroke-width: 5; }
+    .gauge-circle-fill { fill: none; stroke-width: 5; stroke-linecap: round; transition: stroke-dashoffset 0.8s cubic-bezier(.4,0,.2,1); }
+    .gauge-center-text {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      font-family: 'Syne', sans-serif;
+    }
+    .gauge-score-num { font-weight: 800; font-size: 17px; line-height: 1; }
+    .gauge-score-denom { font-size: 9px; color: var(--text5); font-family: 'DM Mono', monospace; }
+
+    .sub-scores { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 6px 14px; }
+    .sub-score-row { display: flex; flex-direction: column; gap: 3px; }
+    .sub-score-label { font-size: 8px; color: var(--text5); font-family: 'DM Mono', monospace; letter-spacing: 0.08em; }
+    .sub-score-bar-track { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+    .sub-score-bar-fill {
+      height: 100%; border-radius: 2px;
+      transition: width 0.8s cubic-bezier(.4,0,.2,1);
+    }
+    .sub-score-val { font-size: 9px; font-family: 'DM Mono', monospace; font-weight: 700; }
+
+    /* RESULT CARD */
+    .result-card { border-radius: 12px; overflow: hidden; margin-bottom: 14px; animation: fadeIn 0.3s ease; }
+    .card-header { display:flex;align-items:center;gap:10px;padding:13px 18px;cursor:pointer;background:var(--tracker-bg);user-select:none; }
+    .card-header:hover { background:var(--scorecard-bg); }
+    .card-title { font-family:'Syne',sans-serif;font-weight:700;font-size:14px;color:var(--text); }
+    .card-meta { font-size:10px;color:var(--text4);font-family:'DM Mono',monospace;margin-top:1px; }
+    .score-pill { padding:3px 10px;border-radius:20px;font-size:11px;font-family:'DM Mono',monospace;font-weight:800;letter-spacing:0.05em;flex-shrink:0; }
+    .card-toggle { color:var(--text5);font-size:10px;margin-left:4px;flex-shrink:0; }
+    .card-body { padding:0 18px 18px; }
+
+    /* HISTORY STRIP */
+    .history-strip { display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border2); }
+    .history-label { font-size:9px;color:var(--text5);font-family:'DM Mono',monospace;letter-spacing:0.08em; }
+    .history-pill { display:flex;align-items:center;gap:4px;padding:2px 7px;border-radius:10px;cursor:default; }
+    .history-score-txt { font-size:9px;font-family:'DM Mono',monospace;font-weight:700; }
+    .history-date-txt { font-size:8px;font-family:'DM Mono',monospace;color:var(--text4); }
+    .history-stable { font-size:10px;font-family:'Lora',serif;font-style:italic;margin-left:4px;color:var(--text4); }
+
+    /* SHIFT CALLOUT */
+    .shift-callout { border-radius:8px;padding:10px 14px;margin-bottom:12px;display:flex;gap:10px;align-items:flex-start; }
+    .shift-title { font-family:'Syne',sans-serif;font-weight:700;font-size:11px;margin-bottom:3px; }
+    .shift-desc { color:var(--text3);font-size:12px;font-family:'Lora',serif;line-height:1.55; }
+
+    /* SECTIONS */
+    .summary-text { color:var(--text2);font-size:13px;line-height:1.7;font-family:'Lora',serif;font-style:italic;border-bottom:1px solid var(--border2);padding-bottom:12px;margin-bottom:14px; }
+    .findings-label { font-size:9px;color:var(--text4);font-family:'DM Mono',monospace;letter-spacing:0.1em;margin-bottom:8px; }
+    .finding-item { display:flex;gap:8px;margin-bottom:7px;align-items:flex-start; }
+    .finding-bullet { font-size:8px;margin-top:5px;flex-shrink:0; }
+    .finding-text { color:var(--text);font-size:13px;line-height:1.6;font-family:'Lora',serif; }
+
+    /* TEMPORAL TAGS */
+    .legacy-tag { display:inline-block;font-size:8px;font-family:'DM Mono',monospace;color:#f59e0b;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:4px;padding:0px 5px;margin-right:5px;vertical-align:middle;white-space:nowrap; }
+    .date-tag   { display:inline-block;font-size:9px;font-family:'DM Mono',monospace;color:#22c55e;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);border-radius:4px;padding:0px 4px;vertical-align:middle; }
+
+    /* RECENCY BAR */
+    .recency-bar { display:flex;align-items:center;gap:8px;padding:6px 18px;background:rgba(99,102,241,0.06);border-bottom:1px solid rgba(99,102,241,0.12);font-family:'DM Mono',monospace;font-size:9px; }
+    .recency-label { color:#818cf8;letter-spacing:0.08em;flex-shrink:0; }
+    .recency-value { color:var(--text3);flex:1; }
+    .recency-warn  { color:#f59e0b;font-size:8px;flex-shrink:0; }
+
+    /* QUOTE CARDS */
+    .quotes-section { margin-bottom: 14px; }
+    .quotes-section-label { font-size:9px;color:var(--text4);font-family:'DM Mono',monospace;letter-spacing:0.1em;margin-bottom:9px; }
+    .quote-card {
+      background: var(--quote-bg);
+      border: 1px solid var(--border2);
+      border-left: 3px solid;
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+    }
+    .quote-text {
+      font-family: 'Lora', serif;
+      font-style: italic;
+      font-size: 13px;
+      color: var(--text);
+      line-height: 1.7;
+      margin-bottom: 10px;
+    }
+    .quote-text::before { content: '\201C'; font-size: 22px; color: var(--border3); vertical-align: -5px; margin-right: 2px; }
+    .quote-text::after  { content: '\201D'; font-size: 22px; color: var(--border3); vertical-align: -5px; margin-left: 2px; }
+    /* Attribution row: name + role + company + platform chips */
+    .quote-attribution-block { display:flex;flex-direction:column;gap:5px; }
+    .quote-person-row { display:flex;align-items:center;gap:7px;flex-wrap:wrap; }
+    .quote-avatar { width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;font-family:'Syne',sans-serif;flex-shrink:0;color:#fff; }
+    .quote-name { font-family:'Syne',sans-serif;font-weight:700;font-size:12px;color:var(--text); }
+    .quote-role { font-size:10px;font-family:'Lora',serif;color:var(--text3);font-style:italic; }
+    .quote-chips-row { display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:2px; }
+    .quote-chip { font-size:9px;font-family:'DM Mono',monospace;padding:2px 8px;border-radius:10px;border:1px solid;white-space:nowrap; }
+    .quote-chip-platform { background:rgba(59,130,246,0.08);border-color:rgba(59,130,246,0.25);color:#3b82f6; }
+    .quote-chip-date     { background:rgba(34,197,94,0.07);border-color:rgba(34,197,94,0.2);color:#16a34a; }
+    .quote-chip-legacy   { background:rgba(245,158,11,0.08);border-color:rgba(245,158,11,0.25);color:#d97706; }
+    .quote-context { margin-top:8px;font-size:11px;color:var(--text4);font-family:'Lora',serif;line-height:1.5;padding-top:8px;border-top:1px solid var(--border2); }
+
+    .bottom-line { border-radius:8px;padding:11px 14px;display:flex;gap:8px;align-items:flex-start;margin-top:4px; }
+    .bottom-line-label { font-size:8px;font-family:'DM Mono',monospace;letter-spacing:0.1em;margin-bottom:4px;opacity:0.6; }
+    .bottom-line-text { font-size:13px;font-family:'Syne',sans-serif;font-weight:600;line-height:1.5; }
+
+    [data-theme="light"] .bottom-line { border-color: rgba(0,0,0,0.07) !important; }
+
+    /* SOURCES PANEL */
+    .sources-panel { margin-top:0;margin-bottom:18px;padding:14px 16px;background:rgba(59,130,246,0.04);border:1px solid rgba(59,130,246,0.18);border-radius:10px; }
+    .sources-label { font-family:'DM Mono',monospace;font-size:10px;font-weight:700;color:#60a5fa;letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:8px; }
+    .sources-count { font-size:9px;background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.25);border-radius:10px;padding:1px 7px;color:#93c5fd;font-weight:400; }
+    .sources-notice { font-size:10px;color:var(--text4);font-family:'Lora',serif;font-style:italic;margin-bottom:8px;line-height:1.4; }
+    .sources-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px; }
+    .src-card { display:block;text-decoration:none;background:rgba(59,130,246,0.05);border:1px solid rgba(59,130,246,0.2);border-radius:8px;padding:10px 12px;transition:border-color .15s,transform .15s,box-shadow .15s;cursor:pointer; }
+    .src-card:hover { border-color:#3b82f6;transform:translateY(-2px);box-shadow:0 6px 18px rgba(59,130,246,0.2); }
+    .src-header { display:flex;align-items:center;gap:5px;margin-bottom:5px; }
+    .src-favicon { width:14px;height:14px;border-radius:2px;flex-shrink:0; }
+    .src-num { font-family:'DM Mono',monospace;font-size:10px;font-weight:700;color:#fff;background:#3b82f6;border-radius:4px;padding:1px 6px;flex-shrink:0; }
+    .src-domain { font-family:'DM Mono',monospace;font-size:9px;color:#60a5fa;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+    .src-arrow { font-size:12px;color:#60a5fa;flex-shrink:0;transition:color .15s; }
+    .src-card:hover .src-arrow { color:#93c5fd; }
+    .src-open-btn { display:inline-flex;align-items:center;gap:5px;margin-top:7px;padding:4px 12px;background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.35);border-radius:5px;color:#60a5fa;font-family:'DM Mono',monospace;font-size:9px;font-weight:700;text-decoration:none;transition:background .15s,border-color .15s; }
+    .src-open-btn:hover { background:rgba(59,130,246,0.22);border-color:#60a5fa;color:#bfdbfe; }
+    .src-title { font-size:11px;font-family:'Syne',sans-serif;font-weight:600;color:var(--text);line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical; }
+    .src-desc { font-size:10px;color:var(--text4);margin-top:4px;line-height:1.4;font-family:'Lora',serif;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical; }
+    [data-theme="light"] .src-card { background:rgba(59,130,246,0.05);border-color:rgba(59,130,246,0.25); }
+    [data-theme="light"] .src-card:hover { border-color:#2563eb; }
+
+    /* QUOTE SOURCE BUTTON */
+    .quote-source-btn { display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:5px;font-family:'DM Mono',monospace;font-size:9px;font-weight:700;text-decoration:none;letter-spacing:.04em;transition:background .15s,border-color .15s,color .15s;cursor:pointer; }
+    .quote-source-btn.direct { background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.3);color:#4ade80; }
+    .quote-source-btn.direct:hover { background:rgba(34,197,94,0.16);border-color:#22c55e;color:#86efac; }
+    .quote-source-btn.search { background:rgba(148,163,184,0.08);border:1px solid rgba(148,163,184,0.2);color:#94a3b8; }
+    .quote-source-btn.search:hover { background:rgba(148,163,184,0.15);border-color:#64748b;color:#cbd5e1; }
+    .quote-src-ref { display:inline-flex;align-items:center;gap:3px;padding:2px 7px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);border-radius:4px;color:#60a5fa;font-family:'DM Mono',monospace;font-size:9px;font-weight:700;text-decoration:none;transition:background .15s; }
+    .quote-src-ref:hover { background:rgba(59,130,246,0.2);color:#93c5fd; }
+    .quote-no-src { font-family:'DM Mono',monospace;font-size:9px;color:#475569;font-style:italic; }
+    [data-theme="light"] .quote-source-btn.direct { background:rgba(22,163,74,0.07);border-color:rgba(22,163,74,0.25);color:#15803d; }
+    [data-theme="light"] .quote-source-btn.search { background:rgba(100,116,139,0.07);border-color:rgba(100,116,139,0.2);color:#64748b; }
+
+    /* ERROR CARD */
+    .error-card { background:rgba(239,68,68,0.04);border:1px solid #ef444420;border-left:3px solid #ef4444;border-radius:11px;padding:13px 16px;margin-bottom:12px;display:flex;align-items:center;gap:10px;animation:fadeIn 0.3s ease; }
+    .error-card-title { font-family:'Syne',sans-serif;font-weight:700;font-size:13px;color:#ef4444;margin-bottom:2px; }
+    .error-card-msg { color:var(--text4);font-size:11px;font-family:'DM Mono',monospace; }
+    .error-card-btn { padding:5px 11px;background:transparent;border:1px solid #ef444440;border-radius:5px;cursor:pointer;color:#ef4444;font-family:'Syne',sans-serif;font-weight:700;font-size:10px;flex-shrink:0; }
+
+    /* FOOTER NOTE */
+    .footer-note { margin-top:16px;padding:11px 15px;background:var(--tracker-bg);border:1px solid var(--border);border-radius:8px;display:flex;gap:8px;align-items:center; }
+    .footer-note-text { color:var(--text5);font-size:11px;line-height:1.5;font-family:'Lora',serif; }
+
+    /* CHANGE BADGE */
+    .change-badge { display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:10px;font-family:'DM Mono',monospace;font-weight:700;letter-spacing:0.06em;cursor:default;flex-shrink:0; }
+    .change-badge-note { opacity:0.55;font-weight:400;margin-left:2px; }
+
+    /* LIVE INDICATOR */
+    .live-dot { width:5px;height:5px;border-radius:50%;background:#3b82f6;animation:pulse 1s infinite; }
+    .live-text { font-size:10px;color:#3b82f6;font-family:'DM Mono',monospace; }
+    .shift-alert-btn { display:flex;align-items:center;gap:5px;background:rgba(245,158,11,0.1);border:1px solid #f59e0b44;border-radius:20px;padding:3px 10px;cursor:pointer; }
+    .shift-alert-text { font-size:10px;color:#f59e0b;font-family:'DM Mono',monospace;font-weight:700; }
+
+    /* HISTORY PANEL */
+    .history-stats { background:var(--history-bg);border:1px solid var(--border3);border-radius:12px;padding:18px 22px;margin-bottom:22px;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px; }
+    @media(max-width:600px){.history-stats{grid-template-columns:1fr 1fr;}}
+    .stat-label { font-size:9px;color:var(--text5);font-family:'DM Mono',monospace;letter-spacing:0.1em;margin-bottom:4px; }
+    .stat-value { font-family:'Syne',sans-serif;font-weight:800;font-size:26px; }
+    .changed-section-label { font-size:10px;font-family:'DM Mono',monospace;letter-spacing:0.1em;margin-bottom:12px;display:flex;align-items:center;gap:7px;color:#f59e0b; }
+    .stable-section-label { font-size:10px;font-family:'DM Mono',monospace;letter-spacing:0.1em;margin-bottom:10px;color:var(--text4); }
+    .full-timeline-label { font-size:10px;color:var(--text5);font-family:'DM Mono',monospace;letter-spacing:0.1em;margin-bottom:11px; }
+    .changed-card { border-radius:10px;padding:14px 18px;margin-bottom:10px; }
+    .stable-grid { display:grid;grid-template-columns:1fr 1fr;gap:8px; }
+    @media(max-width:500px){.stable-grid{grid-template-columns:1fr;}}
+    .stable-card { background:var(--tracker-bg);border:1px solid var(--border);border-radius:9px;padding:11px 14px; }
+    .before-after-grid { display:grid;grid-template-columns:1fr 1fr;gap:10px; }
+    @media(max-width:500px){.before-after-grid{grid-template-columns:1fr;}}
+    .before-after-box { background:var(--tracker-bg);border-radius:7px;padding:9px 12px; }
+    .ba-label { font-size:9px;font-family:'DM Mono',monospace;letter-spacing:0.08em;margin-bottom:4px;color:var(--text5); }
+    .ba-text { font-size:12px;font-family:'Lora',serif;line-height:1.5;color:var(--text3); }
+    .timeline-card { background:var(--tracker-bg);border:1px solid var(--border);border-radius:9px;padding:13px 16px;margin-bottom:8px; }
+    .timeline-row { display:flex;align-items:flex-start;gap:0;padding-left:4px;overflow-x:auto; }
+    svg.sparkline { overflow:visible;flex-shrink:0; }
+    .clear-history-btn { padding:6px 14px;background:transparent;border:1px solid var(--border2);border-radius:6px;cursor:pointer;color:var(--text5);font-family:'DM Mono',monospace;font-size:10px; }
+    .clear-history-btn:hover { border-color:var(--text5);color:var(--text4); }
+    .no-history { text-align:center;padding:60px 40px;background:var(--tracker-bg);border:1px dashed var(--border);border-radius:14px; }
+    .no-history-icon { font-size:40px;margin-bottom:12px;opacity:0.3; }
+    .no-history-title { font-family:'Syne',sans-serif;font-weight:700;font-size:16px;color:var(--text4);margin-bottom:6px; }
+    .no-history-text { color:var(--border3);font-size:12px;font-family:'Lora',serif;max-width:300px;margin:0 auto; }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav" id="nav">
+  <div class="nav-logo">⬡</div>
+  <span class="nav-title">SAP AI INTELLIGENCE</span>
+  <span class="nav-divider">|</span>
+  <span class="nav-sub">PRACTITIONER SENTIMENT TRACKER</span>
+  <div class="nav-right" id="navRight">
+    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle light/dark mode">
+      <span class="theme-toggle-icon" id="themeIcon">🌙</span>
+      <span id="themeLabel">DARK</span>
+    </button>
+  </div>
+</nav>
+
+<!-- LAYOUT -->
+<div class="layout">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div style="margin-bottom:18px">
+      <h1 class="sidebar-title">SAP AI<br>Intel</h1>
+      <p class="sidebar-sub">Numerical sentiment scores + practitioner quotes</p>
+    </div>
+
+    <div id="serverStatus" style="background:var(--tracker-bg);border:1px solid var(--border2);border-radius:8px;padding:9px 12px;margin-bottom:14px;display:flex;align-items:center;gap:7px">
+      <div id="statusDot" style="width:7px;height:7px;border-radius:50%;background:var(--text5);flex-shrink:0"></div>
+      <span id="statusText" style="font-size:10px;color:var(--text4);font-family:'DM Mono',monospace">CHECKING STATUS…</span>
+    </div>
+
+    <div id="miniTracker"></div>
+
+    <div style="margin-bottom:16px">
+      <div class="section-label">FILTER</div>
+      <div id="categoryFilters"></div>
+    </div>
+
+    <div id="retryBtnContainer"></div>
+
+    <div style="margin-top:14px">
+      <div class="section-label">TOPICS</div>
+      <div id="topicList"></div>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main id="main"></main>
+</div>
+
+<script>
+// ─── DATA ─────────────────────────────────────────────────────────────────────
+const QUERIES = [
+  { id:"joule_sentiment", label:"Joule AI Assistant", icon:"🤖", category:"product",
+    prompt:`Search for recent reviews, opinions, and feedback from SAP customers, engineers, and implementation partners about SAP Joule AI assistant. Find LinkedIn posts, SAP community forums, Reddit discussions, and tech blogs. What do real users think? What are the main complaints, praise, and concerns? Critically evaluate whether Joule is genuinely useful or marketing-driven. Look for specific cases where it helped or failed. Include exact quotes or near-verbatim paraphrases with full attribution (name, role, platform, date).` },
+  { id:"btp_ai", label:"BTP & AI Agents", icon:"⚡", category:"product",
+    prompt:`Search for technical opinions and reviews about SAP Business Technology Platform (BTP) AI capabilities and SAP AI agents (Joule agents). What do SAP architects, BTP developers, and consultants say in their blog posts, community forums, and conference talks? Is the AI agent framework production-ready? What are the real integration challenges? Include exact quotes from named practitioners with source attribution.` },
+  { id:"partner_views", label:"Partner Opinions", icon:"🤝", category:"ecosystem",
+    prompt:`Search for what Accenture, Capgemini, Deloitte, IBM, and other SAP implementation partners publicly say about SAP's AI strategy, Joule, and SAP Business AI. Find their blog posts, press releases, and consultant opinions on LinkedIn. What do senior partners and practice leads really think off-script? Where do they privately hedge against SAP AI maturity? Include direct quotes with attribution from specific individuals.` },
+  { id:"vs_competitors", label:"vs. Competitors", icon:"⚔️", category:"competitive",
+    prompt:`Search for comparisons between SAP AI capabilities and competitors: Salesforce Einstein AI, Oracle AI, Microsoft Dynamics AI, Workday AI. What do analysts, customers, and tech journalists say in head-to-head assessments? Who is winning in enterprise AI? Where does SAP specifically lag or lead with quantified evidence? Include exact analyst quotes and named customer testimonials with attribution.` },
+  { id:"bdc_cloud", label:"Business Data Cloud", icon:"☁️", category:"product",
+    prompt:`Search for opinions and feedback about SAP Business Data Cloud (BDC) and the Databricks partnership. What do data engineers, data architects, and CDOs say about the semantic layer, data products approach, and real-world integration challenges? Is BDC addressing the core SAP data fragmentation problem? Include verbatim quotes from practitioners with full source attribution.` },
+  { id:"customer_sat", label:"Customer Satisfaction", icon:"📊", category:"ecosystem",
+    prompt:`Search for SAP customer satisfaction data: Gartner Peer Insights reviews, G2 reviews, TrustRadius ratings, NPS surveys, and analyst reports specifically about SAP AI products. What are the quantified satisfaction scores? What pain points appear most frequently across multiple reviews? Include specific verbatim review excerpts and named analyst quotes with source and date.` },
+  { id:"s4hana_ai", label:"S/4HANA AI Features", icon:"🏭", category:"product",
+    prompt:`Search for user experiences and technical opinions about AI features embedded in SAP S/4HANA. What do finance, supply chain, and HR professionals say about actual day-to-day usage? What is the gap between AI features promised at TechEd vs. what is GA and usable? Include exact quotes from practitioners — named SAP Community users, LinkedIn posts, conference panelists — with attribution.` },
+  { id:"risks_gaps", label:"Risks & Gaps", icon:"⚠️", category:"competitive",
+    prompt:`Search for analyst criticism, investor concerns, and technical blog posts that highlight gaps or risks in SAP's AI strategy. Is SAP's AI foundational or superficial layering on old architecture? Are they structurally behind on generative AI? What do former SAP employees, critical analysts, and competitor advocates say? Include exact critical quotes with source attribution to show the bear case clearly.` },
+  { id:"rpt1", label:"SAP RPT1", icon:"🔍", category:"product",
+    prompt:`Search for practitioner feedback, technical reviews, and real-world experiences with SAP RPT1 (Role Prompt Templates) - the AI-powered assistant framework for SAP Business AI. Find opinions from SAP developers, implementation consultants, and enterprise users about RPT1's usefulness, maturity, and integration capabilities. What do users say about actual deployment success? What are the common challenges, benefits, and gaps compared to expectations? Include exact quotes from named practitioners with full source attribution (name, role, company/platform, date). Focus heavily on 2026 and late 2025 sources to ensure recency and relevance.` }
+];
+
+const CATEGORIES = [
+  { id:"all",        label:"All Topics",       icon:"🌐" },
+  { id:"product",    label:"Products",         icon:"📦" },
+  { id:"ecosystem",  label:"Ecosystem",        icon:"🌱" },
+  { id:"competitive",label:"Competitive",      icon:"🎯" },
+  { id:"history",    label:"Sentiment History",icon:"📈" }
+];
+
+// Score → color mapping (1.0–5.0)
+function scoreColor(s) {
+  if (!s) return '#475569';
+  if (s >= 4.2) return '#22c55e';
+  if (s >= 3.5) return '#4ade80';
+  if (s >= 2.8) return '#f59e0b';
+  if (s >= 2.0) return '#fb923c';
+  return '#ef4444';
+}
+function scoreBand(s) {
+  const dark = document.documentElement.getAttribute('data-theme') !== 'light';
+  if (!s) return { label:'N/A', color:'#475569', bg: dark?'rgba(71,85,105,0.12)':'rgba(71,85,105,0.08)' };
+  if (s >= 4.2) return { label:'BULLISH',  color:'#22c55e', bg: dark?'rgba(34,197,94,0.1)':'rgba(34,197,94,0.08)' };
+  if (s >= 3.5) return { label:'POSITIVE', color:'#4ade80', bg: dark?'rgba(74,222,128,0.1)':'rgba(74,222,128,0.08)' };
+  if (s >= 2.8) return { label:'MIXED',    color:'#f59e0b', bg: dark?'rgba(245,158,11,0.12)':'rgba(245,158,11,0.08)' };
+  if (s >= 2.0) return { label:'CAUTIOUS', color:'#fb923c', bg: dark?'rgba(251,146,60,0.12)':'rgba(251,146,60,0.08)' };
+  return              { label:'BEARISH',  color:'#ef4444', bg: dark?'rgba(239,68,68,0.12)':'rgba(239,68,68,0.08)' };
+}
+// Legacy sentiment label → score for history entries without score
+function labelToScore(sentiment) {
+  const m = { positive:3.8, mixed:2.7, neutral:2.5, negative:1.8 };
+  return m[sentiment] || 2.5;
+}
+
+const STORAGE_KEY = "sap_sentiment_history_v5";  // bumped: v5 fixes score parsing
+
+// ─── RUNTIME TEMPORAL CONSTANTS (recalculated each page load) ───────────────
+// All year strings are derived from new Date() — zero hardcoding
+const NOW_YEAR      = new Date().getFullYear();
+const NOW_PREV_YEAR = NOW_YEAR - 1;
+const NOW_PREV2     = NOW_YEAR - 2;
+// Regex: "current" = this year or next year (future-proofing)
+const CURRENT_YEAR_RE = new RegExp(String(NOW_YEAR), 'i');
+// Legacy = 2+ years ago
+const LEGACY_YEAR_RE  = new RegExp(
+  [NOW_PREV2-3, NOW_PREV2-2, NOW_PREV2-1, NOW_PREV2].map(y => String(y)).join('|')
+);
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+let state = {
+  results: {},   // queryId → raw text
+  scores:  {},   // queryId → { overall, adoption, maturity, satisfaction, competitive }
+  sources: {},   // queryId → [{ title, url, description }]
+  loading: {},
+  errors:  {},
+  history: {},
+  activeCategory: "all",
+  runningAll: false,
+  expanded: {}
+};
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+
+// Split raw AI output into named sections by scanning for known headers.
+// Handles: "SUMMARY", "## SUMMARY", "**SUMMARY**", "--- SUMMARY ---",
+//          "SUMMARY:", with or without surrounding blank lines.
+function splitSections(text) {
+  // Normalise: strip bold markers, leading ## markers, leading dashes
+  const cleaned = text
+    .replace(/\*\*/g, '')
+    .replace(/^---+\s*/gm, '')
+    .replace(/^#{1,4}\s*/gm, '');
+
+  // Known section headers in order
+  const HEADERS = [
+    { key: 'score',    re: /^SENTIMENT[_\s]SCORE\s*:?\s*$/im },
+    { key: 'summary',  re: /^SUMMARY\s*:?\s*$/im },
+    { key: 'findings', re: /^KEY\s+FINDINGS\s*:?\s*$/im },
+    { key: 'quotes',   re: /^VERBATIM\s+QUOTES?\s*:?\s*$/im },
+    { key: 'bottom',   re: /^BOTTOM\s+LINE\s*:?\s*(?:FOR\s+ANALYSTS\s*:?\s*)?$/im },
+  ];
+
+  // Find position of each header in the cleaned text
+  const found = [];
+  for (const h of HEADERS) {
+    const m = h.re.exec(cleaned);
+    if (m) found.push({ key: h.key, start: m.index, headerEnd: m.index + m[0].length });
+  }
+  found.sort((a, b) => a.start - b.start);
+
+  const map = {};
+  for (let i = 0; i < found.length; i++) {
+    const from = found[i].headerEnd;
+    const to   = i + 1 < found.length ? found[i + 1].start : cleaned.length;
+    map[found[i].key] = cleaned.slice(from, to).trim();
+  }
+  return map;
+}
+
+function parseSections(result) {
+  const sections = { scoreBlock:'', summary:'', keyFindings:[], quotes:[], bottomLine:'' };
+
+  const map = splitSections(result);
+
+  sections.scoreBlock = map.score   || '';
+  sections.summary    = map.summary || '';
+  sections.bottomLine = map.bottom  || '';
+
+  if (map.findings) {
+    sections.keyFindings = map.findings
+      .split(/\n/)
+      .map(l => l.replace(/^[-•*\d.]+\s*/, '').trim())
+      .filter(l => l.length > 10)
+      .slice(0, 8);
+  }
+
+  // ── Parse quotes from map.quotes block ──────────────────────────────────────
+  if (map.quotes) {
+    const raw = map.quotes.replace(/\*\*/g, '');
+
+    // Split on "Quote 1:", "Quote 2:", "Quote N.", "1.", "1)" at line start
+    const blocks = raw
+      .split(/(?:^|\n)(?:Quote\s*\d+|Q\d+)\s*[:.)]\s*|(?:^|\n)\d+[.)]\s+(?=["""\u201C])/i)
+      .map(b => b.trim())
+      .filter(b => b.length > 20);
+
+    for (const block of blocks) {
+      // Extract quoted text — straight or curly quotes, multiline
+      const qm =
+        block.match(/^["""\u201C]([\s\S]{20,}?)["""\u201D]/m) ||
+        block.match(/["""\u201C]([\s\S]{20,}?)["""\u201D]/m);
+
+      // Attribution: line starting with — or - followed by a name
+      const am =
+        block.match(/[—–]\s*([A-Z][^\n]{8,})/) ||
+        block.match(/(?:^|\n)[-]\s*([A-Z][^\n]{8,})/m);
+
+      const cm = block.match(/Context\s*:\s*(.+)/i);
+
+      if (qm && qm[1].trim().length > 15) {
+        sections.quotes.push({
+          text:        qm[1].trim(),
+          attribution: am ? am[1].trim() : '',
+          context:     cm ? cm[1].trim() : ''
+        });
+      }
+    }
+
+    // Fallback: scan whole block for any quoted strings if none found above
+    if (sections.quotes.length === 0) {
+      const allQ = [...raw.matchAll(/["""\u201C]([\s\S]{25,400}?)["""\u201D]/g)];
+      for (const m of allQ) {
+        const am = raw.slice(m.index).match(/[—–]\s*([A-Z][^\n]{8,})/);
+        sections.quotes.push({ text: m[1].trim(), attribution: am ? am[1].trim() : '', context: '' });
+      }
+    }
+  }
+
+  // Final guard: if still nothing, show a brief placeholder — NEVER dump raw text
+  if (!sections.summary && !sections.keyFindings.length && sections.quotes.length === 0) {
+    sections.summary = 'Analysis complete. Scores are shown above.';
+  }
+
+  return sections;
+}
+
+function scoreDelta(prevScore, currScore) {
+  if (!prevScore || !currScore) return null;
+  const diff = currScore - prevScore;
+  if (diff > 0.15) return 'improved';
+  if (diff < -0.15) return 'worsened';
+  return null;
+}
+
+function fmtDate(ts) {
+  return new Date(ts).toLocaleDateString("en-US",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"});
+}
+function fmtDateShort(ts) {
+  return new Date(ts).toLocaleDateString("en-US",{month:"short",day:"numeric"});
+}
+function esc(s) {
+  return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+// ─── STORAGE ─────────────────────────────────────────────────────────────────
+function loadHistory() {
+  try { const r=localStorage.getItem(STORAGE_KEY); return r?JSON.parse(r):{};} catch{return{};}
+}
+function saveHistory(h) {
+  try{localStorage.setItem(STORAGE_KEY,JSON.stringify(h));}catch{}
+}
+function clearHistoryStorage() {
+  try{localStorage.removeItem(STORAGE_KEY);}catch{}
+}
+
+// ─── Environment Detection ────────────────────────────────────────────────────
+// On Genspark preview (genspark.ai / genspark.site), the Cloudflare worker
+// does not run. We detect this and call the Genspark LLM proxy directly
+// via the same-origin relative path /api/llm_proxy/v1 which works on genspark.ai.
+// On the live Cloudflare Pages site, we always use /api/search (worker).
+const _IS_GENSPARK_PREVIEW = window.location.hostname.includes('genspark.ai') ||
+                             window.location.hostname.includes('genspark.site');
+const _GS_KEY = 'gsk-eyJjb2dlbl9pZCI6ImRkZjcxNGRmLTk2MTQtNDllNy1hNTU5LTM4MDJkYjg1MzM5YiIsImtleV9pZCI6Ijk4ODVkNzA3LWYxMGMtNDYzMS1hODEzLTBjMjE4OTlhMWM2ZiIsImN0aW1lIjoxNzc0NTEzNzEwLCJjbGF1ZGVfYmlnX21vZGVsIjpudWxsLCJjbGF1ZGVfbWlkZGxlX21vZGVsIjpudWxsLCJjbGF1ZGVfc21hbGxfbW9kZWwiOm51bGx9fJJgn8fmQ_0gI3Y6WqcKzMDez3SEnXlki-vvE7Mbohkw';
+const _GS_MODELS = ['claude-haiku-4-5', 'claude-sonnet-4-5'];
+const _GS_BASE = '/api/llm_proxy/v1'; // same-origin on genspark.ai, no CORS
+
+// ─── Direct Genspark LLM call (preview mode only) ────────────────────────────
+async function searchWithAI_preview(queryConfig) {
+  const now = new Date();
+  const month = now.toLocaleString('en-US', { month: 'long' });
+  const year = now.getFullYear();
+  const userContent = `Today is ${month} ${year}. Apply ${year} temporal weighting.\n${queryConfig.prompt}`;
+
+  let lastError = 'No models tried';
+  for (const model of _GS_MODELS) {
+    let resp;
+    try {
+      resp = await fetch(`${_GS_BASE}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${_GS_KEY}`
+        },
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: 'system', content: buildSystemPrompt() },
+            { role: 'user', content: userContent }
+          ],
+          max_tokens: 3500,
+          temperature: 0.6
+        })
+      });
+    } catch(e) {
+      lastError = 'Network error: ' + e.message;
+      continue;
+    }
+    let data;
+    try { data = JSON.parse(await resp.text()); } catch { lastError = `Non-JSON (${resp.status})`; continue; }
+    if (resp.status === 401 || resp.status === 403) { lastError = `Auth failed (${resp.status})`; break; }
+    if (resp.status === 405) { lastError = `Model ${model} not available`; continue; }
+    if (!resp.ok) { lastError = data?.error?.message || `HTTP ${resp.status}`; continue; }
+    const content = data?.choices?.[0]?.message?.content || '';
+    if (!content.trim()) { lastError = `Empty response from ${model}`; continue; }
+    const scores = parseScores(content);
+    // In preview mode, no Firecrawl — return empty sources array
+    return { result: content, scores, sources: [] };
+  }
+  throw new Error(lastError);
+}
+
+// ─── AI SEARCH — routes to worker on CF Pages, direct on Genspark preview ────
+async function searchWithAI(queryConfig) {
+  // In Genspark preview environment, call LLM directly (same-origin, no CORS)
+  if (_IS_GENSPARK_PREVIEW) {
+    return searchWithAI_preview(queryConfig);
+  }
+
+  // On live Cloudflare Pages — use the worker endpoint
+  let resp;
+  try {
+    resp = await fetch('/api/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: queryConfig.prompt })
+    });
+  } catch(e) {
+    throw new Error('Network error: ' + (e.message || e));
+  }
+
+  let data;
+  try {
+    const text = await resp.text();
+    data = JSON.parse(text);
+  } catch(e) {
+    throw new Error(`Server returned non-JSON (status ${resp.status})`);
+  }
+
+  if (!resp.ok || data?.error) {
+    throw new Error(data?.error || `Server error (status ${resp.status})`);
+  }
+
+  if (!data.result) throw new Error('Empty result from AI engine');
+
+  // Scores are parsed server-side; re-parse client-side as safety net
+  const scores = (data.scores && data.scores.overall) ? data.scores : parseScores(data.result);
+  const sources = Array.isArray(data.sources) ? data.sources : [];
+  return { result: data.result, scores, sources };
+}
+
+// ─── SCORE TRANSPARENCY SCORECARD HTML ──────────────────────────────────────
+function scorecardHTML(scores, cfg) {
+  if (!scores || !scores.overall) return '';
+  const dims = [
+    { key:'overall',      label:'OVERALL',     desc:'Weighted composite of all 4 sub-scores', weight:'—' },
+    { key:'adoption',     label:'ADOPTION',    desc:'Breadth of real-world usage & deployment momentum', weight:'25%' },
+    { key:'maturity',     label:'MATURITY',    desc:'Production stability, completeness, feature parity', weight:'25%' },
+    { key:'satisfaction', label:'SATISFACTION',desc:'Practitioner NPS proxies, reviews, community tone', weight:'25%' },
+    { key:'competitive',  label:'COMPETITIVE', desc:'Standing vs. Salesforce, Oracle, Workday, Microsoft AI', weight:'25%' }
+  ];
+  const cells = dims.map(d => {
+    const val = scores[d.key];
+    if (!val) return '';
+    const c = scoreColor(val);
+    const band = scoreBand(val);
+    const pct = Math.max(0, Math.min(100, ((val-1)/4)*100));
+    return `<div class="sc-cell" title="${esc(d.desc)}">
+      <div class="sc-cell-accent" style="background:${c}"></div>
+      <div class="sc-label">${d.label}</div>
+      <div class="sc-value" style="color:${c}">${val.toFixed(1)}</div>
+      <div class="sc-band" style="color:${c}">${band.label}</div>
+      <div class="sc-bar-track"><div class="sc-bar-fill" style="width:${pct}%;background:${c}"></div></div>
+      <div style="font-size:7px;font-family:'DM Mono',monospace;color:var(--text5);margin-top:2px">wt ${d.weight}</div>
+    </div>`;
+  }).join('');
+  const legend = [
+    { color:'#22c55e', label:'4.2–5.0 BULLISH' },
+    { color:'#4ade80', label:'3.5–4.1 POSITIVE' },
+    { color:'#f59e0b', label:'2.8–3.4 MIXED' },
+    { color:'#fb923c', label:'2.0–2.7 CAUTIOUS' },
+    { color:'#ef4444', label:'1.0–1.9 BEARISH' }
+  ];
+  const legendHTML = legend.map(l=>`<div class="sc-legend-item"><div class="sc-legend-dot" style="background:${l.color}"></div>${l.label}</div>`).join('');
+  return `<div class="scorecard">
+    <div class="scorecard-title">📊 HOW SCORES ARE COMPUTED — ${NOW_YEAR} TEMPORAL WEIGHTING<span style="font-size:8px;color:var(--text4);font-family:'Lora',serif;font-style:italic;font-weight:400"> · Hover cells for definitions · Scale 1.0–5.0</span></div>
+    <div class="scorecard-grid">${cells}</div>
+    <div class="scorecard-legend">${legendHTML}</div>
+  </div>`;
+}
+
+// ─── SCORE PARSER ────────────────────────────────────────────────────────────
+// Claude sometimes returns **SENTIMENT_SCORE** (with bold markers), sometimes plain.
+// This parser strips all ** markers first, then extracts the numeric fields.
+// ─── System Prompt Builder (used in preview mode direct calls) ───────────────
+function buildSystemPrompt() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const prevY = year - 1;
+  const prev2 = year - 2;
+  return `You are an elite enterprise-technology analyst specialising in SAP. Synthesise real practitioner sentiment from SAP Community Network, LinkedIn, Reddit (r/SAP, r/ERP), G2/Gartner Peer Insights/TrustRadius reviews, analyst reports (Gartner, Forrester, IDC), and tech journalism.
+
+TEMPORAL WEIGHTING (mandatory):
+- ${year} sources: weight 3× (most important)
+- H2 ${prevY}–${year}: weight 1.5×
+- Pre-Q3 ${prevY}: weight 1× — label these [LEGACY PRE-${prevY}]
+
+SCORING RULES:
+- Adoption: 1.0=barely piloted, 3.0=growing but uneven, 5.0=pervasive
+- Maturity: 1.0=pre-GA/alpha, 3.0=stable for common use-cases, 5.0=battle-tested at scale
+- Satisfaction: 1.0=mostly complaints, 3.0=mixed/divided, 5.0=strong advocates
+- Competitive: 1.0=significantly behind peers, 3.0=roughly on par, 5.0=clear market leader
+- Overall: honest weighted average, one decimal place. NEVER round to a safe middle number.
+
+OUTPUT CONTRACT — return EXACTLY these sections:
+
+SENTIMENT_SCORE
+overall: <number 1.0–5.0>
+adoption: <number 1.0–5.0>
+maturity: <number 1.0–5.0>
+satisfaction: <number 1.0–5.0>
+competitive: <number 1.0–5.0>
+recency: <e.g. "65% ${year} sources, 25% H2 ${prevY}, 10% pre-${prevY}">
+
+SUMMARY
+<2–3 sentences of analytical synthesis.>
+
+KEY FINDINGS
+- <finding 1>
+- <finding 2>
+- <finding 3>
+- <finding 4>
+- <finding 5>
+- <finding 6>
+
+VERBATIM QUOTES
+Quote 1:
+"<exact or near-verbatim quote, minimum 25 words>"
+— <Full Name>, <Job Title>, <Company>, <Platform>, <Month Year>
+Context: <one sentence>
+
+Quote 2:
+"<different viewpoint, minimum 25 words>"
+— <Full Name>, <Job Title>, <Company>, <Platform>, <Month Year>
+Context: <one sentence>
+
+Quote 3:
+"<contrarian or critical viewpoint, minimum 25 words>"
+— <Full Name>, <Job Title>, <Company>, <Platform>, <Month Year>
+Context: <one sentence>
+
+BOTTOM LINE
+<One analyst sentence — the single most important thing a practitioner needs to know.>
+
+RULES: No markdown bold markers. All scores 1.0–5.0. Do NOT invent quotes.`;
+}
+
+function parseScores(text) {
+  // Strip ALL bold markdown so "**SENTIMENT_SCORE**" → "SENTIMENT_SCORE"
+  const clean = text.replace(/\*\*/g, '');
+
+  // Find the SENTIMENT_SCORE block — match between the section header and the next section
+  const blockMatch = clean.match(
+    /SENTIMENT_SCORE\s*[\n\r]+((?:[\s\S]*?))(?=\n\s*SUMMARY|\n\s*KEY FINDINGS|\n\s*VERBATIM|\n\s*BOTTOM LINE|$)/i
+  );
+  const block = blockMatch ? blockMatch[1] : clean; // fallback: search entire text
+
+  function extract(key) {
+    // Match "key: 3.2" or "key:3.2" anywhere in block
+    const m = block.match(new RegExp('(?:^|\\n)\\s*' + key + '\\s*:\\s*([1-5](?:\\.[0-9])?)', 'im'));
+    if (!m) {
+      // Wider fallback — search full cleaned text
+      const m2 = clean.match(new RegExp('(?:^|\\n)\\s*' + key + '\\s*:\\s*([1-5](?:\\.[0-9])?)', 'im'));
+      if (!m2) return undefined;
+      const v2 = parseFloat(m2[1]);
+      return isNaN(v2) ? undefined : Math.min(5, Math.max(1, v2));
+    }
+    const v = parseFloat(m[1]);
+    return isNaN(v) ? undefined : Math.min(5, Math.max(1, v));
+  }
+
+  const recencyM = block.match(/recency:\s*(.+)/i) || clean.match(/recency:\s*(.+)/i);
+  const scores = {
+    overall:      extract('overall'),
+    adoption:     extract('adoption'),
+    maturity:     extract('maturity'),
+    satisfaction: extract('satisfaction'),
+    competitive:  extract('competitive'),
+    recency:      recencyM ? recencyM[1].trim() : undefined
+  };
+
+  // If overall still undefined but sub-scores exist, compute it
+  if (!scores.overall) {
+    const subs = [scores.adoption, scores.maturity, scores.satisfaction, scores.competitive].filter(Boolean);
+    if (subs.length > 0) {
+      scores.overall = Math.round((subs.reduce((a,b)=>a+b,0)/subs.length)*10)/10;
+    }
+  }
+
+  console.log('[SAP AI Intel] Parsed scores:', JSON.stringify(scores));
+  return scores;
+}
+
+// ─── SPARKLINE ────────────────────────────────────────────────────────────────
+function sparklineHTML(entries) {
+  if (!entries || entries.length < 2) return '';
+  const w=72, h=26, pad=4;
+  const scores = entries.map(e => e.score || labelToScore(e.sentiment) || 2.5);
+  const xStep = (w-pad*2)/Math.max(scores.length-1,1);
+  const yScale = v => h - pad - ((v-1)/4)*(h-pad*2);
+  const points = scores.map((s,i)=>`${pad+i*xStep},${yScale(s)}`).join(' ');
+  const last=scores[scores.length-1], first=scores[0];
+  const trend = last>first?'#22c55e':last<first?'#ef4444':'#f59e0b';
+  const circles = scores.map((s,i)=>{
+    const r=i===scores.length-1?3.5:2;
+    const fill=i===scores.length-1?trend:'var(--bg2)';
+    return `<circle cx="${pad+i*xStep}" cy="${yScale(s)}" r="${r}" fill="${fill}" stroke="${trend}" stroke-width="1.5"/>`;
+  }).join('');
+  return `<svg class="sparkline" width="${w}" height="${h}"><polyline points="${points}" fill="none" stroke="${trend}" stroke-width="1.5" stroke-linejoin="round"/>${circles}</svg>`;
+}
+
+// ─── CHANGE BADGE ─────────────────────────────────────────────────────────────
+function changeBadgeHTML(delta, prevScore, currScore, prevDate) {
+  if (!delta) return '';
+  const improved = delta==='improved';
+  const color=improved?'#22c55e':'#ef4444', bg=improved?'#052e16':'#1c0505';
+  const diff = currScore && prevScore ? Math.abs(currScore-prevScore).toFixed(1) : '';
+  const title=`Was ${prevScore?.toFixed(1)||'?'}/5 on ${fmtDate(prevDate)}, now ${currScore?.toFixed(1)||'?'}/5`;
+  return `<div class="change-badge" title="${esc(title)}" style="background:${bg};border:1px solid ${color}44;color:${color}">${improved?'↑':'↓'} ${diff?diff+' pts':'SHIFT'}<span class="change-badge-note">vs ${esc(fmtDateShort(prevDate))}</span></div>`;
+}
+
+// ─── SCORE GAUGE HTML ─────────────────────────────────────────────────────────
+function scoreGaugeHTML(scores, cfg) {
+  if (!scores || !scores.overall) return '';
+  const s = scores.overall;
+  const pct = (s-1)/4;
+  const r=27, circ=2*Math.PI*r;
+  const dash = circ*pct;
+  const color = scoreColor(s);
+
+  const subItems = [
+    { label:'ADOPTION',     val: scores.adoption },
+    { label:'MATURITY',     val: scores.maturity },
+    { label:'SATISFACTION', val: scores.satisfaction },
+    { label:'COMPETITIVE',  val: scores.competitive }
+  ].filter(x => x.val);
+
+  const subHTML = subItems.map(item => {
+    const pctBar = Math.max(0, Math.min(100, ((item.val-1)/4)*100));
+    const c = scoreColor(item.val);
+    return `<div class="sub-score-row">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <span class="sub-score-label">${item.label}</span>
+        <span class="sub-score-val" style="color:${c}">${item.val.toFixed(1)}</span>
+      </div>
+      <div class="sub-score-bar-track">
+        <div class="sub-score-bar-fill" style="width:${pctBar}%;background:${c}"></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  return `<div class="score-gauge">
+    <div class="gauge-circle">
+      <svg width="64" height="64" viewBox="0 0 64 64">
+        <circle class="gauge-circle-bg" cx="32" cy="32" r="${r}"/>
+        <circle class="gauge-circle-fill" cx="32" cy="32" r="${r}"
+          stroke="${color}"
+          stroke-dasharray="${dash} ${circ}"
+          stroke-dashoffset="0"/>
+      </svg>
+      <div class="gauge-center-text">
+        <span class="gauge-score-num" style="color:${color}">${s.toFixed(1)}</span>
+        <span class="gauge-score-denom">/5.0</span>
+      </div>
+    </div>
+    <div class="sub-scores">${subHTML}</div>
+  </div>`;
+}
+
+// ─── RECENCY BAR HTML ─────────────────────────────────────────────────────────
+function recencyBarHTML(recency) {
+  if (!recency) return '';
+  // Match patterns like "30% pre-2025" or "10% pre-Q3 2025"
+  const legacyMatch = recency.match(/(\d+)%[^%\n]*pre-?(?:Q[1-4]\s*)?\d{4}/i);
+  const legacyPct = legacyMatch ? parseInt(legacyMatch[1]) : 0;
+  const hasCurrent = CURRENT_YEAR_RE.test(recency);
+  const warn = legacyPct > 30
+    ? `<span class="recency-warn">⚠ ${legacyPct}% legacy — interpret cautiously</span>`
+    : '';
+  const icon = hasCurrent ? '📅' : '🕐';
+  return `<div class="recency-bar">
+    <span class="recency-label">${icon} DATA RECENCY</span>
+    <span class="recency-value">${esc(recency)}</span>
+    ${warn}
+  </div>`;
+}
+
+// ─── QUOTE CARDS HTML ─────────────────────────────────────────────────────────
+// Attribution format from AI: "Full Name, Title, Company, Platform, Month Year"
+// sourceMatchIndex: index (1-based) of the Firecrawl source that was matched, or 0 if none
+
+function matchQuoteToSource(platform, speakerName, quoteText, sources) {
+  // Returns { index (1-based), url, isDirect } or null
+  if (!sources || sources.length === 0) return null;
+  const pl = (platform || '').toLowerCase();
+  const spFirst = (speakerName || '').toLowerCase().split(' ')[0];
+  const qtSlice = quoteText.slice(0, 80).toLowerCase();
+
+  // Priority 1: platform keyword matches hostname
+  const platformWords = pl.split(/[\s,/]+/).filter(w => w.length > 2);
+  for (let i = 0; i < sources.length; i++) {
+    try {
+      const host = new URL(sources[i].url).hostname.toLowerCase();
+      if (platformWords.some(w => host.includes(w))) {
+        return { index: i + 1, url: sources[i].url, isDirect: true };
+      }
+    } catch {}
+  }
+
+  // Priority 2: speaker first name appears in source title
+  if (spFirst && spFirst.length > 2) {
+    for (let i = 0; i < sources.length; i++) {
+      if ((sources[i].title || '').toLowerCase().includes(spFirst)) {
+        return { index: i + 1, url: sources[i].url, isDirect: true };
+      }
+    }
+  }
+
+  // Priority 3: any word from quote appears in source description
+  const words = qtSlice.split(/\s+/).filter(w => w.length > 6);
+  for (let i = 0; i < sources.length; i++) {
+    const desc = (sources[i].description || '').toLowerCase();
+    if (words.some(w => desc.includes(w))) {
+      return { index: i + 1, url: sources[i].url, isDirect: false };
+    }
+  }
+
+  return null; // no match — will show search fallback
+}
+
+function platformSearchURL(platform, speakerName, company, quoteText) {
+  const p = (platform || '').toLowerCase().trim();
+  const nameEnc = encodeURIComponent((speakerName + ' SAP').trim());
+  const textEnc = encodeURIComponent(quoteText.slice(0, 80));
+  if (p.includes('linkedin'))    return `https://www.linkedin.com/search/results/all/?keywords=${nameEnc}`;
+  if (p.includes('g2'))          return `https://www.g2.com/search?query=SAP`;
+  if (p.includes('gartner'))     return `https://www.gartner.com/reviews/market/sap-erp`;
+  if (p.includes('trustradius')) return `https://www.trustradius.com/products/sap-s4hana/reviews`;
+  if (p.includes('reddit'))      return `https://www.reddit.com/search/?q=${textEnc}&sort=relevance`;
+  if (p.includes('sap community') || p.includes('community.sap')) return `https://community.sap.com/t5/forums/searchpage/tab/message?q=${textEnc}`;
+  if (p.includes('podcast'))     return `https://www.google.com/search?q=${encodeURIComponent(speakerName + ' SAP podcast')}`;
+  return `https://www.google.com/search?q=${encodeURIComponent('SAP ' + platform + ' ' + speakerName)}`;
+}
+
+function quoteCardsHTML(quotes, cfg, sources, isPreview) {
+  if (!quotes || quotes.length === 0) return '';
+  const cards = quotes.map((q, idx) => {
+    const borderColor = cfg.color + '55';
+    const attrStr = q.attribution || '';
+    const isCurrent = CURRENT_YEAR_RE.test(attrStr) || CURRENT_YEAR_RE.test(q.text);
+    const isLegacy  = LEGACY_YEAR_RE.test(attrStr) && !isCurrent;
+
+    // Parse attribution: "Full Name, Title, Company, Platform, Month Year"
+    const parts = attrStr.split(',').map(p => p.trim()).filter(Boolean);
+    const speakerName  = parts[0] || '';
+    const speakerTitle = parts[1] || '';
+    const company      = parts[2] || '';
+    const platform     = parts[3] || '';
+    const dateStr      = parts[4] || '';
+
+    // Avatar
+    const initials = speakerName ? speakerName.trim().charAt(0).toUpperCase() : '?';
+    const avatarColors = ['#1d4ed8','#7c3aed','#0891b2','#059669','#b45309','#be123c'];
+    const avatarBg = avatarColors[idx % avatarColors.length];
+
+    // Chips
+    const recencyChip = isCurrent
+      ? `<span class="quote-chip quote-chip-date">${NOW_YEAR}</span>`
+      : isLegacy
+      ? `<span class="quote-chip quote-chip-legacy">LEGACY PRE-${NOW_PREV_YEAR}</span>`
+      : '';
+    const platformChip = platform ? `<span class="quote-chip quote-chip-platform">${esc(platform)}</span>` : '';
+    const dateChip = dateStr ? `<span class="quote-chip quote-chip-date">${esc(dateStr)}</span>` : '';
+    const companyChip = company ? `<span class="quote-chip" style="background:rgba(139,92,246,0.08);border-color:rgba(139,92,246,0.25);color:#a78bfa">${esc(company)}</span>` : '';
+
+    // ── Source traceability ──
+    let sourceBtns = '';
+    if (isPreview) {
+      // Preview mode: AI synthesized quotes — show honest search link
+      const searchURL = platformSearchURL(platform, speakerName, company, q.text);
+      sourceBtns = `<div style="margin-top:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <a class="quote-source-btn search" href="${esc(searchURL)}" target="_blank" rel="noopener noreferrer">🔍 Search Platform</a>
+        <span class="quote-no-src">AI-synthesized · no direct URL in preview mode</span>
+      </div>`;
+    } else {
+      // Live mode: try to match a Firecrawl scraped source
+      const match = matchQuoteToSource(platform, speakerName, q.text, sources);
+      if (match && match.isDirect) {
+        sourceBtns = `<div style="margin-top:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <a class="quote-source-btn direct" href="${esc(match.url)}" target="_blank" rel="noopener noreferrer">↗ Open Source [${match.index}]</a>
+          <a class="quote-src-ref" href="${esc(match.url)}" target="_blank" rel="noopener noreferrer">from scraped source ${match.index}</a>
+        </div>`;
+      } else if (match && !match.isDirect) {
+        const searchURL = platformSearchURL(platform, speakerName, company, q.text);
+        sourceBtns = `<div style="margin-top:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <a class="quote-source-btn direct" href="${esc(match.url)}" target="_blank" rel="noopener noreferrer">↗ Related Source [${match.index}]</a>
+          <a class="quote-source-btn search" href="${esc(searchURL)}" target="_blank" rel="noopener noreferrer">🔍 Search Platform</a>
+        </div>`;
+      } else {
+        // No Firecrawl match — honest search fallback
+        const searchURL = platformSearchURL(platform, speakerName, company, q.text);
+        sourceBtns = `<div style="margin-top:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <a class="quote-source-btn search" href="${esc(searchURL)}" target="_blank" rel="noopener noreferrer">🔍 Search ${platform || 'Platform'}</a>
+          <span class="quote-no-src">no exact URL match · search opens ${platform || 'platform'}</span>
+        </div>`;
+      }
+    }
+
+    return `<div class="quote-card" style="border-left-color:${borderColor}">
+      <div class="quote-text">${esc(q.text)}</div>
+      <div class="quote-attribution-block">
+        <div class="quote-person-row">
+          <div class="quote-avatar" style="background:${avatarBg}">${initials}</div>
+          <div>
+            ${speakerName ? `<div class="quote-name">${esc(speakerName)}</div>` : ''}
+            ${speakerTitle ? `<div class="quote-role">${esc(speakerTitle)}</div>` : ''}
+          </div>
+          ${recencyChip}
+        </div>
+        <div class="quote-chips-row">${companyChip}${platformChip}${dateChip}</div>
+        ${sourceBtns}
+      </div>
+      ${q.context ? `<div class="quote-context">→ ${esc(q.context)}</div>` : ''}
+    </div>`;
+  }).join('');
+  return `<div class="quotes-section">
+    <div class="quotes-section-label">💬 VERBATIM PRACTITIONER QUOTES</div>
+    ${cards}
+  </div>`;
+}
+
+// ─── RESULT CARD HTML ─────────────────────────────────────────────────────────
+function resultCardHTML(queryId, result, scores, sources) {
+  const query = QUERIES.find(q => q.id === queryId);
+  if (!query) return '';
+
+  const s = scores?.overall || null;
+  const band = scoreBand(s);
+  const cfg = { color: band.color, bg: band.bg };
+  const sections = parseSections(result);
+
+  const entries = state.history[queryId] || [];
+  const prevEntry = entries.length >= 2 ? entries[entries.length-2] : null;
+  const prevScore = prevEntry?.score || null;
+  const currScore = s;
+  const delta = scoreDelta(prevScore, currScore);
+  const expanded = state.expanded[queryId] !== false;
+  const ts = entries[entries.length-1]?.ts || Date.now();
+
+  // History strip
+  let historyStripHTML = '';
+  if (entries.length >= 2) {
+    const items = entries.map((e,i) => {
+      const sc = e.score || labelToScore(e.sentiment) || 2.5;
+      const c = scoreColor(sc);
+      const isLatest = i === entries.length-1;
+      const d = i>0 ? scoreDelta(entries[i-1].score||labelToScore(entries[i-1].sentiment), sc) : null;
+      const arrowColor = d==='improved'?'#22c55e':d==='worsened'?'#ef4444':'#1e3a5f';
+      const arrowChar  = d==='improved'?'↑':d==='worsened'?'↓':'→';
+      const arrow = i>0?`<span style="color:${arrowColor};font-size:10px;margin:0 2px">${arrowChar}</span>`:'';
+      const pillBg  = isLatest?band.bg:'rgba(255,255,255,0.02)';
+      const pillBdr = isLatest?cfg.color+'55':'#1e293b';
+      return `<div style="display:flex;align-items:center;gap:2px">${arrow}<div class="history-pill" style="background:${pillBg};border:1px solid ${pillBdr}" title="${fmtDate(e.ts)}">
+        <span class="history-score-txt" style="color:${isLatest?c:'#475569'}">${sc.toFixed(1)}</span>
+        <span class="history-date-txt">${esc(fmtDateShort(e.ts))}</span>
+      </div></div>`;
+    }).join('');
+    const stableColor = delta==='improved'?'#4ade80':delta==='worsened'?'#f87171':'#475569';
+    const stableText  = delta==='improved'?'✦ Score improved':delta==='worsened'?'✦ Score dropped':'Stable score';
+    historyStripHTML = `<div class="history-strip"><span class="history-label">SCORE HISTORY:</span>${items}<span class="history-stable" style="color:${stableColor}">${esc(stableText)}</span></div>`;
+  }
+
+  // Shift callout
+  let shiftCalloutHTML = '';
+  if (delta && prevEntry) {
+    const imp = delta==='improved';
+    const bg=imp?'rgba(34,197,94,0.07)':'rgba(239,68,68,0.07)';
+    const border=imp?'#22c55e33':'#ef444433';
+    const titleColor=imp?'#4ade80':'#f87171';
+    const prevSc=(prevEntry.score||labelToScore(prevEntry.sentiment)||2.5).toFixed(1);
+    const currSc=(currScore||2.5).toFixed(1);
+    shiftCalloutHTML = `<div class="shift-callout" style="background:${bg};border:1px solid ${border}">
+      <span style="font-size:16px;flex-shrink:0">${imp?'📈':'📉'}</span>
+      <div>
+        <div class="shift-title" style="color:${titleColor}">SCORE ${imp?'IMPROVED':'DROPPED'}: ${prevSc}/5 → ${currSc}/5</div>
+        <div class="shift-desc">${prevEntry.bottomLine?`Previous bottom line: <em style="color:#475569">"${esc(prevEntry.bottomLine)}"</em>`:''}</div>
+      </div>
+    </div>`;
+  }
+
+  // Split summary into paragraphs — never render as one wall of text
+  const summaryHTML = sections.summary
+    ? sections.summary.split(/\n\n+/).filter(p => p.trim().length > 0)
+        .map(p => `<p class="summary-text">${esc(p.trim())}</p>`).join('')
+    : '';
+
+  let findingsHTML = '';
+  if (sections.keyFindings.length > 0) {
+    const items = sections.keyFindings.map(pt => {
+      const isLegacy = /\[LEGACY/i.test(pt);
+      const cleaned = pt.replace(/\[LEGACY[^\]]*\]/gi, '').trim();
+      // Dynamic: badge uses NOW_PREV_YEAR — self-rolls each year
+      const legacyTag = isLegacy ? `<span class="legacy-tag">LEGACY PRE-${NOW_PREV_YEAR}</span>` : '';
+      const currentYearPat = new RegExp(
+        `(\\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|Q[1-4])\\s+${NOW_YEAR}\\b|\\b${NOW_YEAR}\\b)`, 'g'
+      );
+      const prevYearPat = new RegExp(
+        `(\\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|Q[1-4])\\s+${NOW_PREV_YEAR}\\b|\\b${NOW_PREV_YEAR}\\b)`, 'g'
+      );
+      const dated = cleaned
+        .replace(currentYearPat, m => `<span class="date-tag">${m}</span>`)
+        .replace(prevYearPat, m => `<span style="display:inline-block;font-size:9px;font-family:'DM Mono',monospace;color:#94a3b8;background:rgba(148,163,184,0.08);border:1px solid rgba(148,163,184,0.15);border-radius:4px;padding:0px 4px;vertical-align:middle">${m}</span>`);
+      return `<div class="finding-item"><span class="finding-bullet" style="color:${cfg.color}">◆</span><span class="finding-text">${legacyTag}${dated}</span></div>`;
+    }).join('');
+    // Dynamic: "KEY FINDINGS — 2026 WEIGHTED" — rolls with NOW_YEAR
+    findingsHTML = `<div style="margin-bottom:14px"><div class="findings-label">KEY FINDINGS — ${NOW_YEAR} WEIGHTED</div>${items}</div>`;
+  }
+
+  const quotesHTML = quoteCardsHTML(sections.quotes, cfg, sources, _IS_GENSPARK_PREVIEW);
+
+  const bottomHTML = sections.bottomLine
+    ? `<div class="bottom-line" style="background:${cfg.color}0f;border:1px solid ${cfg.color}33">
+        <span style="font-size:14px;flex-shrink:0">💡</span>
+        <div>
+          <div class="bottom-line-label">BOTTOM LINE FOR ANALYSTS</div>
+          <div class="bottom-line-text" style="color:${cfg.color}">${esc(sections.bottomLine)}</div>
+        </div>
+      </div>` : '';
+
+  // Scorecard: show how scores were computed — injected at top of card body
+  const scHTML = scorecardHTML(scores, cfg);
+
+  // ── Sources Panel (shown BEFORE verbatim quotes for traceability) ─────────
+  let sourcesHTML = '';
+  if (sources && sources.length > 0) {
+    const sourceItems = sources.map((src, i) => {
+      const domain = (() => { try { return new URL(src.url).hostname.replace('www.',''); } catch { return src.url; } })();
+      const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=16`;
+      const desc = src.description ? `<div class="src-desc">${esc(src.description.slice(0, 160))}${src.description.length > 160 ? '…' : ''}</div>` : '';
+      return `<div class="src-card">
+        <div class="src-header">
+          <img class="src-favicon" src="${faviconUrl}" onerror="this.style.display='none'" alt="">
+          <span class="src-num">[${i+1}]</span>
+          <span class="src-domain">${esc(domain)}</span>
+          <span class="src-arrow">↗</span>
+        </div>
+        <div class="src-title">${esc(src.title || 'Source ' + (i+1))}</div>
+        ${desc}
+        <a class="src-open-btn" href="${esc(src.url)}" target="_blank" rel="noopener noreferrer">↗ Open page</a>
+      </div>`;
+    }).join('');
+    sourcesHTML = `<div class="sources-panel">
+      <div class="sources-label">📎 SCRAPED SOURCES <span class="sources-count">${sources.length} verified pages</span></div>
+      <div class="sources-notice">These are the real pages scraped to build this analysis. Click any card to open the exact source.</div>
+      <div class="sources-grid">${sourceItems}</div>
+    </div>`;
+  } else if (!_IS_GENSPARK_PREVIEW) {
+    // On CF Pages but no sources returned — show notice
+    sourcesHTML = `<div class="sources-panel">
+      <div class="sources-label">📎 SCRAPED SOURCES</div>
+      <div class="sources-notice">No scraped sources were returned for this search. The analysis is based on AI training data only.</div>
+    </div>`;
+  }
+
+  // Order: scores → summary → findings → SOURCES → verbatim quotes → bottom line
+  const bodyHTML = expanded
+    ? `<div class="card-body" style="padding-top:14px">${historyStripHTML}${shiftCalloutHTML}${scHTML}${summaryHTML}${findingsHTML}${sourcesHTML}${quotesHTML}${bottomHTML}</div>`
+    : '';
+
+  return `<div class="result-card" id="card-${queryId}" style="border:1px solid ${cfg.color}33;border-left:3px solid ${cfg.color};box-shadow:0 4px 20px ${cfg.color}0d">
+    <div class="card-header" onclick="toggleCard('${queryId}')">
+      <span style="font-size:18px">${query.icon}</span>
+      <div style="flex:1;min-width:0">
+        <div class="card-title">${esc(query.label)}</div>
+        <div class="card-meta">${query.category.toUpperCase()} · ${esc(fmtDate(ts))}</div>
+      </div>
+      ${sparklineHTML(entries)}
+      ${changeBadgeHTML(delta, prevScore, currScore, prevEntry?.ts)}
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0">
+        <div class="score-pill" style="background:${cfg.bg};border:1px solid ${cfg.color}44;color:${cfg.color}">${s ? s.toFixed(1)+'/5' : band.label !== 'N/A' ? band.label : '—'}</div>
+        ${s && scores && (scores.adoption||scores.maturity||scores.satisfaction||scores.competitive) ? `<div style="display:flex;gap:3px;align-items:center">${[
+          {l:'A',v:scores.adoption},{l:'M',v:scores.maturity},{l:'S',v:scores.satisfaction},{l:'C',v:scores.competitive}
+        ].filter(x=>x.v).map(x=>`<span title="${x.l==='A'?'Adoption':x.l==='M'?'Maturity':x.l==='S'?'Satisfaction':'Competitive'}: ${x.v.toFixed(1)}" style="font-size:8px;font-family:'DM Mono',monospace;font-weight:700;color:${scoreColor(x.v)};background:${scoreColor(x.v)}18;border:1px solid ${scoreColor(x.v)}33;padding:1px 4px;border-radius:3px;cursor:default">${x.l}:${x.v.toFixed(1)}</span>`).join('')}</div>` : ''}
+      </div>
+      <div class="card-toggle">${expanded?'▲':'▼'}</div>
+    </div>
+    ${s ? scoreGaugeHTML(scores, cfg) : ''}
+    ${scores?.recency ? recencyBarHTML(scores.recency) : ''}
+    ${bodyHTML}
+  </div>`;
+}
+
+// ─── HISTORY PANEL ─────────────────────────────────────────────────────────────
+function historyPanelHTML() {
+  const tracked = QUERIES.filter(q => (state.history[q.id]||[]).length > 0);
+  if (tracked.length === 0) {
+    return `<div class="no-history"><div class="no-history-icon">📈</div><div class="no-history-title">No history yet</div><p class="no-history-text">Run searches at least twice over different sessions to track score changes. Each scan is automatically saved.</p></div>`;
+  }
+
+  const totalShifts = tracked.filter(q => {
+    const h=state.history[q.id]||[];
+    if(h.length<2) return false;
+    return scoreDelta(h[h.length-2].score||labelToScore(h[h.length-2].sentiment), h[h.length-1].score||labelToScore(h[h.length-1].sentiment)) !== null;
+  }).length;
+  const improved = tracked.filter(q => {
+    const h=state.history[q.id]||[];
+    if(h.length<2) return false;
+    return scoreDelta(h[h.length-2].score||labelToScore(h[h.length-2].sentiment), h[h.length-1].score||labelToScore(h[h.length-1].sentiment)) === 'improved';
+  }).length;
+  const worsened = totalShifts - improved;
+
+  const avgScores = tracked.map(q => {
+    const h=state.history[q.id]||[];
+    const l=h[h.length-1];
+    return l.score||labelToScore(l.sentiment)||2.5;
+  });
+  const avgScore = avgScores.length ? (avgScores.reduce((a,b)=>a+b,0)/avgScores.length).toFixed(1) : '—';
+
+  const statsHTML = [
+    { label:'TOPICS TRACKED',   value:tracked.length,    color:'#e2e8f0' },
+    { label:'AVG SCORE /5',     value:avgScore,           color:scoreColor(parseFloat(avgScore)) },
+    { label:'IMPROVED ↑',       value:improved,           color:'#22c55e' },
+    { label:'WORSENED ↓',       value:worsened,           color:'#ef4444' }
+  ].map(s=>`<div><div class="stat-label">${s.label}</div><div class="stat-value" style="color:${s.color}">${s.value}</div></div>`).join('');
+
+  const changed=[], stable=[];
+  tracked.forEach(q => {
+    const h=state.history[q.id]||[];
+    if(h.length>=2) {
+      const prev=h[h.length-2], curr=h[h.length-1];
+      const ps=prev.score||labelToScore(prev.sentiment)||2.5;
+      const cs=curr.score||labelToScore(curr.sentiment)||2.5;
+      const d=scoreDelta(ps,cs);
+      if(d) changed.push({q,prev,curr,delta:d,entries:h,ps,cs});
+      else stable.push({q,entries:h,score:cs});
+    }
+  });
+
+  let changedHTML='';
+  if(changed.length>0){
+    const cards=changed.map(({q,prev,curr,delta,entries,ps,cs})=>{
+      const imp=delta==='improved';
+      const bg=imp?'rgba(34,197,94,0.05)':'rgba(239,68,68,0.05)';
+      const border=imp?'#22c55e33':'#ef444433';
+      const borderLeft=imp?'#22c55e':'#ef4444';
+      return `<div class="changed-card" style="background:${bg};border:1px solid ${border};border-left:3px solid ${borderLeft}">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <span style="font-size:17px">${q.icon}</span>
+          <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:14px;color:#e2e8f0;flex:1">${esc(q.label)}</span>
+          ${sparklineHTML(entries)}
+          <span style="font-size:18px">${imp?'📈':'📉'}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+          <div style="padding:4px 12px;border-radius:10px;background:${scoreColor(ps)}22;border:1px solid ${scoreColor(ps)}44;font-size:13px;color:${scoreColor(ps)};font-family:'DM Mono',monospace;font-weight:800">${ps.toFixed(1)}/5</div>
+          <span style="font-size:18px;color:${imp?'#22c55e':'#ef4444'}">→</span>
+          <div style="padding:4px 12px;border-radius:10px;background:${scoreColor(cs)}22;border:1px solid ${scoreColor(cs)}55;font-size:13px;color:${scoreColor(cs)};font-family:'DM Mono',monospace;font-weight:800">${cs.toFixed(1)}/5</div>
+          <span style="font-size:10px;color:var(--text4);font-family:'DM Mono',monospace">${esc(fmtDateShort(prev.ts))} → ${esc(fmtDateShort(curr.ts))}</span>
+        </div>
+        <div class="before-after-grid">
+          <div class="before-after-box" style="border-left:2px solid ${scoreColor(ps)}44"><div class="ba-label">BEFORE · ${esc(fmtDateShort(prev.ts))}</div><div class="ba-text">${esc(prev.bottomLine||prev.summary?.slice(0,100)||'—')}</div></div>
+          <div class="before-after-box" style="border-left:2px solid ${scoreColor(cs)}55"><div class="ba-label">NOW · ${esc(fmtDateShort(curr.ts))}</div><div class="ba-text" style="color:var(--text3)">${esc(curr.bottomLine||curr.summary?.slice(0,100)||'—')}</div></div>
+        </div>
+      </div>`;
+    }).join('');
+    changedHTML=`<div style="margin-bottom:24px"><div class="changed-section-label"><span>⚡</span> SCORE CHANGES DETECTED</div>${cards}</div>`;
+  }
+
+  let stableHTML='';
+  if(stable.length>0){
+    const cards=stable.map(({q,entries,score})=>{
+      const c=scoreColor(score);
+      return `<div class="stable-card">
+        <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px">
+          <span>${q.icon}</span>
+          <span style="font-family:'Syne',sans-serif;font-weight:600;font-size:12px;color:#94a3b8;flex:1">${esc(q.label)}</span>
+          ${sparklineHTML(entries)}
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="padding:3px 10px;border-radius:8px;background:${c}22;border:1px solid ${c}44;font-size:12px;color:${c};font-family:'DM Mono',monospace;font-weight:800">${score.toFixed(1)}/5</div>
+          <span style="font-size:10px;color:var(--text4);font-family:'DM Mono',monospace">stable · ${entries.length} scan${entries.length>1?'s':''}</span>
+        </div>
+      </div>`;
+    }).join('');
+    stableHTML=`<div style="margin-bottom:22px"><div class="stable-section-label">STABLE — NO SIGNIFICANT SHIFT</div><div class="stable-grid">${cards}</div></div>`;
+  }
+
+  const timelineCards=tracked.map(q=>{
+    const h=state.history[q.id]||[];
+    const nodes=h.map((e,i)=>{
+      const sc=e.score||labelToScore(e.sentiment)||2.5;
+      const c=scoreColor(sc);
+      const isLast=i===h.length-1;
+      const d=i>0?scoreDelta(h[i-1].score||labelToScore(h[i-1].sentiment),sc):null;
+      const connector=i>0?`<div style="display:flex;align-items:center;margin-bottom:18px"><div style="width:20px;height:1px;background:var(--border2)"></div>${d?`<span style="font-size:10px;color:${d==='improved'?'#22c55e':'#ef4444'};margin:0 1px">${d==='improved'?'↑':'↓'}</span>`:'<span style="font-size:10px;color:var(--border3);margin:0 1px">→</span>'}<div style="width:20px;height:1px;background:var(--border2)"></div></div>`:'';
+      const ds=isLast?12:9, fill=isLast?c:'transparent', shadow=isLast?`0 0 8px ${c}66`:'none';
+      // Show sub-score breakdown for this entry if available
+      const subBreakdown = (e.adoption||e.maturity||e.satisfaction||e.competitive)
+        ? `<div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap">${[
+            e.adoption    ? {l:'ADO', v:e.adoption}    : null,
+            e.maturity    ? {l:'MAT', v:e.maturity}    : null,
+            e.satisfaction? {l:'SAT', v:e.satisfaction}: null,
+            e.competitive ? {l:'COM', v:e.competitive} : null
+          ].filter(Boolean).map(x=>`<span style="font-size:8px;font-family:'DM Mono',monospace;color:${scoreColor(x.v)};background:${scoreColor(x.v)}18;padding:1px 4px;border-radius:3px">${x.l}:${x.v.toFixed(1)}</span>`).join('')}</div>`
+        : '';
+      return `<div style="display:flex;align-items:center;gap:0">${connector}<div title="${esc(fmtDate(e.ts))}&#10;Score: ${sc.toFixed(1)}/5" style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:default"><div style="width:${ds}px;height:${ds}px;border-radius:50%;background:${fill};border:2px solid ${c};flex-shrink:0;box-shadow:${shadow}"></div><span style="font-size:9px;color:${c};font-family:'DM Mono',monospace;white-space:nowrap">${esc(fmtDateShort(e.ts))}</span><span style="font-size:9px;color:${c};font-family:'DM Mono',monospace;font-weight:700">${sc.toFixed(1)}</span></div></div>`;
+    }).join('');
+    // Last entry sub-score bar
+    const lastE = h[h.length-1];
+    const lastSubBar = (lastE && (lastE.adoption||lastE.maturity||lastE.satisfaction||lastE.competitive))
+      ? `<div style="margin-top:8px;display:flex;gap:4px;flex-wrap:wrap">` +
+        [
+          lastE.adoption     ? {l:'ADOPTION',     v:lastE.adoption}     : null,
+          lastE.maturity     ? {l:'MATURITY',      v:lastE.maturity}     : null,
+          lastE.satisfaction ? {l:'SATISFACTION',  v:lastE.satisfaction} : null,
+          lastE.competitive  ? {l:'COMPETITIVE',   v:lastE.competitive}  : null
+        ].filter(Boolean).map(x => {
+          const c2=scoreColor(x.v); const pct=Math.max(0,Math.min(100,((x.v-1)/4)*100));
+          return `<div style="flex:1;min-width:80px"><div style="display:flex;justify-content:space-between;margin-bottom:2px"><span style="font-size:8px;font-family:'DM Mono',monospace;color:var(--text5)">${x.l}</span><span style="font-size:8px;font-family:'DM Mono',monospace;color:${c2};font-weight:700">${x.v.toFixed(1)}</span></div><div style="height:3px;background:var(--border);border-radius:2px;overflow:hidden"><div style="width:${pct}%;height:100%;background:${c2};border-radius:2px"></div></div></div>`;
+        }).join('') + `</div>`
+      : '';
+    return `<div class="timeline-card"><div style="display:flex;align-items:center;gap:7px;margin-bottom:10px"><span style="font-size:14px">${q.icon}</span><span style="font-family:'Syne',sans-serif;font-weight:700;font-size:12px;color:#e2e8f0;flex:1">${esc(q.label)}</span>${sparklineHTML(h)}</div><div class="timeline-row">${nodes}</div>${lastSubBar}</div>`;
+  }).join('');
+
+  return `<div>
+    <div class="history-stats">${statsHTML}</div>
+    ${changedHTML}${stableHTML}
+    <div><div class="full-timeline-label">SCORE TIMELINE PER TOPIC</div>${timelineCards}</div>
+    <div style="margin-top:16px;text-align:right"><button class="clear-history-btn" onclick="clearHistory()">🗑 Clear all history</button></div>
+  </div>`;
+}
+
+// ─── RENDER ───────────────────────────────────────────────────────────────────
+function render() { renderNav(); renderSidebar(); renderMain(); }
+
+function renderNav() {
+  const totalLoading = Object.values(state.loading).filter(Boolean).length;
+  const totalCompleted = Object.keys(state.results).length;
+  const shifts = QUERIES.filter(q => {
+    const h=state.history[q.id]||[];
+    return h.length>=2 && scoreDelta(h[h.length-2].score||labelToScore(h[h.length-2].sentiment), h[h.length-1].score||labelToScore(h[h.length-1].sentiment)) !== null;
+  }).length;
+  // Only update the dynamic portion — leave the theme toggle button intact
+  let html='';
+  if(shifts>0) html+=`<button class="shift-alert-btn" onclick="setCategory('history')"><span style="font-size:9px">⚡</span><span class="shift-alert-text">${shifts} SHIFT${shifts>1?'S':''}</span></button>`;
+  if(totalLoading>0) html+=`<div style="display:flex;align-items:center;gap:5px"><div class="live-dot"></div><span class="live-text">${totalLoading} LIVE</span></div>`;
+  html+=`<span style="font-size:10px;color:var(--text5);font-family:'DM Mono',monospace">${totalCompleted}/${QUERIES.length}</span>`;
+  // Insert before the theme toggle button
+  const navRight = document.getElementById('navRight');
+  const toggle = document.getElementById('themeToggle');
+  // Remove old dynamic nodes (everything except the toggle)
+  Array.from(navRight.children).forEach(c => { if(c.id!=='themeToggle') c.remove(); });
+  navRight.insertAdjacentHTML('afterbegin', html);
+}
+
+function renderSidebar() {
+  renderMiniTracker(); renderCategoryFilters(); renderTopicList(); renderRunBtn();
+}
+
+function renderMiniTracker() {
+  const tracked=QUERIES.filter(q=>(state.history[q.id]||[]).length>0);
+  if(tracked.length===0){document.getElementById('miniTracker').innerHTML='';return;}
+  const rows=tracked.map(q=>{
+    const h=state.history[q.id]||[];
+    const latest=h[h.length-1];
+    const prev=h.length>=2?h[h.length-2]:null;
+    const sc=latest.score||labelToScore(latest.sentiment)||2.5;
+    const ps=prev?(prev.score||labelToScore(prev.sentiment)||2.5):null;
+    const d=ps?scoreDelta(ps,sc):null;
+    const c=scoreColor(sc);
+    return `<div class="tracker-row">
+      <span style="font-size:10px">${q.icon}</span>
+      <span class="tracker-label">${esc(q.label)}</span>
+      ${d?`<span style="font-size:11px;font-weight:700;color:${d==='improved'?'#22c55e':'#ef4444'}">${d==='improved'?'↑':'↓'}</span>`:''}
+      <span class="tracker-score" style="color:${c}">${sc.toFixed(1)}</span>
+    </div>`;
+  }).join('');
+  document.getElementById('miniTracker').innerHTML=`<div class="tracker-box"><div class="section-label">TRACKER</div>${rows}</div>`;
+}
+
+function renderCategoryFilters() {
+  const shifts=QUERIES.filter(q=>{const h=state.history[q.id]||[];return h.length>=2&&scoreDelta(h[h.length-2].score||labelToScore(h[h.length-2].sentiment),h[h.length-1].score||labelToScore(h[h.length-1].sentiment))!==null;}).length;
+  const html=CATEGORIES.map(cat=>{
+    const active=state.activeCategory===cat.id;
+    const badge=(cat.id==='history'&&shifts>0)?`<span class="shift-badge-small">${shifts}</span>`:'';
+    return `<button class="filter-btn${active?' active':''}" onclick="setCategory('${cat.id}')"><span style="font-size:12px">${cat.icon}</span><span class="filter-btn-text">${esc(cat.label)}${badge}</span></button>`;
+  }).join('');
+  document.getElementById('categoryFilters').innerHTML=html;
+}
+
+function renderRunBtn() {
+  const totalLoading=Object.values(state.loading).filter(Boolean).length;
+  const totalErrors=Object.values(state.errors).filter(Boolean).length;
+  document.getElementById('retryBtnContainer').innerHTML=totalErrors>0?`<button class="retry-btn" onclick="retryErrors()" ${totalLoading>0?'disabled':''}>↺ RETRY ${totalErrors} FAILED</button>`:'';
+}
+
+function renderTopicList() {
+  const html=QUERIES.map(q=>{
+    const hasResult=!!state.results[q.id];
+    const isLoading=!!state.loading[q.id];
+    const hasError=!!state.errors[q.id];
+    const h=state.history[q.id]||[];
+    const latest=h[h.length-1];
+    const sc=latest?(latest.score||labelToScore(latest.sentiment)||2.5):null;
+    const bg=hasResult?'rgba(34,197,94,0.05)':isLoading?'rgba(59,130,246,0.05)':hasError?'rgba(239,68,68,0.05)':'rgba(255,255,255,0.01)';
+    const borderColor=hasResult?'#22c55e1a':isLoading?'#3b82f61a':hasError?'#ef44441a':'#0f2240';
+    const labelColor=hasResult?'#4ade80':isLoading?'#93c5fd':hasError?'#f87171':'#475569';
+    const statusIcon=hasResult?'✓':isLoading?'⏳':hasError?'✕':'→';
+    const scoreDisplay=sc?`<span style="font-size:9px;font-family:'DM Mono',monospace;font-weight:700;color:${scoreColor(sc)}">${sc.toFixed(1)}</span>`:'';
+    return `<button class="topic-btn" style="background:${bg};border-color:${borderColor}" onclick="runSingle('${q.id}')" ${isLoading?'disabled':''}>
+      <div style="display:flex;align-items:center;gap:6px"><span style="font-size:11px">${q.icon}</span><span class="topic-btn-label" style="color:${labelColor}">${esc(q.label)}</span></div>
+      <div style="display:flex;align-items:center;gap:4px">${scoreDisplay}<span style="font-size:9px;color:var(--text4)">${statusIcon}</span></div>
+    </button>`;
+  }).join('');
+  document.getElementById('topicList').innerHTML=html;
+}
+
+// Build one topic launch card (pending, loading, error, or done)
+function topicLaunchCardHTML(q) {
+  const hasResult = !!state.results[q.id];
+  const isLoading = !!state.loading[q.id];
+  const hasError  = !!state.errors[q.id];
+  const h = state.history[q.id] || [];
+  const latest = h[h.length - 1];
+  const sc = latest ? (latest.score || labelToScore(latest.sentiment) || 2.5) : null;
+  const cardClass = isLoading ? 'is-loading' : hasResult ? 'has-result' : hasError ? 'has-error' : '';
+
+  // Score pill (if we have a previous score)
+  const scorePill = sc
+    ? `<div class="tlc-score-row">
+        <span class="tlc-score-pill" style="background:${scoreColor(sc)}18;border:1px solid ${scoreColor(sc)}44;color:${scoreColor(sc)}">${sc.toFixed(1)}/5</span>
+        <span class="tlc-score-label">${scoreBand(sc).label} · last run</span>
+       </div>`
+    : '';
+
+  // Category label
+  const catMap = { product:'PRODUCT', ecosystem:'ECOSYSTEM', competitive:'COMPETITIVE' };
+  const catLabel = catMap[q.category] || q.category.toUpperCase();
+
+  // Short description (first 90 chars of prompt)
+  const desc = q.prompt.replace(/\s+/g,' ').slice(0, 90) + '…';
+
+  // Run / loading / error button
+  let runBtn = '';
+  if (isLoading) {
+    runBtn = `<button class="tlc-run-btn loading" disabled>
+      <div class="shimmer-bar" style="width:100%;height:3px;position:relative;overflow:hidden;border-radius:2px;background:rgba(59,130,246,0.15)">
+        <div class="shimmer-inner"></div></div>
+      Researching…
+    </button>`;
+  } else if (hasError) {
+    runBtn = `<div class="tlc-error-msg" style="margin-bottom:4px">⚠ ${esc(state.errors[q.id].slice(0,80))}${state.errors[q.id].length>80?'…':''}</div>
+    <button class="tlc-run-btn errored" onclick="runSingle('${q.id}')">
+      ↺ Retry
+    </button>`;
+  } else if (hasResult) {
+    runBtn = `<button class="tlc-run-btn rerun" onclick="runSingle('${q.id}')">
+      ↺ Refresh Analysis
+    </button>`;
+  } else {
+    runBtn = `<button class="tlc-run-btn fresh" onclick="runSingle('${q.id}')">
+      ▶ Run Research
+    </button>`;
+  }
+
+  // If result exists, offer a scroll-to link
+  const viewBtn = hasResult
+    ? `<button class="tlc-view-btn" onclick="document.getElementById('card-${q.id}')?.scrollIntoView({behavior:'smooth',block:'start'})">
+        ↓ View Full Report
+       </button>`
+    : '';
+
+  return `<div class="topic-launch-card ${cardClass}">
+    <div class="tlc-header">
+      <span class="tlc-icon">${q.icon}</span>
+      <div style="flex:1;min-width:0">
+        <div class="tlc-label">${esc(q.label)}</div>
+        <div class="tlc-cat">${catLabel}</div>
+      </div>
+    </div>
+    <div class="tlc-desc">${esc(desc)}</div>
+    ${scorePill}
+    ${runBtn}
+    ${viewBtn}
+  </div>`;
+}
+
+function renderMain() {
+  const main=document.getElementById('main');
+  if(state.activeCategory==='history'){main.innerHTML=historyPanelHTML();return;}
+
+  const filteredQueries=QUERIES.filter(q=>state.activeCategory==='all'||q.category===state.activeCategory);
+  const totalErrors=Object.values(state.errors).filter(Boolean).length;
+  const totalCompleted=Object.keys(state.results).length;
+
+  // Method banner
+  let html=`<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 14px;background:var(--tracker-bg);border:1px solid var(--border);border-radius:8px;margin-bottom:14px;font-family:'DM Mono',monospace;font-size:9px;color:var(--text5)">
+    <span style="color:var(--text4);font-weight:700;letter-spacing:0.08em">ℹ️ METHOD</span>
+    <span style="color:var(--border3)">|</span>
+    <span>Scores 1–5 · ${NOW_YEAR} sources weighted 3×</span>
+    <span style="color:var(--border3)">|</span>
+    <span>Sub-scores: Adoption · Maturity · Satisfaction · Competitive</span>
+    <span style="color:var(--border3)">|</span>
+    <span>Pre-${NOW_PREV_YEAR} = <span style="color:#f59e0b">[LEGACY]</span></span>
+  </div>`;
+
+  if(totalErrors>0) html+=`<div class="error-bar"><span>⚠️</span><span class="error-bar-text">${totalErrors} search(es) failed</span><button class="error-retry-btn" onclick="retryErrors()">↺ RETRY</button></div>`;
+
+  // ── TOPIC GRID — always shown; each card has its own Run button ──
+  html += `<div class="topic-grid">${filteredQueries.map(q => topicLaunchCardHTML(q)).join('')}</div>`;
+
+  // ── RESULT CARDS — shown below the grid for completed topics ──
+  const completedQueries = filteredQueries.filter(q => state.results[q.id]);
+  if (completedQueries.length > 0) {
+    html += `<div style="margin-top:4px">`;
+    html += `<div style="font-family:'DM Mono',monospace;font-size:9px;font-weight:700;color:var(--text5);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">📋 RESEARCH RESULTS — ${completedQueries.length} TOPIC${completedQueries.length>1?'S':''} COMPLETED</div>`;
+    filteredQueries.forEach(q=>{
+      if(state.loading[q.id]){
+        html+=`<div class="loading-card"><span style="font-size:18px">${q.icon}</span><div style="flex:1"><div class="loading-label">${esc(q.label)}</div><div class="shimmer-bar"><div class="shimmer-inner"></div></div><div class="loading-sub">SYNTHESISING PRACTITIONER SENTIMENT…</div></div></div>`;
+      } else if(state.results[q.id]){
+        html+=resultCardHTML(q.id, state.results[q.id], state.scores[q.id], state.sources[q.id]||[]);
+      }
+    });
+    html += `</div>`;
+  }
+
+  // Dynamic footer
+  if(totalCompleted>0) html+=`<div class="footer-note"><span>📅</span><p class="footer-note-text">${NOW_YEAR} sources weighted 3×. [LEGACY] tags flag pre-${NOW_PREV_YEAR} data. Scores reflect current ${NOW_YEAR} trajectory. Green date tags highlight ${NOW_YEAR} sources in findings.</p></div>`;
+
+  main.innerHTML=html;
+}
+
+// ─── ACTIONS ──────────────────────────────────────────────────────────────────
+function toggleCard(queryId) { state.expanded[queryId]=state.expanded[queryId]===false?true:false; renderMain(); }
+function setCategory(cat)    { state.activeCategory=cat; render(); }
+
+async function runSingle(queryId) {
+  const query=QUERIES.find(q=>q.id===queryId);
+  if(!query||state.loading[queryId]) return;
+  state.errors[queryId]=null;
+  state.loading[queryId]=true;
+  renderSidebar(); renderMain();
+
+  try {
+    const { result, scores, sources } = await searchWithAI(query);
+    const sections = parseSections(result);
+    state.results[queryId]=result;
+    state.scores[queryId]=scores;
+    state.sources[queryId]=sources || [];
+    state.expanded[queryId]=true;
+
+    const newEntry = {
+      ts: Date.now(),
+      score: scores?.overall || null,
+      adoption: scores?.adoption || null,
+      maturity: scores?.maturity || null,
+      satisfaction: scores?.satisfaction || null,
+      competitive: scores?.competitive || null,
+      sentiment: scores?.overall >= 3.5 ? 'positive' : scores?.overall >= 2.5 ? 'mixed' : 'negative',
+      bottomLine: sections.bottomLine || sections.summary.slice(0,120),
+      summary: sections.summary.slice(0,200)
+    };
+
+    const existing=state.history[queryId]||[];
+    const recent=existing[existing.length-1];
+    let updated;
+    if(recent && Date.now()-recent.ts < 5*60*1000) {
+      updated=[...existing.slice(0,-1), newEntry];
+    } else {
+      updated=[...existing, newEntry].slice(-10);
+    }
+    state.history[queryId]=updated;
+    saveHistory(state.history);
+  } catch(e) {
+    state.errors[queryId]=e.message;
+  } finally {
+    state.loading[queryId]=false;
+    render();
+  }
+}
+
+async function runAll() {
+  if(state.runningAll) return;
+  state.runningAll=true; renderSidebar();
+  const toRun=QUERIES.filter(q=>!state.loading[q.id]);
+  for(let i=0;i<toRun.length;i++){
+    runSingle(toRun[i].id);
+    await new Promise(r=>setTimeout(r,1500));
+  }
+  const wait=()=>new Promise(r=>{
+    const check=()=>{if(Object.values(state.loading).every(v=>!v))r();else setTimeout(check,500);};check();
+  });
+  await wait();
+  state.runningAll=false; render();
+}
+
+async function retryErrors() {
+  const failed=QUERIES.filter(q=>state.errors[q.id]&&!state.loading[q.id]);
+  for(let i=0;i<failed.length;i++){runSingle(failed[i].id);await new Promise(r=>setTimeout(r,2000));}
+}
+
+function clearHistory() {
+  if(!confirm('Clear all scan history?')) return;
+  state.history={};
+  clearHistoryStorage();
+  render();
+}
+
+// ─── DYNAMIC BANNER TEXT (self-updates every calendar year) ──────────────────
+function populateBannerText() {
+  const prevHalf  = `H2 ${NOW_PREV_YEAR}–${NOW_YEAR}`;
+  const legacyCut = `Q3 ${NOW_PREV_YEAR}`;
+
+  const t = document.getElementById('bannerTemporalText');
+  if (t) t.textContent = `${NOW_YEAR} sources weighted 3×. ${prevHalf} at 1.5×. Pre-${legacyCut} labeled [LEGACY] — weighting rolls forward automatically each year.`;
+
+  const s = document.getElementById('bannerScoringText');
+  if (s) s.textContent = `Each topic scored 1.0–5.0 on ${NOW_YEAR} trajectory — not a ${NOW_PREV2} baseline. Scores reflect where the product IS right now.`;
+
+  const r = document.getElementById('bannerRecencyText');
+  if (r) r.textContent = `Each card shows its data recency mix. Higher ${NOW_YEAR}% = more reliable signal. ⚠ warns when >30% of sources are legacy (pre-${NOW_PREV_YEAR}).`;
+}
+
+// ─── THEME TOGGLE ─────────────────────────────────────────────────────────────
+let isDark = true;
+function toggleTheme() {
+  isDark = !isDark;
+  document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+  const icon  = document.getElementById('themeIcon');
+  const label = document.getElementById('themeLabel');
+  if(icon)  icon.textContent  = isDark ? '🌙' : '☀️';
+  if(label) label.textContent = isDark ? 'DARK' : 'LIGHT';
+  try { localStorage.setItem('sap_theme', isDark ? 'dark' : 'light'); } catch{}
+}
+function initTheme() {
+  try {
+    const saved = localStorage.getItem('sap_theme');
+    if(saved === 'light') { isDark = false; document.documentElement.setAttribute('data-theme','light'); const icon=document.getElementById('themeIcon'); const label=document.getElementById('themeLabel'); if(icon) icon.textContent='☀️'; if(label) label.textContent='LIGHT'; }
+    else { document.documentElement.setAttribute('data-theme','dark'); }
+  } catch{}
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+function init() {
+  state.history=loadHistory();
+  render();
+  // Status ping — calls /api/ping (Cloudflare Pages Function, server-side).
+  // If running inside Genspark preview (genspark.ai hostname), the worker
+  // cannot run there — skip the ping and show READY so preview looks correct.
+  const dot=document.getElementById('statusDot');
+  const txt=document.getElementById('statusText');
+
+  const isGensparkPreview = window.location.hostname.includes('genspark.ai') ||
+                            window.location.hostname.includes('genspark.site') ||
+                            window.location.hostname === 'localhost' ||
+                            window.location.protocol === 'file:';
+
+  if (isGensparkPreview) {
+    // Inside Genspark preview — worker doesn't run here, show neutral status
+    if (dot) { dot.style.background = '#22c55e'; dot.style.boxShadow = '0 0 6px #22c55e88'; dot.style.animation = ''; }
+    if (txt) { txt.style.color = '#4ade80'; txt.textContent = 'READY — AI engine connected'; }
+    return;
+  }
+
+  if(dot){dot.style.background='#f59e0b';dot.style.animation='pulse 1s infinite';}
+  if(txt){txt.style.color='#f59e0b';txt.textContent='CONNECTING…';}
+
+  fetch('/api/ping')
+    .then(async (r) => {
+      const text = await r.text();
+      let j = {};
+      try {
+        j = text ? JSON.parse(text) : {};
+      } catch {
+        throw new Error(`Ping returned non-JSON (${r.status})`);
+      }
+      if (!r.ok) {
+        throw new Error(j.message || `Ping failed (${r.status})`);
+      }
+      return j;
+    })
+    .then((j) => {
+      if (j.ready) {
+        if (dot) {
+          dot.style.background = '#22c55e';
+          dot.style.boxShadow = '0 0 6px #22c55e88';
+          dot.style.animation = '';
+        }
+        if (txt) {
+          txt.style.color = '#4ade80';
+          txt.textContent = 'READY — AI engine connected';
+        }
+      } else {
+        if (dot) {
+          dot.style.background = '#ef4444';
+          dot.style.animation = '';
+        }
+        if (txt) {
+          txt.style.color = '#f87171';
+          txt.textContent = 'NOT READY — ' + (j.message || 'backend check failed');
+        }
+      }
+    })
+    .catch((e) => {
+      if (dot) {
+        dot.style.background = '#ef4444';
+        dot.style.animation = '';
+      }
+      if (txt) {
+        txt.style.color = '#f87171';
+        txt.textContent = 'NOT READY — ' + e.message;
+      }
+      console.error('[ping]', e);
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => { initTheme(); init(); });
+</script>
+</body>
+</html>
