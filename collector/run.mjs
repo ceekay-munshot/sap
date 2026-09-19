@@ -58,6 +58,7 @@ async function main() {
     const t0 = Date.now();
     try {
       const result = await researchTopic(client, topic, { now: startedAt, log });
+      result.runId = process.env.GITHUB_RUN_ID || null;
       results[topic.id] = result;
       history[topic.id] = appendHistory(history, topic.id, result.score, day);
       report.topics.push({ id: topic.id, status: 'ok', score: result.score, ms: Date.now() - t0 });
@@ -70,12 +71,15 @@ async function main() {
   }
 
   const ok = report.topics.filter((t) => t.status === 'ok').length;
+  report.runId = process.env.GITHUB_RUN_ID || null;
   report.finishedAt = new Date().toISOString();
   report.durationMs = Date.now() - startedAt.getTime();
   report.succeeded = ok;
   report.failed = report.topics.length - ok;
 
   const snapshot = {
+    version: startedAt.getTime(),
+    runId: process.env.GITHUB_RUN_ID || null,
     generatedAt: startedAt.toISOString(),
     engine: ok > 0 ? 'claude' : 'unknown',
     model: MODEL,

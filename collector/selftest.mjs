@@ -6,7 +6,7 @@
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { extractJson, normalise, cleanText, cleanUrl, buildPack } from './lib/research.mjs';
+import { extractJson, normalise, cleanText, cleanUrl, buildPack, validateScore, validateConfidence } from './lib/research.mjs';
 import { quoteAppearsIn, verifyQuotes } from './lib/verify.mjs';
 import { rollupTopic, appendDay } from './track.mjs';
 import { topicsFor, toFiveScale } from './lib/topicmatch.mjs';
@@ -54,17 +54,51 @@ const messy = 'Here is the analysis:\n```json\n'
 
 const topic = { id: 't', label: 'L', icon: '🤖', category: 'product' };
 const out = normalise(extractJson(messy), topic, NOW);
-assert.equal(out.score, 3.7, 'string score coerced');
-assert.equal(out.sub.adoption, 5, 'out-of-range clamped to the 1-5 scale');
-assert.equal(out.sub.satisfaction, 1, 'below-range clamped');
+assert.equal(out.score, 3.7, 'valid string score coerced to number');
+assert.equal(out.sub.maturity, 2.4, 'valid in-range subscore kept');
+assert.equal(out.sub.competitive, 3, 'valid in-range integer subscore kept');
+assert.equal(out.sub.adoption, undefined, 'out-of-range subscore (>5.0) rejected and omitted');
+assert.equal(out.sub.satisfaction, undefined, 'below-range subscore (<1.0) rejected and omitted');
 assert.equal(out.quotes.length, 1, 'quotes under 20 chars dropped');
 assert.equal(out.findings.length, 2, 'empty findings dropped');
 assert.equal(out.sources.length, 0,
   'with no fetched pages there are no sources — the model cannot supply them');
 assert.equal(out.id, 't');
 
-assert.throws(() => normalise({ sub: {} }, topic, NOW), /missing overall score/,
+/* ── strict score & confidence unit tests (F05) ─────────────────────────── */
+assert.equal(validateScore(null), null, 'null is never coerced to a score');
+assert.equal(validateScore(false), null, 'false is never coerced to a score');
+assert.equal(validateScore(true), null, 'true is never coerced to a score');
+assert.equal(validateScore(''), null, 'empty string is never coerced to a score');
+assert.equal(validateScore('   '), null, 'blank string is never coerced to a score');
+assert.equal(validateScore(0), null, '0 is out of range and rejected');
+assert.equal(validateScore(-1), null, 'negative score is rejected');
+assert.equal(validateScore(0.9), null, '<1.0 is rejected');
+assert.equal(validateScore(1.0), 1.0, 'boundary 1.0 is valid');
+assert.equal(validateScore(5.0), 5.0, 'boundary 5.0 is valid');
+assert.equal(validateScore(5.1), null, '>5.0 is rejected');
+assert.equal(validateScore(9), null, '9 is rejected');
+
+assert.equal(validateConfidence(0), 0, 'confidence 0 is valid and retained');
+assert.equal(validateConfidence(0.55), 0.55, 'confidence in range retained');
+assert.equal(validateConfidence(1.0), 1.0, 'confidence 1.0 retained');
+assert.equal(validateConfidence(null), null, 'null confidence is null');
+assert.equal(validateConfidence(false), null, 'false confidence is null');
+assert.equal(validateConfidence(-0.1), null, 'negative confidence rejected');
+assert.equal(validateConfidence(1.1), null, '>1.0 confidence rejected');
+
+assert.throws(() => normalise({ sub: {} }, topic, NOW), /missing or invalid overall score/,
   'a payload with no score must fail loudly, not render as zero');
+assert.throws(() => normalise({ score: null }, topic, NOW), /missing or invalid overall score/,
+  'null score must throw');
+assert.throws(() => normalise({ score: false }, topic, NOW), /missing or invalid overall score/,
+  'false score must throw');
+assert.throws(() => normalise({ score: '' }, topic, NOW), /missing or invalid overall score/,
+  'empty score must throw');
+assert.throws(() => normalise({ score: 0 }, topic, NOW), /missing or invalid overall score/,
+  '0 score must throw');
+assert.throws(() => normalise({ score: 6 }, topic, NOW), /missing or invalid overall score/,
+  'out of range score must throw');
 assert.throws(() => extractJson('no json here'), /no JSON object/);
 
 /* ── the free tracker: weighting must bite, reruns must not stack ───────── */
@@ -123,9 +157,9 @@ assert.deepEqual(dirty.sources.map((x) => x.url),
   ['https://community.sap.com/a', 'https://diginomica.com/b'],
   'sources are the pages actually fetched, not anything the model typed');
 
-/* ── a quote that is not in the fetched pages must not survive ──────────── */
+/* ── a quote that is not in the fetched pages must not survive (F06) ────── */
 const { kept, rejected } = verifyQuotes([
-  { text: 'every exception still lands on a human desk, but the clean invoices are fine', sourceIndex: 0 },
+  { text: 'handles the clean invoices fine, but every exception still lands on a human desk', sourceIndex: 0 },
   { text: 'Joule has completely transformed our finance organisation beyond recognition', sourceIndex: 0 },
 ], PAGES);
 assert.equal(kept.length, 1, 'only the real quote survives');
@@ -133,6 +167,21 @@ assert.equal(rejected.length, 1, 'the fabricated one is dropped, not flagged');
 assert.equal(kept[0].url, 'https://community.sap.com/a', 'the link comes from the page it was found in');
 assert.ok(quoteAppearsIn('handles the clean invoices fine, but every exception still lands', PAGES[0].markdown),
   'punctuation differences must not fail a real quote');
+
+// F06: A genuine opening followed by invented claims must fail
+const partialInvented = 'We piloted the accounts payable agent for four months and it caused massive losses';
+assert.equal(quoteAppearsIn(partialInvented, PAGES[0].markdown), false,
+  'genuine opening followed by invented claims must be rejected');
+
+// F06: Ellipsis in order must pass
+const ellipsisValid = 'piloted the accounts payable agent ... clean invoices fine ... human desk';
+assert.equal(quoteAppearsIn(ellipsisValid, PAGES[0].markdown), true,
+  'ellipsis-separated spans in source order must match');
+
+// F06: Ellipsis out of source order must fail
+const ellipsisOutOfOrder = 'human desk ... piloted the accounts payable agent';
+assert.equal(quoteAppearsIn(ellipsisOutOfOrder, PAGES[0].markdown), false,
+  'ellipsis spans out of source order must be rejected');
 
 assert.ok(buildPack(PAGES).includes('--- PAGE 0 ---'), 'pages are numbered for citation');
 

@@ -16,53 +16,71 @@ export function normaliseForMatch(text) {
     .toLowerCase()
     .replace(/[‘’‚‛]/g, "'")
     .replace(/[“”„‟]/g, '"')
-    .replace(/[‐-―]/g, '-')
+    .replace(/[‐-―—–]/g, '-')
+    .replace(/…/g, ' ... ')
     .replace(/[^a-z0-9'" -]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 }
 
 /**
- * True when `minRun` consecutive words of the quote appear in the source.
- * Short quotes must match in full.
+ * True when the complete quoted text appears in the source.
+ * When ellipses ('...' or '…') are used to condense quotes, every span must
+ * appear in the source in the same sequential order.
  */
-export function quoteAppearsIn(quote, sourceText, { minRun = 8 } = {}) {
-  const needleWords = normaliseForMatch(quote).split(' ').filter(Boolean);
+export function quoteAppearsIn(quote, sourceText) {
   const hay = normaliseForMatch(sourceText);
-  if (!needleWords.length || !hay) return false;
+  if (!hay) return false;
 
-  if (needleWords.length <= minRun) return hay.includes(needleWords.join(' '));
+  const rawParts = String(quote || '').split(/\.{3,}|…/);
+  const spans = rawParts.map((p) => normaliseForMatch(p)).filter(Boolean);
 
-  for (let i = 0; i + minRun <= needleWords.length; i += 1) {
-    if (hay.includes(needleWords.slice(i, i + minRun).join(' '))) return true;
+  if (!spans.length) return false;
+
+  let searchFromIndex = 0;
+  for (const span of spans) {
+    const idx = hay.indexOf(span, searchFromIndex);
+    if (idx === -1) return false;
+    searchFromIndex = idx + span.length;
   }
-  return false;
+  return true;
 }
 
 /**
  * Keep the quotes that check out; report the ones that did not.
- * A quote may cite any of the supplied pages — the model's index is a hint, not
- * a constraint, so a correct quote attributed to the wrong page still survives
- * and gets its link corrected.
+ * Distinguish verified text from verified attribution/date.
  */
-export function verifyQuotes(quotes, pages, { minRun = 8 } = {}) {
+export function verifyQuotes(quotes, pages) {
   const kept = [];
   const rejected = [];
 
   for (const quote of quotes) {
     const cited = Number.isInteger(quote.sourceIndex) ? pages[quote.sourceIndex] : null;
-    let match = cited && quoteAppearsIn(quote.text, cited.markdown, { minRun }) ? cited : null;
-    if (!match) match = pages.find((p) => quoteAppearsIn(quote.text, p.markdown, { minRun })) || null;
+    let match = cited && quoteAppearsIn(quote.text, cited.markdown) ? cited : null;
+    if (!match) match = pages.find((p) => quoteAppearsIn(quote.text, p.markdown)) || null;
 
     if (!match) {
-      rejected.push({ text: quote.text.slice(0, 90), reason: 'not found in any fetched page' });
+      rejected.push({ text: quote.text.slice(0, 90), reason: 'quote text not found in full in any fetched page' });
       continue;
     }
+
+    const sourceHay = normaliseForMatch(match.markdown);
+    const hasName = Boolean(quote.name && quote.name.trim() && quote.name.trim().toLowerCase() !== 'anonymous');
+    const attributionVerified = hasName
+      ? sourceHay.includes(normaliseForMatch(quote.name))
+      : true;
+
+    const dateStr = String(quote.date || '').trim();
+    const dateYear = dateStr ? dateStr.slice(0, 4) : null;
+    const dateVerified = dateYear ? sourceHay.includes(dateYear) : false;
+
     kept.push({
       ...quote,
       url: match.url,
       platform: quote.platform || match.title || '',
       verified: true,
+      attributionVerified,
+      dateVerified,
       relocated: Boolean(cited && match !== cited),
     });
   }

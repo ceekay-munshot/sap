@@ -174,27 +174,59 @@ export function cleanUrl(value) {
   }
 }
 
-const clampScore = (n) => {
-  const v = Number(n);
-  if (!Number.isFinite(v)) return null;
-  return Math.round(Math.min(5, Math.max(1, v)) * 10) / 10;
-};
-
-/** Never let a malformed or hallucinated shape through to the dashboard. */
-export function normalise(raw, topic, now, pages = []) {
-  const score = clampScore(raw.score);
-  if (score === null) throw new Error('missing overall score');
-  const sub = {};
-  for (const key of ['adoption', 'maturity', 'satisfaction', 'competitive']) {
-    const v = clampScore(raw.sub?.[key]);
-    if (v !== null) sub[key] = v;
+export function validateScore(val) {
+  if (val === null || val === undefined || typeof val === 'boolean') return null;
+  if (typeof val === 'string') {
+    const trimmed = val.trim();
+    if (!trimmed || !/^[0-9]+(\.[0-9]+)?$/.test(trimmed)) return null;
   }
+  const n = typeof val === 'number' ? val : Number(val);
+  if (!Number.isFinite(n) || n < 1.0 || n > 5.0) return null;
+  return Math.round(n * 10) / 10;
+}
+
+export function validateConfidence(val) {
+  if (val === null || val === undefined || typeof val === 'boolean') return null;
+  if (typeof val === 'string') {
+    const trimmed = val.trim();
+    if (!trimmed || !/^[0-9]+(\.[0-9]+)?$/.test(trimmed)) return null;
+  }
+  const n = typeof val === 'number' ? val : Number(val);
+  if (!Number.isFinite(n) || n < 0.0 || n > 1.0) return null;
+  return Math.round(n * 100) / 100;
+}
+
+/** Never let a malformed, coerced or hallucinated shape through to the dashboard. */
+export function normalise(raw, topic, now, pages = []) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    throw new Error('invalid report payload: expected object');
+  }
+
+  const score = validateScore(raw.score);
+  if (score === null) throw new Error('missing or invalid overall score: must be a finite number between 1.0 and 5.0');
+
+  const sub = {};
+  if (raw.sub && typeof raw.sub === 'object') {
+    for (const key of ['adoption', 'maturity', 'satisfaction', 'competitive']) {
+      const v = validateScore(raw.sub[key]);
+      if (v !== null) sub[key] = v;
+    }
+  }
+
   const mix = raw.recencyMix || {};
+  const recencyMix = {
+    current: Number.isInteger(Number(mix.current)) && Number(mix.current) >= 0 ? Number(mix.current) : 0,
+    prior: Number.isInteger(Number(mix.prior)) && Number(mix.prior) >= 0 ? Number(mix.prior) : 0,
+    legacy: Number.isInteger(Number(mix.legacy)) && Number(mix.legacy) >= 0 ? Number(mix.legacy) : 0,
+  };
+
+  const confidence = validateConfidence(raw.confidence);
+
   const quotes = (Array.isArray(raw.quotes) ? raw.quotes : [])
     .filter((q) => q && typeof q.text === 'string' && q.text.trim().length > 20)
     .slice(0, 8)
     .map((q) => ({
-      sourceIndex: Number.isFinite(Number(q.sourceIndex)) ? Number(q.sourceIndex) : null,
+      sourceIndex: Number.isInteger(Number(q.sourceIndex)) && Number(q.sourceIndex) >= 0 ? Number(q.sourceIndex) : null,
       text: cleanText(q.text),
       name: cleanText(q.name),
       title: cleanText(q.title),
@@ -204,6 +236,7 @@ export function normalise(raw, topic, now, pages = []) {
       context: cleanText(q.context),
       url: '',
     }));
+
   // Sources are the pages we actually fetched, never something the model typed.
   const sources = (pages || []).slice(0, 12)
     .map((p) => ({ title: cleanText(p.title) || p.url, url: cleanUrl(p.url) }))
@@ -216,12 +249,8 @@ export function normalise(raw, topic, now, pages = []) {
     category: topic.category,
     score,
     sub,
-    recencyMix: {
-      current: Number(mix.current) || 0,
-      prior: Number(mix.prior) || 0,
-      legacy: Number(mix.legacy) || 0,
-    },
-    confidence: Number(raw.confidence) || null,
+    recencyMix,
+    confidence,
     summary: cleanText(raw.summary),
     findings: (Array.isArray(raw.findings) ? raw.findings : [])
       .map(cleanText).filter(Boolean).slice(0, 8),
