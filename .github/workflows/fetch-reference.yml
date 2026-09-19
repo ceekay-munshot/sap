@@ -1,0 +1,60 @@
+name: Capture reference design
+
+# The build sandbox cannot reach the reference page (egress policy), but this
+# runner can. It captures the design into reference/ and commits it back.
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: 'Page to capture'
+        required: false
+        default: 'https://sap-dashboard-bh1.pages.dev/'
+        type: string
+  push:
+    paths:
+      - 'tools/fetch-reference.mjs'
+      - '.github/workflows/fetch-reference.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Playwright
+        run: |
+          npm install playwright --no-audit --no-fund
+          npx playwright install --with-deps chromium
+
+      - name: Capture the reference page
+        env:
+          REFERENCE_URL: ${{ inputs.url || 'https://sap-dashboard-bh1.pages.dev/' }}
+        run: node tools/fetch-reference.mjs
+
+      - name: Commit the capture
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f reference
+          if git diff --staged --quiet; then
+            echo "reference capture unchanged"
+          else
+            git commit -m "reference: capture ${{ inputs.url || 'sap-dashboard-bh1.pages.dev' }}"
+            for i in 1 2 3 4; do
+              git pull --rebase origin ${{ github.ref_name }} && \
+              git push origin HEAD:${{ github.ref_name }} && break
+              echo "push attempt $i failed; retrying"; sleep $((2 ** i))
+            done
+          fi
+
+      - name: Summary
+        run: |
+          echo "### Reference capture" >> $GITHUB_STEP_SUMMARY
+          ls -la reference | sed 's/^/    /' >> $GITHUB_STEP_SUMMARY
