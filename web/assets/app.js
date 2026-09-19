@@ -48,6 +48,8 @@ function scoreBand(s) {
 
 const TIER_COLOR = { current: '#22c55e', prior: '#3b82f6', legacy: '#f59e0b' };
 
+const fmtNum = (n) => (typeof n === 'number' ? n.toLocaleString() : '—');
+
 const fmtDate = (iso) => {
   if (!iso) return '—';
   const d = new Date(iso);
