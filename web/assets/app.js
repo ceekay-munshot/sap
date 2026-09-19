@@ -775,7 +775,8 @@ function wireCrosshair(root) {
       + row(b.opinionItems ?? '—', 'people with a view')
       + row(b.items ?? '—', 'items scanned')
       + (b.tiers ? row(`${b.tiers.current}/${b.tiers.prior}/${b.tiers.legacy}`,
-        'current / prior / legacy') : '');
+        'current / prior / legacy') : '')
+      + '<div class="t-hint">click to read the posts behind this week</div>';
     tip.style.opacity = '1';
     const tb = tip.getBoundingClientRect();
     tip.style.left = `${Math.min(Math.max(8, ev.clientX + 14), window.innerWidth - tb.width - 8)}px`;
@@ -897,13 +898,24 @@ async function openEvidence(date, topicId, bucket) {
   const scanned = week.scanned.map((n) => data.items[n]).filter(Boolean);
   const score = typeof bucket?.score === 'number' ? `${bucket.score.toFixed(1)}/5` : 'n/a';
 
+  const vendor = bucket?.vendorItems || 0;
   sub.innerHTML = `<b>${views.length}</b> of <b>${week.scannedTotal}</b> items read in the `
     + `${windowDays / 7} weeks to this date expressed a view — they are what the `
-    + `<b style="color:${scoreColor(bucket?.score)}">${esc(score)}</b> is an average of.`;
+    + `<b style="color:${scoreColor(bucket?.score)}">${esc(score)}</b> is an average of.`
+    + (vendor
+      ? ` ${vendor} more came from SAP itself and were read but not counted.`
+      : '');
 
   const rest = week.scannedTotal - views.length;
   const shown = scanned.length;
+  // Say it plainly rather than let a confident-looking line imply otherwise.
+  const thin = views.length < 5
+    ? `<div class="ev-warn">A score built on ${views.length} `
+      + `opinion${views.length === 1 ? '' : 's'} is an indication, not a measurement. `
+      + `Read them below and judge for yourself.</div>`
+    : '';
   scroll.innerHTML = `
+    ${thin}
     <div class="ev-section">EXPRESSED A VIEW (${views.length})</div>
     ${views.length
     ? `<ul class="ev-list">${views.map(evidenceRow).join('')}</ul>`
