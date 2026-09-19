@@ -614,9 +614,18 @@ function series(topicId, metric) {
   return (state.trend?.days || []).map((day) => {
     const bucket = topicId === 'overall' ? day.overall : day.topics?.[topicId];
     const value = bucket?.[metric];
-    if (bucket?.thin) return null;          // too few opinions to plot honestly
+    // A thin week is plotted and marked, not dropped. Dropping it left the
+    // line to stride across the gap as though the weeks between had been
+    // measured and agreed, which is the opposite of what a gap means.
     return typeof value === 'number'
-      ? { date: day.date, value, items: bucket.items, bucket, reconstructed: Boolean(day.reconstructed) }
+      ? {
+        date: day.date,
+        value,
+        items: bucket.items,
+        bucket,
+        thin: Boolean(bucket.thin),
+        reconstructed: Boolean(day.reconstructed),
+      }
       : null;
   }).filter(Boolean);
 }
@@ -678,11 +687,26 @@ function trendChart(points, metric, { width = 860, height = 260 } = {}) {
         fill="#3b82f6" opacity="0.10"/>`
     : '';
 
+  /*
+   * A segment is dashed where either week it joins rested on fewer than three
+   * opinions. A solid line says the same thing everywhere along it, and these
+   * weeks do not: some carry twenty-eight views and some carry two.
+   */
+  const segments = points.slice(1).map((p, i) => {
+    const a = points[i];
+    const weak = a.thin || p.thin;
+    return `<line x1="${xOf(times[i])}" y1="${yOf(a.value)}"
+      x2="${xOf(times[i + 1])}" y2="${yOf(p.value)}"
+      stroke="#3b82f6" stroke-width="2" stroke-linecap="round"
+      ${weak ? 'stroke-dasharray="3 4" opacity="0.5"' : ''}/>`;
+  }).join('');
+
   // One dot per weekly collection, so the cadence is visible rather than implied.
   const dots = points.map((p, i) => {
     const filled = p.reconstructed ? 'var(--bg)' : '#3b82f6';
-    return `<circle cx="${xOf(times[i])}" cy="${yOf(p.value)}" r="3"
-      fill="${filled}" stroke="#3b82f6" stroke-width="1.5"/>`;
+    return `<circle cx="${xOf(times[i])}" cy="${yOf(p.value)}" r="${p.thin ? 2 : 3}"
+      fill="${filled}" stroke="#3b82f6" stroke-width="1.5"
+      ${p.thin ? 'opacity="0.5"' : ''}/>`;
   }).join('');
 
   const last = points[points.length - 1];
@@ -693,8 +717,7 @@ function trendChart(points, metric, { width = 860, height = 260 } = {}) {
       role="img" aria-label="${esc(spec.label)} over time">
     ${grid}
     ${area}
-    ${points.length > 1 ? `<path d="${line}" fill="none" stroke="#3b82f6" stroke-width="2"
-      stroke-linejoin="round" stroke-linecap="round"/>` : ''}
+    ${segments}
     ${dots}
     <circle cx="${lastX}" cy="${lastY}" r="5" fill="#3b82f6" stroke="var(--bg)" stroke-width="2"/>
     <text x="${lastX + 9}" y="${lastY + 4}" fill="var(--text2)" font-size="11"
@@ -1080,8 +1103,15 @@ function historyView() {
       <div class="card-meta" style="margin-top:6px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap">
         <span>${(() => {
     const rebuilt = points.filter((p) => p.reconstructed).length;
-    return rebuilt === 0 ? 'all points collected live'
+    const thin = points.filter((p) => p.thin).length;
+    const provenance = rebuilt === 0 ? 'all points collected live'
       : `${rebuilt} earlier point${rebuilt === 1 ? '' : 's'} computed from dated sources (hollow), later points collected live (filled)`;
+    // The sparsity is the first thing a reader should know about a line like
+    // this, so it is stated next to the line rather than left to be inferred.
+    return thin
+      ? `${provenance} · ${thin} of ${points.length} week${points.length === 1 ? '' : 's'} `
+        + 'rested on fewer than three opinions (dashed)'
+      : provenance;
   })()}</span>
         <span>${(() => {
     const d = domainFor(points, spec);
