@@ -56,6 +56,8 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # npm can touch the manifests; a dirty tree makes the rebase refuse.
+          git checkout -- package.json package-lock.json 2>/dev/null || true
           git add data web/data
           if git diff --staged --quiet; then
             echo "no change"
