@@ -66,7 +66,7 @@ for (let i = 0; i < cards; i += 1) {
 // It lives behind the SENTIMENT HISTORY filter, not on the front page.
 await page.goto(BASE, { waitUntil: 'networkidle' });
 await page.waitForTimeout(500);
-const historyFilter = page.locator('[data-cat="history"]');
+const historyFilter = page.locator('[data-cat="history"]:visible').first();
 if (!(await historyFilter.count())) note('no SENTIMENT HISTORY filter');
 else {
   await historyFilter.click();
@@ -74,7 +74,7 @@ else {
   await check('sentiment history', 800);
 }
 
-const select = page.locator('#historyTopic');
+const select = page.locator('#historyTopic').first();
 if (await select.count()) {
   for (const value of await select.locator('option').evaluateAll((os) => os.map((o) => o.value))) {
     await select.selectOption(value);
@@ -88,7 +88,7 @@ if (await select.count()) {
 }
 
 // Light mode is a second set of colour variables; it has broken on its own.
-const toggle = page.locator('#themeToggle');
+const toggle = page.locator('#themeToggle').first();
 if (await toggle.count()) {
   await toggle.click();
   await page.waitForTimeout(400);
