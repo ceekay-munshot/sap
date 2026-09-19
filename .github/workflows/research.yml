@@ -10,9 +10,9 @@ on:
         required: false
         type: string
       model:
-        description: 'Model override'
+        description: 'Model override (blank picks the provider default)'
         required: false
-        default: 'claude-opus-5'
+        default: ''
         type: string
 
 permissions:
@@ -41,8 +41,15 @@ jobs:
 
       - name: Research
         env:
+          # Retrieval
+          FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
+          # Reasoning — Bedrock when AWS creds are present, else the Anthropic API
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          RESEARCH_MODEL: ${{ inputs.model || vars.RESEARCH_MODEL || 'claude-opus-5' }}
+          AI_PROVIDER: ${{ vars.AI_PROVIDER || '' }}
+          RESEARCH_MODEL: ${{ inputs.model || vars.RESEARCH_MODEL || '' }}
         run: node collector/run.mjs ${{ inputs.only && format('--only={0}', inputs.only) || '' }}
 
       - name: Commit the reports

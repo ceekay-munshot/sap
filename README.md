@@ -105,14 +105,29 @@ node collector/run.mjs --only=joule_sentiment
 npm run serve                   # http://localhost:8080
 ```
 
-Research uses Claude with the web-search server tool, so the searching happens on
-Anthropic's infrastructure rather than from the runner. `ANTHROPIC_API_KEY` is
-required — without it the run exits rather than writing anything.
+Retrieval and reasoning are separate, which is what makes the citations checkable:
+
+1. **Firecrawl** searches and fetches the pages, so the repository holds the real
+   URLs and the real page text.
+2. **Claude** reads only those pages. It cites a page *number*, never a URL.
+3. Every quote is then checked against the page it cites. A quote that cannot be
+   found is discarded, not flagged — the report shows how many were thrown away.
+
+The model therefore cannot invent a citation: links are attached from pages that
+were actually fetched.
+
+Reasoning runs on **Amazon Bedrock** when AWS credentials are present, otherwise
+on the Anthropic API. Bedrock has no server-side web search, which is exactly why
+retrieval is Firecrawl's job rather than the model's.
 
 | Setting | Effect |
 |---|---|
-| `ANTHROPIC_API_KEY` (secret) | Required for research. |
-| `RESEARCH_MODEL` (variable) | Defaults to `claude-opus-5`. |
+| `FIRECRAWL_API_KEY` (secret) | Required for research — no retrieval without it. |
+| `AWS_ACCESS_KEY_ID` + `AWS_SECRET_ACCESS_KEY` (secrets) | Use Bedrock for reasoning. |
+| `AWS_REGION` (variable) | Defaults to `us-east-1`. |
+| `ANTHROPIC_API_KEY` (secret) | Used instead when no AWS credentials are set. |
+| `AI_PROVIDER` (variable) | Force `bedrock` or `anthropic`; auto-detected otherwise. |
+| `RESEARCH_MODEL` (variable) | Defaults to `anthropic.claude-opus-5` on Bedrock, `claude-opus-5` otherwise. |
 | `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` (secrets) | Enables the Pages deploy step; skipped when absent. |
 | `CLOUDFLARE_PAGES_PROJECT` (variable) | Defaults to `sap-dashboard`. |
 
@@ -138,7 +153,9 @@ web/                     the deployed site (Cloudflare Pages output directory)
 collector/
   track.mjs              free daily pass: scrape, bucket, score, append trend
   run.mjs                paid pass: Claude research per topic
-  lib/research.mjs       prompt, web search, parsing, validation
+  lib/research.mjs       prompt, evidence pack, parsing, validation
+  lib/firecrawl.mjs      search and page fetching
+  lib/verify.mjs         checks every quote against the page it cites
   lib/topicmatch.mjs     keyword buckets for the nine topics
   sources/               one scraper per source, failures isolated
   selftest.mjs           offline checks, both pipelines

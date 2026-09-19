@@ -1,4 +1,6 @@
 import { frameFor, POLICY } from '../../web/lib/recency.mjs';
+import { gather } from './firecrawl.mjs';
+import { verifyQuotes } from './verify.mjs';
 
 /**
  * One research pass per topic, using Claude with the web-search server tool —
@@ -9,7 +11,27 @@ import { frameFor, POLICY } from '../../web/lib/recency.mjs';
  * the runner needing to reach each source itself.
  */
 
-export const MODEL = process.env.RESEARCH_MODEL || 'claude-opus-5';
+/**
+ * Bedrock has no server-side web search, so retrieval is Firecrawl's job and the
+ * model only ever reads text we fetched. Provider is chosen from the environment.
+ */
+export const PROVIDER = process.env.AI_PROVIDER
+  || (process.env.AWS_ACCESS_KEY_ID || process.env.AWS_REGION ? 'bedrock' : 'anthropic');
+
+export const MODEL = process.env.RESEARCH_MODEL
+  || (PROVIDER === 'bedrock' ? 'anthropic.claude-opus-5' : 'claude-opus-5');
+
+/** Page text is capped so a single long page cannot dominate the bill. */
+const MAX_PAGE_CHARS = Number(process.env.MAX_PAGE_CHARS || 6000);
+
+export async function makeClient() {
+  if (PROVIDER === 'bedrock') {
+    const { AnthropicBedrockMantle } = await import('@anthropic-ai/bedrock-sdk');
+    return new AnthropicBedrockMantle({ awsRegion: process.env.AWS_REGION || 'us-east-1' });
+  }
+  const { default: Anthropic } = await import('@anthropic-ai/sdk');
+  return new Anthropic();
+}
 
 /** The temporal rule is generated from the shared policy, so the prompt rolls
  *  over with the calendar exactly as the dashboard's labels do. */
@@ -32,9 +54,15 @@ SCORING RULES (1.0–5.0, one decimal place):
 - competitive: 1.0 significantly behind peers, 3.0 roughly on par, 5.0 clear market leader
 - overall: an honest recency-weighted average. NEVER round to a safe middle number.
 
-Search the web before answering. Ground every quote in a real, findable source.
-If the evidence is thin, say so in the summary and lower your confidence — do not invent
-quotes, names, companies or URLs. A fabricated quote is worse than no quote.
+You will be given numbered pages that have already been fetched from the web.
+Work ONLY from those pages. Do not use anything you remember about SAP that is not
+in them, and do not describe what you cannot see in them.
+
+Every quote must be copied from one of the pages, word for word, and must carry the
+number of the page it came from. Quotes are checked against the page text afterwards
+and silently discarded if they are not there, so paraphrasing costs you the quote.
+If the pages do not support a confident read, say so in the summary and lower the
+confidence score. Thin evidence honestly reported is useful; invented evidence is not.
 
 WRITING STYLE — this is read by investors, not engineers:
 - Plain English. Short sentences. Explain jargon the first time you use it.
@@ -46,9 +74,8 @@ WRITING STYLE — this is read by investors, not engineers:
 - The summary is 2-3 sentences a non-technical reader understands on first pass.
 - Never write a number without saying what it counts.
 
-LINKS — every url must be one you actually opened during this search. Copy it exactly.
-If you do not have the real link for a quote or source, leave the url as an empty
-string. An empty url is fine; a guessed or constructed one is not.
+Do not write any urls. Links are attached from the fetched pages, using the page
+number you cite, so a page number is all that is needed.
 
 Return ONLY a JSON object, no prose around it, in exactly this shape:
 {
@@ -67,12 +94,11 @@ Return ONLY a JSON object, no prose around it, in exactly this shape:
       "platform": "<where it was published>",
       "date": "<YYYY-MM-DD, best known date>",
       "context": "<one sentence of context>",
-      "url": "<direct link, or empty string>"
+      "sourceIndex": <the number of the page this quote came from>
     }
-  ],
-  "sources": [ { "title": "<page title>", "url": "<url>" } ]
+  ]
 }
-Include 3-6 quotes spanning different viewpoints, and every source you actually used.`;
+Include 3-6 quotes spanning different viewpoints, each from a page you were given.`;
 }
 
 /** Models sometimes wrap JSON in prose or fences; take the outermost object. */
@@ -122,7 +148,7 @@ const clampScore = (n) => {
 };
 
 /** Never let a malformed or hallucinated shape through to the dashboard. */
-export function normalise(raw, topic, now) {
+export function normalise(raw, topic, now, pages = []) {
   const score = clampScore(raw.score);
   if (score === null) throw new Error('missing overall score');
   const sub = {};
@@ -135,6 +161,7 @@ export function normalise(raw, topic, now) {
     .filter((q) => q && typeof q.text === 'string' && q.text.trim().length > 20)
     .slice(0, 8)
     .map((q) => ({
+      sourceIndex: Number.isFinite(Number(q.sourceIndex)) ? Number(q.sourceIndex) : null,
       text: cleanText(q.text),
       name: cleanText(q.name),
       title: cleanText(q.title),
@@ -142,13 +169,12 @@ export function normalise(raw, topic, now) {
       platform: cleanText(q.platform),
       date: String(q.date || '').trim() || null,
       context: cleanText(q.context),
-      url: cleanUrl(q.url),
+      url: '',
     }));
-  const sources = (Array.isArray(raw.sources) ? raw.sources : [])
-    .filter((s) => s && (s.url || s.title))
-    .slice(0, 12)
-    .map((s) => ({ title: cleanText(s.title), url: cleanUrl(s.url) }))
-    .filter((s) => s.url || s.title);
+  // Sources are the pages we actually fetched, never something the model typed.
+  const sources = (pages || []).slice(0, 12)
+    .map((p) => ({ title: cleanText(p.title) || p.url, url: cleanUrl(p.url) }))
+    .filter((s) => s.url);
 
   return {
     id: topic.id,
@@ -173,30 +199,55 @@ export function normalise(raw, topic, now) {
   };
 }
 
-/** Run one topic. Throws on failure so the caller can record it per topic. */
+/** Build the numbered pack the model reads, and the page list we verify against. */
+export function buildPack(pages) {
+  return pages.map((page, i) =>
+    `--- PAGE ${i} ---\nTITLE: ${page.title || '(untitled)'}\nURL: ${page.url}\n`
+    + `${String(page.markdown || '').slice(0, MAX_PAGE_CHARS)}`).join('\n\n');
+}
+
+/** Run one topic: fetch, read, score, then verify every quote. */
 export async function researchTopic(client, topic, { now = new Date(), log = console.log } = {}) {
-  const stream = await client.messages.stream({
+  const base = topic.queries?.length ? topic.queries : [topic.label, `SAP ${topic.label} review`];
+  // One extra, year-stamped query so retrieval leans on the current year. The
+  // year comes from the shared policy, so this rolls over like everything else.
+  const queries = [...base, `SAP ${topic.label} ${frameFor(now).currentYear}`];
+  const { pages, errors } = await gather(queries, { log });
+  if (!pages.length) {
+    throw new Error(`no usable pages fetched${errors.length ? ` (${errors[0]})` : ''}`);
+  }
+
+  const message = await client.messages.create({
     model: MODEL,
-    max_tokens: 32000,
+    max_tokens: 16000,
     system: systemPrompt(now),
     thinking: { type: 'adaptive' },
     output_config: { effort: 'high' },
-    tools: [{ type: 'web_search_20260209', name: 'web_search', max_uses: 12 }],
-    messages: [{ role: 'user', content: topic.prompt }],
+    messages: [{
+      role: 'user',
+      content: `${topic.prompt}\n\nHere are the pages that were fetched for this topic.\n\n${buildPack(pages)}`,
+    }],
   });
-  const message = await stream.finalMessage();
 
   if (message.stop_reason === 'refusal') {
     throw new Error(`refused: ${message.stop_details?.category || 'unknown'}`);
   }
 
-  const text = message.content
-    .filter((block) => block.type === 'text')
-    .map((block) => block.text)
-    .join('\n');
+  const text = message.content.filter((b) => b.type === 'text').map((b) => b.text).join('\n');
+  const result = normalise(extractJson(text), topic, now, pages);
 
-  const searches = message.content.filter((b) => b.type === 'web_search_tool_result').length;
-  log(`    ${searches} web searches, ${text.length} chars returned`);
-
-  return normalise(extractJson(text), topic, now);
+  const { kept, rejected } = verifyQuotes(result.quotes, pages);
+  if (rejected.length) {
+    log(`    ${rejected.length} quote(s) dropped — not found in the fetched pages`);
+    for (const bad of rejected) log(`      × "${bad.text}…"`);
+  }
+  result.quotes = kept.map(({ sourceIndex, ...q }) => q);
+  result.evidence = {
+    pagesFetched: pages.length,
+    quotesVerified: kept.length,
+    quotesRejected: rejected.length,
+    searchErrors: errors,
+  };
+  log(`    ${pages.length} pages · ${kept.length} quotes verified`);
+  return result;
 }

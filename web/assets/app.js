@@ -358,6 +358,19 @@ function gauge(report) {
   </div>`;
 }
 
+/** What the run actually saw, and what it threw away. */
+function evidenceBar(report) {
+  const e = report.evidence;
+  if (!e) return '';
+  const rejected = e.quotesRejected || 0;
+  return `<div class="recency-bar">
+    <span class="recency-label">🔎 EVIDENCE</span>
+    <span class="recency-value">${e.pagesFetched} page${e.pagesFetched === 1 ? '' : 's'} fetched ·
+      ${e.quotesVerified} quote${e.quotesVerified === 1 ? '' : 's'} checked against the page they cite</span>
+    ${rejected ? `<span class="recency-warn">${rejected} DISCARDED</span>` : ''}
+  </div>`;
+}
+
 function recencyBar(report) {
   const mix = report.recencyMix || {};
   const total = (mix.current || 0) + (mix.prior || 0) + (mix.legacy || 0);
@@ -491,6 +504,7 @@ function reportView(topic) {
     <div class="card-body">
       ${gauge(report)}
       ${recencyBar(report)}
+      ${evidenceBar(report)}
       ${report.summary ? `<div class="summary-text">${esc(report.summary)}</div>` : ''}
       ${findings ? `<div class="findings-label">KEY FINDINGS</div>${findings}` : ''}
       ${scorecard(report)}

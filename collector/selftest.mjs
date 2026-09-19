@@ -6,7 +6,8 @@
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { extractJson, normalise, cleanText, cleanUrl } from './lib/research.mjs';
+import { extractJson, normalise, cleanText, cleanUrl, buildPack } from './lib/research.mjs';
+import { quoteAppearsIn, verifyQuotes } from './lib/verify.mjs';
 import { rollupTopic, appendDay } from './track.mjs';
 import { topicsFor, toFiveScale } from './lib/topicmatch.mjs';
 import { frameFor, weightFor, tierFor, explainWeight } from '../web/lib/recency.mjs';
@@ -52,7 +53,8 @@ assert.equal(out.sub.adoption, 5, 'out-of-range clamped to the 1-5 scale');
 assert.equal(out.sub.satisfaction, 1, 'below-range clamped');
 assert.equal(out.quotes.length, 1, 'quotes under 20 chars dropped');
 assert.equal(out.findings.length, 2, 'empty findings dropped');
-assert.equal(out.sources.length, 1, 'sources without url or title dropped');
+assert.equal(out.sources.length, 0,
+  'with no fetched pages there are no sources — the model cannot supply them');
 assert.equal(out.id, 't');
 
 assert.throws(() => normalise({ sub: {} }, topic, NOW), /missing overall score/,
@@ -91,19 +93,42 @@ assert.equal(cleanUrl('javascript:alert(1)'), '', 'only http(s) survives');
 assert.equal(cleanUrl('https://example.invalid/a'), '', 'placeholder hosts rejected');
 assert.equal(cleanUrl('notaurl'), '', 'a non-url is dropped rather than rendered');
 
+const PAGES = [
+  { url: 'https://community.sap.com/a', title: 'SAP Community thread',
+    markdown: 'We piloted the accounts payable agent for four months and it handles the clean '
+      + 'invoices fine, but every exception still lands on a human desk.' },
+  { url: 'https://diginomica.com/b', title: 'Diginomica', markdown: 'Analysis of SAP AI adoption.' },
+];
+
 const dirty = normalise({
   score: 3,
   sub: {},
   summary: '**Bold** claim --- here',
   findings: ['- a finding', '**another**'],
-  quotes: [{ text: 'x'.repeat(40), url: 'not-a-link', name: '**Anna**' }],
-  sources: [{ title: 'ok', url: 'https://real.example.com/a' }, { title: '', url: 'nope' }],
-}, topic, NOW);
+  quotes: [{ text: 'x'.repeat(40), name: '**Anna**', sourceIndex: 1 }],
+  sources: [{ title: 'model invented this', url: 'https://not-fetched.example.com/a' }],
+}, topic, NOW, PAGES);
 assert.equal(dirty.summary, 'Bold claim here');
 assert.deepEqual(dirty.findings, ['a finding', 'another']);
-assert.equal(dirty.quotes[0].url, '', 'an unusable quote link becomes empty, never fake');
 assert.equal(dirty.quotes[0].name, 'Anna');
-assert.equal(dirty.sources.length, 1, 'a source with neither title nor real url is dropped');
+assert.equal(dirty.quotes[0].url, '', 'the model never supplies a link');
+assert.equal(dirty.quotes[0].sourceIndex, 1, 'the cited page number is kept for verification');
+assert.deepEqual(dirty.sources.map((x) => x.url),
+  ['https://community.sap.com/a', 'https://diginomica.com/b'],
+  'sources are the pages actually fetched, not anything the model typed');
+
+/* ── a quote that is not in the fetched pages must not survive ──────────── */
+const { kept, rejected } = verifyQuotes([
+  { text: 'every exception still lands on a human desk, but the clean invoices are fine', sourceIndex: 0 },
+  { text: 'Joule has completely transformed our finance organisation beyond recognition', sourceIndex: 0 },
+], PAGES);
+assert.equal(kept.length, 1, 'only the real quote survives');
+assert.equal(rejected.length, 1, 'the fabricated one is dropped, not flagged');
+assert.equal(kept[0].url, 'https://community.sap.com/a', 'the link comes from the page it was found in');
+assert.ok(quoteAppearsIn('handles the clean invoices fine, but every exception still lands', PAGES[0].markdown),
+  'punctuation differences must not fail a real quote');
+
+assert.ok(buildPack(PAGES).includes('--- PAGE 0 ---'), 'pages are numbered for citation');
 
 /* ── the shipped scaffold must not carry invented numbers ───────────────── */
 const shipped = JSON.parse(fs.readFileSync('web/data/dashboard.json', 'utf8'));
