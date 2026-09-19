@@ -87,6 +87,29 @@ if (await select.count()) {
   note('no trend topic selector on the page');
 }
 
+// Clicking a week opens the posts behind its score. That panel fetches a
+// separate file and renders from it, so it can break on its own.
+const hit = page.locator('.trend-hit:visible').first();
+if (await hit.count()) {
+  const bb = await hit.boundingBox();
+  await page.mouse.click(bb.x + bb.width * 0.88, bb.y + bb.height * 0.5);
+  await page.waitForTimeout(2500);
+  const open = await page.locator('.evidence.open').count();
+  const rows = await page.locator('.ev-item').count();
+  const head = (await page.locator('.ev-h2').textContent().catch(() => '')) || '';
+  console.log(`  evidence panel: ${open ? 'opens' : 'DID NOT OPEN'}, ${rows} row(s)`);
+  console.log(`    ${head.trim().slice(0, 110)}`);
+  if (!open) note('clicking a week did not open the evidence panel');
+  else if (!rows) note('the evidence panel opened with nothing in it');
+  else if (!/expressed a view/.test(head)) note('the evidence panel did not say what it counted');
+
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(400);
+  if (await page.locator('.evidence.open').count()) note('the evidence panel did not close on Escape');
+} else {
+  note('no chart hit area to click');
+}
+
 // Light mode is a second set of colour variables; it has broken on its own.
 const toggle = page.locator('#themeToggle').first();
 if (await toggle.count()) {
