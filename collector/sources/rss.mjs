@@ -44,7 +44,7 @@ function parseFeed(xml) {
 
 /** Reddit rate-limits hard; space requests to the same host rather than racing them. */
 const HOST_DELAY = [
-  [/reddit\.com/i, 4000],
+  [/reddit\.com/i, 12000],
   [/news\.google\.com/i, 600],
 ];
 const delayFor = (url) => {
@@ -52,12 +52,21 @@ const delayFor = (url) => {
   return 400;
 };
 
+/**
+ * CI runners share addresses, so Reddit throttles them hard. Its 429s clear
+ * with patience rather than with a different request, so back off much further
+ * than the default before giving up on a feed.
+ */
+const retryFor = (url) => (/reddit\.com/i.test(url)
+  ? { retries: 3, backoffMs: 15000, timeoutMs: 25000 }
+  : undefined);
+
 export async function collect(cfg) {
   const items = [];
   const errors = [];
   for (const feed of cfg.feeds) {
     try {
-      const xml = await getText(feed.url);
+      const xml = await getText(feed.url, undefined, retryFor(feed.url));
       for (const entry of parseFeed(xml)) {
         if (!entry.title && !entry.body) continue;
         const parsed = entry.date ? new Date(entry.date) : null;

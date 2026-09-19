@@ -38,8 +38,8 @@ export async function getJson(url, options) {
   return res.json();
 }
 
-export async function getText(url, options) {
-  const res = await fetchWithRetry(url, options);
+export async function getText(url, options, retryOpts) {
+  const res = await fetchWithRetry(url, options, retryOpts);
   return res.text();
 }
 
