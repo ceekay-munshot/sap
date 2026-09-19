@@ -411,3 +411,46 @@ svg.sparkline { overflow:visible;flex-shrink:0; }
 .no-history-title { font-family:'Syne',sans-serif;font-weight:700;font-size:16px;color:var(--text4);margin-bottom:6px; }
 .no-history-text { color:var(--border3);font-size:12px;font-family:'Lora',serif;max-width:300px;margin:0 auto; }
   
+/* ==========================================================================
+   Trend view — the free daily tracker's time series.
+   Built on the same tokens as everything above.
+   ========================================================================== */
+
+.trend-svg { display:block; width:100%; overflow:visible; touch-action:none; }
+.trend-hit { cursor:crosshair; }
+
+.history-select {
+  font-family:'DM Mono',monospace; font-size:10px; color:var(--text2);
+  background:var(--input-bg); border:1px solid var(--border2);
+  border-radius:7px; padding:6px 10px; cursor:pointer;
+}
+
+.stable-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+@media(max-width:900px){ .stable-grid{ grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media(max-width:560px){ .stable-grid{ grid-template-columns:1fr; } }
+
+.timeline-card[data-history] { background:var(--tracker-bg); border:1px solid var(--border2);
+  border-radius:9px; padding:10px 12px; transition:border-color .15s, background .15s; }
+.timeline-card[data-history]:hover { border-color:var(--border3); background:var(--scorecard-bg); }
+
+.trend-table { width:100%; border-collapse:collapse; font-size:11px;
+  font-family:'DM Mono',monospace; margin-top:10px; }
+.trend-table th, .trend-table td { text-align:left; padding:6px 9px;
+  border-bottom:1px solid var(--border); color:var(--text2); }
+.trend-table th { color:var(--text5); font-size:9px; letter-spacing:0.06em; white-space:nowrap; }
+.trend-table td.num, .trend-table th.num { text-align:right; font-variant-numeric:tabular-nums; }
+
+.tooltip {
+  position:fixed; z-index:60; pointer-events:none; opacity:0;
+  transition:opacity 120ms ease; max-width:260px;
+  background:var(--bg3); color:var(--text);
+  border:1px solid var(--border3); border-radius:8px;
+  padding:8px 10px; font-size:11px; font-family:'DM Mono',monospace;
+  box-shadow:0 6px 24px rgba(0,0,0,0.35);
+}
+.tooltip .t-title { color:var(--text4); font-size:9px; margin-bottom:5px; letter-spacing:0.06em; }
+.tooltip .t-row { display:flex; align-items:baseline; gap:7px; margin-top:3px; }
+.tooltip .t-val { font-weight:600; color:var(--text); font-variant-numeric:tabular-nums; }
+.tooltip .t-name { color:var(--text4); }
+
+.scroll { overflow-x:auto; max-width:100%; }

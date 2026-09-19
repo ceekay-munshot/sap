@@ -1,4 +1,4 @@
-name: Collect SAP AI signal
+name: Track sentiment (free, daily)
 
 on:
   schedule:
@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       only:
-        description: 'Research a single topic id (e.g. joule_sentiment); blank runs all nine'
+        description: 'Run a single source (hackernews, reddit, stackexchange, rss, youtube, vendorpages)'
         required: false
         type: string
   push:
@@ -43,12 +43,15 @@ jobs:
         run: node collector/selftest.mjs
 
       # Skipped on a plain push to web/ — that path only needs the deploy below.
-      - name: Collect and score
+      # Free: scrapes public sources, no API key, no cost.
+      - name: Track sentiment
         if: github.event_name != 'push'
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          RESEARCH_MODEL: ${{ vars.RESEARCH_MODEL || 'claude-opus-5' }}
-        run: node collector/run.mjs ${{ inputs.only && format('--only={0}', inputs.only) || '' }}
+          REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
+          REDDIT_CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+          STACKEXCHANGE_KEY: ${{ secrets.STACKEXCHANGE_KEY }}
+        run: node collector/track.mjs ${{ inputs.only && format('--only={0}', inputs.only) || '' }}
 
       - name: Commit the day's data
         if: github.event_name != 'push'
@@ -59,7 +62,7 @@ jobs:
           if git diff --staged --quiet; then
             echo "no change in collected data"
           else
-            git commit -m "data: collection run $(date -u +%Y-%m-%d)"
+            git commit -m "data: tracking run $(date -u +%Y-%m-%d)"
             for i in 1 2 3 4; do
               git pull --rebase origin ${{ github.ref_name }} && git push origin HEAD:${{ github.ref_name }} && break
               echo "push attempt $i failed; retrying"; sleep $((2 ** i))
@@ -69,10 +72,10 @@ jobs:
       - name: Upload dashboard artifact
         uses: actions/upload-artifact@v4
         with:
-          name: dashboard-data
+          name: trend-data
           path: |
-            web/data/dashboard.json
-            data/run-report.json
+            web/data/trend.json
+            data/track-report.json
           if-no-files-found: warn
 
       # Optional: publish to Cloudflare Pages. Skipped entirely unless both

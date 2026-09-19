@@ -7,6 +7,8 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { extractJson, normalise } from './lib/research.mjs';
+import { rollupTopic, appendDay } from './track.mjs';
+import { topicsFor, toFiveScale } from './lib/topicmatch.mjs';
 import { frameFor, weightFor, tierFor, explainWeight } from '../web/lib/recency.mjs';
 
 const NOW = new Date('2026-09-19T00:00:00Z');
@@ -57,6 +59,29 @@ assert.throws(() => normalise({ sub: {} }, topic, NOW), /missing overall score/,
   'a payload with no score must fail loudly, not render as zero');
 assert.throws(() => extractJson('no json here'), /no JSON object/);
 
+/* ── the free tracker: weighting must bite, reruns must not stack ───────── */
+assert.deepEqual(toFiveScale(-1), 1);
+assert.deepEqual(toFiveScale(0), 3);
+assert.deepEqual(toFiveScale(1), 5);
+
+const tracked = rollupTopic([
+  { sentiment: 0.8, stance: 'positive', date: '2026-09-10T00:00:00Z' },
+  { sentiment: -0.9, stance: 'negative', date: '2023-05-10T00:00:00Z' },
+], NOW);
+assert.ok(tracked.score > 4,
+  `one furious 2023 post must not sink a positive current-year reading (got ${tracked.score})`);
+assert.equal(tracked.tiers.legacy, 1);
+assert.equal(rollupTopic([], NOW), null, 'no items must yield no point, never a zero');
+
+let trend = appendDay({ days: [] }, '2026-09-19', { overall: tracked });
+trend = appendDay(trend, '2026-09-19', { overall: tracked });
+assert.equal(trend.days.length, 1, 'a same-day rerun replaces the point');
+
+const buckets = topicsFor('Joule on S/4HANA is fine but Accenture oversold the agent story');
+assert.ok(buckets.includes('joule_sentiment') && buckets.includes('partner_views'),
+  'an item can count for several topics');
+assert.deepEqual(topicsFor('unrelated gardening post'), [], 'no false buckets');
+
 /* ── the shipped scaffold must not carry invented numbers ───────────────── */
 const shipped = JSON.parse(fs.readFileSync('web/data/dashboard.json', 'utf8'));
 assert.equal(Object.keys(shipped.topics || {}).length === 0 || shipped.generatedAt !== null, true,
@@ -73,3 +98,4 @@ console.log('selftest passed');
 console.log(`  ${frameFor(NOW).tiers.map((t) => t.badge).join('  |  ')}`);
 console.log(`  recent ${fresh}× vs legacy ${legacy}× = ${(fresh / legacy).toFixed(0)}:1`);
 console.log(`  ${config.length} topics in sync between config and web`);
+console.log(`  free tracker: legacy-heavy mix scores ${tracked.score}/5`);

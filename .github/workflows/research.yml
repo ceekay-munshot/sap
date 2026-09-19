@@ -1,0 +1,69 @@
+name: Deep research (paid, on demand)
+
+# The expensive pass: Claude reads the web and writes the scored reports with
+# quotes. Never runs on a schedule — someone has to ask for it.
+on:
+  workflow_dispatch:
+    inputs:
+      only:
+        description: 'Research a single topic id (e.g. joule_sentiment); blank runs all nine'
+        required: false
+        type: string
+      model:
+        description: 'Model override'
+        required: false
+        default: 'claude-opus-5'
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: research
+  cancel-in-progress: false
+
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci || npm install --no-audit --no-fund
+
+      - name: Self-test
+        run: node collector/selftest.mjs
+
+      - name: Research
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          RESEARCH_MODEL: ${{ inputs.model || vars.RESEARCH_MODEL || 'claude-opus-5' }}
+        run: node collector/run.mjs ${{ inputs.only && format('--only={0}', inputs.only) || '' }}
+
+      - name: Commit the reports
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data web/data
+          if git diff --staged --quiet; then
+            echo "no change"
+            exit 0
+          fi
+          git commit -m "data: research run $(date -u +%Y-%m-%d)"
+          pushed=0
+          for i in 1 2 3 4; do
+            if git pull --rebase origin ${{ github.ref_name }} && \
+               git push origin HEAD:${{ github.ref_name }}; then
+              pushed=1; break
+            fi
+            echo "push attempt $i failed; retrying"; sleep $((2 ** i))
+          done
+          if [ "$pushed" -ne 1 ]; then
+            echo "::error::reports committed but could not be pushed"
+            exit 1
+          fi
