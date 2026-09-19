@@ -98,7 +98,10 @@ export function tagsFor(text) {
 /** Is this item about SAP + AI at all? Keeps the corpus honest. */
 export function isRelevant(text) {
   const hay = lower(text);
-  const mentionsSap = ['sap', 's/4hana', 's4hana', 'joule', 'abap', 'datasphere', 'btp']
+  // Named SAP artifacts count even where the vendor's name does not appear —
+  // a paper on RPT-1 is about SAP whether or not its abstract says so.
+  const mentionsSap = ['sap', 's/4hana', 's4hana', 'joule', 'abap', 'datasphere', 'btp',
+    'rpt-1', 'rpt1', 'relational foundation model', 'relational transformer']
     .some((m) => hay.includes(m));
   if (!mentionsSap) return false;
   const mentionsSubject = [...PILLARS, ...TAGS].some((g) => g.match.some((m) => hay.includes(m)));
