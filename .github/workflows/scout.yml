@@ -1,0 +1,23 @@
+name: Source scout (which feeds carry opinion)
+
+# Measures candidate sources by the only thing that matters for a sentiment
+# tracker: how much of what they return is somebody's view. Reads nothing,
+# writes nothing, costs nothing.
+on:
+  workflow_dispatch:
+
+jobs:
+  scout:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Try every candidate
+        run: node collector/sourcescout.mjs --json=scout.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: scout
+          path: scout.json
