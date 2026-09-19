@@ -22,6 +22,29 @@ const log = (...args) => console.log(...args);
 
 const TREND = 'web/data/trend.json';
 
+/**
+ * How far back one weekly point looks.
+ *
+ * Every point used to score everything published up to that date, which is why
+ * the lines were flat: by week twenty a point averaged five months of
+ * accumulated items, and one new opinion could not move it. Joule held exactly
+ * 1.8 for fifteen weeks that way.
+ *
+ * A point now describes what was being said in the eight weeks ending on its
+ * date, so it can actually move, and the caption on the chart says so.
+ */
+export const WINDOW_DAYS = Number(process.env.TREND_WINDOW_DAYS || 56);
+
+/** The items a point at `asOf` is allowed to see. */
+export function windowFor(items, asOf, days = WINDOW_DAYS) {
+  const end = asOf.getTime();
+  const start = end - days * 86400000;
+  return items.filter((item) => {
+    const t = new Date(item.date).getTime();
+    return !Number.isNaN(t) && t > start && t <= end;
+  });
+}
+
 /** Recency-weighted rollup for one topic's items. */
 export function rollupTopic(items, now) {
   let num = 0;
@@ -30,9 +53,14 @@ export function rollupTopic(items, now) {
   let opinionDen = 0;
   const stance = { positive: 0, negative: 0, neutral: 0, mixed: 0 };
   const tiers = { current: 0, prior: 0, legacy: 0 };
+  let vendorItems = 0;
 
   for (const item of items) {
     if (typeof item.sentiment !== 'number') continue;
+    // A vendor's own words are not a practitioner's view of it. SAP's newsroom
+    // still counts as read — it shows up in the scanned list — but it does not
+    // get a vote in the score it is the subject of.
+    if (item.voice === 'vendor') { vendorItems += 1; continue; }
     const w = weightFor(item.date, now);
     num += item.sentiment * w;
     den += w;
@@ -53,7 +81,9 @@ export function rollupTopic(items, now) {
   // over the items that actually express a view; the share that did not is
   // reported separately rather than hidden.
   const opinionated = stance.positive + stance.negative + stance.mixed;
-  const opinionItems = items.filter((i) => typeof i.sentiment === 'number' && i.sentiment !== 0).length;
+  const scored = items.filter((i) => typeof i.sentiment === 'number' && i.voice !== 'vendor');
+  const withView = scored.filter((i) => i.sentiment !== 0);
+  const opinionItems = withView.length;
   // Below a handful of opinions the percentages are noise dressed as measurement.
   const thin = opinionItems < 3;
   const pct = (part) => (opinionated === 0 ? null : Math.round((part / opinionated) * 100));
@@ -68,9 +98,24 @@ export function rollupTopic(items, now) {
     pctMixed: pct(stance.mixed),
     pctNoView: Math.round((stance.neutral / den) * 100),
     items: items.length,
+    vendorItems,
     opinionatedWeight: Math.round(opinionated * 10) / 10,
     tiers,
+    // The ids behind the number, so a reader can click a week and check it
+    // against the actual posts rather than take the score on trust. They are
+    // split out into evidence.json; only the counts stay in the trend file.
+    evidence: {
+      view: withView.map((i) => i.id).filter(Boolean),
+      scanned: items.map((i) => i.id).filter(Boolean),
+    },
   };
+}
+
+/** The numbers only — what belongs in a file the page loads on every visit. */
+export function withoutEvidence(roll) {
+  if (!roll) return roll;
+  const { evidence, ...rest } = roll;
+  return rest;
 }
 
 /** Same-day reruns replace the day's point rather than stacking a second one. */
@@ -128,13 +173,16 @@ async function main() {
   const all = pruneCorpus(merged.map((item) => byId.get(item.id) || item));
 
   /* 3. One weighted point per topic, plus an overall ----------------------- */
+  // A point describes the eight weeks ending today, not everything ever
+  // collected, so today's number can differ from last week's.
+  const recent = windowFor(all, startedAt);
   const perTopic = {};
   for (const topic of topics) {
-    const subset = all.filter((i) => (i.topics || []).includes(topic.id));
+    const subset = recent.filter((i) => (i.topics || []).includes(topic.id));
     const roll = rollupTopic(subset, startedAt);
     if (roll) perTopic[topic.id] = roll;
   }
-  const overall = rollupTopic(all, startedAt);
+  const overall = rollupTopic(recent, startedAt);
 
   report.finishedAt = new Date().toISOString();
   report.corpusSize = all.length;
@@ -146,7 +194,14 @@ async function main() {
     return;
   }
 
-  const trend = appendDay(readJson(TREND, { days: [] }), day, { topics: perTopic, overall });
+  // The trend file carries the numbers; the ids behind them go to evidence.json,
+  // which the page fetches only when a reader clicks a week open.
+  const slim = Object.fromEntries(Object.entries(perTopic).map(([k, v]) => [k, withoutEvidence(v)]));
+  const trend = appendDay(readJson(TREND, { days: [] }), day, {
+    topics: slim,
+    overall: withoutEvidence(overall),
+    windowDays: WINDOW_DAYS,
+  });
   saveCorpus(all, { engine: 'heuristic', lastTrack: report.finishedAt });
   writeJson(TREND, trend);
   writeJson('data/track-report.json', report);

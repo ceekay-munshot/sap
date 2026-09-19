@@ -73,6 +73,8 @@ const state = {
   now: new Date(),
   category: 'all',
   open: null,
+  evidence: null,
+  evidenceError: null,
 };
 
 const reportFor = (id) => state.data?.topics?.[id] || null;
@@ -785,6 +787,147 @@ function wireCrosshair(root) {
     cross.setAttribute('opacity', '0');
     $('tooltip').style.opacity = '0';
   });
+
+  // Hovering says what the number is. Clicking says where it came from.
+  hit.style.cursor = 'pointer';
+  hit.addEventListener('click', (ev) => {
+    const rect = svg.getBoundingClientRect();
+    const px = ((ev.clientX - rect.left) / rect.width) * box.width;
+    let nearest = 0;
+    let best = Infinity;
+    times.forEach((t, i) => {
+      const dist = Math.abs(xOf(t) - px);
+      if (dist < best) { best = dist; nearest = i; }
+    });
+    openEvidence(points[nearest].date, state.historyTopic, points[nearest].bucket);
+  });
+}
+
+/* ─── evidence ─────────────────────────────────────────────────────────────── */
+
+/**
+ * The posts behind one week's score.
+ *
+ * A number a reader cannot check is a number they have to take on trust, and
+ * this one is built from three or four opinions some weeks. Clicking a point
+ * opens what was read: every item that expressed a view, with its quote and a
+ * link, and a sample of everything else scanned that did not.
+ *
+ * The file is a few hundred kilobytes, so it is fetched on the first click
+ * rather than on every visit.
+ */
+async function loadEvidence() {
+  if (state.evidence) return state.evidence;
+  if (state.evidenceError) return null;
+  try {
+    const res = await fetch('data/evidence.json', { cache: 'no-cache' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    state.evidence = await res.json();
+    return state.evidence;
+  } catch (err) {
+    state.evidenceError = String(err.message || err);
+    return null;
+  }
+}
+
+const STANCE_STYLE = {
+  positive: ['#22c55e', 'POSITIVE'],
+  negative: ['#ef4444', 'NEGATIVE'],
+  mixed: ['#f59e0b', 'MIXED'],
+  neutral: ['var(--text5)', 'NO VIEW'],
+};
+
+function evidenceRow(item) {
+  if (!item) return '';
+  const [colour, label] = STANCE_STYLE[item.st] || STANCE_STYLE.neutral;
+  const when = item.d ? fmtDate(item.d.slice(0, 10)) : '';
+  const title = safeUrl(item.u)
+    ? `<a href="${safeUrl(item.u)}" target="_blank" rel="noopener noreferrer">${esc(item.t || item.u)}</a>`
+    : esc(item.t || '(untitled)');
+  return `<li class="ev-item">
+    <span class="ev-stance" style="color:${colour};border-color:${colour}">${label}</span>
+    <div class="ev-body">
+      <div class="ev-title">${title}</div>
+      <div class="ev-meta">${esc(item.s || '')}${when ? ` · ${esc(when)}` : ''}${item.v ? ` · ${esc(item.v)}` : ''}</div>
+      ${item.q ? `<blockquote class="ev-quote">${esc(item.q)}</blockquote>` : ''}
+    </div>
+  </li>`;
+}
+
+async function openEvidence(date, topicId, bucket) {
+  const label = topicId === 'overall'
+    ? 'All topics'
+    : (state.topics.find((t) => t.id === topicId)?.label || topicId);
+  const host = $('evidence');
+  const windowDays = state.trend?.days?.find((d) => d.date === date)?.windowDays
+    || state.evidence?.windowDays || 56;
+
+  host.innerHTML = `<div class="ev-panel" role="dialog" aria-modal="true" aria-label="Evidence">
+      <div class="ev-head">
+        <div>
+          <div class="ev-h1">${esc(label)} · week ending ${esc(fmtDate(date))}</div>
+          <div class="ev-h2">Loading what was read…</div>
+        </div>
+        <button class="ev-close" type="button" aria-label="Close">✕</button>
+      </div>
+      <div class="ev-scroll"><div class="ev-loading">◌ fetching the sources behind this point</div></div>
+    </div>`;
+  host.classList.add('open');
+  wireEvidenceClose();
+
+  const data = await loadEvidence();
+  const week = data?.weeks?.[date]?.[topicId];
+  const scroll = host.querySelector('.ev-scroll');
+  const sub = host.querySelector('.ev-h2');
+  if (!scroll) return;   // closed while loading
+
+  if (!data) {
+    sub.textContent = 'Could not load the evidence file.';
+    scroll.innerHTML = `<div class="ev-empty">${esc(state.evidenceError || 'unavailable')}</div>`;
+    return;
+  }
+  if (!week) {
+    sub.textContent = 'No record kept for this week.';
+    scroll.innerHTML = '<div class="ev-empty">This point predates the evidence log, '
+      + 'or the week held nothing for this topic.</div>';
+    return;
+  }
+
+  const views = week.view.map((n) => data.items[n]).filter(Boolean);
+  const scanned = week.scanned.map((n) => data.items[n]).filter(Boolean);
+  const score = typeof bucket?.score === 'number' ? `${bucket.score.toFixed(1)}/5` : 'n/a';
+
+  sub.innerHTML = `<b>${views.length}</b> of <b>${week.scannedTotal}</b> items read in the `
+    + `${windowDays / 7} weeks to this date expressed a view — they are what the `
+    + `<b style="color:${scoreColor(bucket?.score)}">${esc(score)}</b> is an average of.`;
+
+  const rest = week.scannedTotal - views.length;
+  const shown = scanned.length;
+  scroll.innerHTML = `
+    <div class="ev-section">EXPRESSED A VIEW (${views.length})</div>
+    ${views.length
+    ? `<ul class="ev-list">${views.map(evidenceRow).join('')}</ul>`
+    : '<div class="ev-empty">Nothing read this week took a position. '
+      + 'The score carries over from the weeks either side of it.</div>'}
+    <details class="ev-details"${views.length ? '' : ' open'}>
+      <summary>ALSO SCANNED, NO VIEW EXPRESSED (${rest})${shown < rest ? ` · showing ${shown}` : ''}</summary>
+      ${shown
+    ? `<ul class="ev-list">${scanned.map(evidenceRow).join('')}</ul>`
+    : '<div class="ev-empty">Nothing else was read for this topic this week.</div>'}
+    </details>`;
+}
+
+function wireEvidenceClose() {
+  const host = $('evidence');
+  const close = () => {
+    host.classList.remove('open');
+    host.innerHTML = '';
+    document.removeEventListener('keydown', onKey);
+  };
+  function onKey(ev) { if (ev.key === 'Escape') close(); }
+  host.querySelector('.ev-close')?.addEventListener('click', close);
+  host.addEventListener('click', (ev) => { if (ev.target === host) close(); });
+  document.addEventListener('keydown', onKey);
 }
 
 /** What the tracker scanned this week, and what it got back. */
@@ -915,7 +1058,12 @@ function historyView() {
         </span>
       </div>
       <p class="scale-note">Each week's score is the recency-weighted average view of everyone
-        who expressed one. Hover any week for the split behind it.</p>
+        who expressed one in the ${(() => {
+    const d = state.trend?.days || [];
+    const w = d[d.length - 1]?.windowDays || 56;
+    return w / 7;
+  })()} weeks ending that date. Hover for the split behind a week —
+        <b>click it to read the posts the score is made of</b>.</p>
       ${trendChart(points, metric)}
       <div class="card-meta" style="margin-top:6px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap">
         <span>${(() => {

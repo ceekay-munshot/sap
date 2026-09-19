@@ -96,17 +96,42 @@ export function tagsFor(text) {
 }
 
 /** Is this item about SAP + AI at all? Keeps the corpus honest. */
+/**
+ * Whole-word containment.
+ *
+ * Plain substring matching let a third of the corpus in on nothing: "ai" is
+ * inside available, maintain, chain and domain, so "SAP is available in more
+ * regions" read as a post about SAP and AI. 451 of 1,249 items qualified that
+ * way, and 142 of them were being counted as opinions.
+ *
+ * Terms carrying punctuation (s/4hana, rpt-1) cannot take a word boundary on
+ * both sides, so those fall back to substring, where they are distinctive
+ * enough not to collide.
+ */
+const WORDY = /^[a-z0-9]+(?: [a-z0-9]+)*$/;
+const mentionCache = new Map();
+function mentions(hay, term) {
+  if (!WORDY.test(term)) return hay.includes(term);
+  let re = mentionCache.get(term);
+  if (!re) {
+    re = new RegExp(`\\b${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+    mentionCache.set(term, re);
+  }
+  return re.test(hay);
+}
+
 export function isRelevant(text) {
   const hay = lower(text);
   // Named SAP artifacts count even where the vendor's name does not appear —
   // a paper on RPT-1 is about SAP whether or not its abstract says so.
   const mentionsSap = ['sap', 's/4hana', 's4hana', 'joule', 'abap', 'datasphere', 'btp',
     'rpt-1', 'rpt1', 'relational foundation model', 'relational transformer']
-    .some((m) => hay.includes(m));
+    .some((m) => mentions(hay, m));
   if (!mentionsSap) return false;
-  const mentionsSubject = [...PILLARS, ...TAGS].some((g) => g.match.some((m) => hay.includes(m)));
-  const mentionsAi = ['ai', 'genai', 'llm', 'machine learning', 'agent', 'automation']
-    .some((m) => hay.includes(m));
+  const mentionsSubject = [...PILLARS, ...TAGS].some((g) => g.match.some((m) => mentions(hay, m)));
+  const mentionsAi = ['ai', 'genai', 'llm', 'machine learning', 'agent', 'agents', 'agentic',
+    'automation', 'copilot', 'assistant', 'model', 'models']
+    .some((m) => mentions(hay, m));
   return mentionsSubject || mentionsAi;
 }
 

@@ -134,10 +134,26 @@ function heuristicScore(text) {
   };
 }
 
+/**
+ * Whose voice this is.
+ *
+ * The distinction that matters most is vendor, and it was never being drawn:
+ * the check asked whether stance was 'vendor', which stance never is, so
+ * SAP's own newsroom came through as press. Eleven of its releases were
+ * scored positive and none negative — "SAP Named a Strategic Leader",
+ * "Colombina's Cloud Move Delivers Faster Delivery" — which is marketing
+ * counted as practitioner sentiment on a practitioner sentiment tracker.
+ */
+const VENDOR_HOSTS = /(^|\.)(sap|sapinsider|successfactors|qualtrics|signavio)\.(com|org)$/i;
+const VENDOR_PROSE = /\b(we are (pleased|excited|proud)|today announced|reinforcing our|our customers can now|is now generally available)\b/i;
+
+function hostOf(url) {
+  try { return new URL(url).hostname.replace(/^www\./, ''); } catch { return ''; }
+}
+
 function heuristicVoice(item) {
-  if (item.stance === 'vendor' || item.source === 'rss') {
-    return item.stance === 'vendor' ? 'vendor' : 'press';
-  }
+  if (VENDOR_HOSTS.test(hostOf(item.url))) return 'vendor';
+  if (VENDOR_PROSE.test(`${item.title} ${item.text}`)) return 'vendor';
   return item.kind === 'article' ? 'press' : 'practitioner';
 }
 
