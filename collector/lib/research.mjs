@@ -35,17 +35,15 @@ export const PROVIDER = process.env.AI_PROVIDER || (
 );
 
 /**
- * Bedrock will not serve these models by bare id — it wants a cross-region
- * inference profile, which is the same id behind a geography prefix. The prefix
- * follows the region, so it is derived rather than hardcoded.
+ * The SDK's Mantle client wants `anthropic.<model>` and nothing else.
+ * Confirmed against the live account: `anthropic.claude-opus-5` answers,
+ * while `us.anthropic.claude-opus-5` and bare `claude-opus-5` both 404.
+ * (The region-prefixed inference profile is for the raw bedrock-runtime
+ * InvokeModel endpoint, which is a different API.)
  */
-export function bedrockModelId(base, region = process.env.AWS_REGION || 'us-east-1') {
-  if (/^(us|eu|apac|us-gov)\./.test(base)) return base;   // already a profile id
-  const geo = /^eu-/.test(region) ? 'eu.'
-    : /^ap-/.test(region) ? 'apac.'
-      : /^us-gov-/.test(region) ? 'us-gov.'
-        : 'us.';
-  return `${geo}${base.startsWith('anthropic.') ? base : `anthropic.${base}`}`;
+export function bedrockModelId(base) {
+  const bare = String(base).replace(/^(us|eu|apac|us-gov)\./, '');
+  return bare.startsWith('anthropic.') ? bare : `anthropic.${bare}`;
 }
 
 export const MODEL = process.env.RESEARCH_MODEL

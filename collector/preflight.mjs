@@ -105,4 +105,4 @@ try {
 
 console.log('\nVERDICT');
 console.log(`  Firecrawl version to use: ${fcVersion || 'NONE WORKED'}`);
-console.log('  Use whichever MODEL line says OK above.');
+console.log('  Use whichever MANTLE CLIENT line says OK — that is the path the collector takes.');
