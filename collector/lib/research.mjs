@@ -250,24 +250,44 @@ export async function researchTopic(client, topic, { now = new Date(), log = con
     throw new Error(`no usable pages fetched${errors.length ? ` (${errors[0]})` : ''}`);
   }
 
-  const message = await client.messages.create({
-    model: MODEL,
-    max_tokens: 16000,
-    system: systemPrompt(now),
-    thinking: { type: 'adaptive' },
-    output_config: { effort: 'high' },
-    messages: [{
-      role: 'user',
-      content: `${topic.prompt}\n\nHere are the pages that were fetched for this topic.\n\n${buildPack(pages)}`,
-    }],
-  });
+  const ask = async (extraInstruction) => {
+    // Streamed: thinking shares the output budget, so a non-streaming call with
+    // a modest cap can run out mid-JSON and return an unclosed object.
+    const stream = await client.messages.stream({
+      model: MODEL,
+      max_tokens: 32000,
+      system: systemPrompt(now) + (extraInstruction ? `\n\n${extraInstruction}` : ''),
+      thinking: { type: 'adaptive' },
+      output_config: { effort: 'high' },
+      messages: [{
+        role: 'user',
+        content: `${topic.prompt}\n\nHere are the pages that were fetched for this topic.\n\n${buildPack(pages)}`,
+      }],
+    });
+    const message = await stream.finalMessage();
+    if (message.stop_reason === 'refusal') {
+      throw new Error(`refused: ${message.stop_details?.category || 'unknown'}`);
+    }
+    if (message.stop_reason === 'max_tokens') {
+      throw new Error('ran out of output budget before finishing the JSON');
+    }
+    return message.content.filter((b) => b.type === 'text').map((b) => b.text).join('\n');
+  };
 
-  if (message.stop_reason === 'refusal') {
-    throw new Error(`refused: ${message.stop_details?.category || 'unknown'}`);
+  let parsed;
+  try {
+    parsed = extractJson(await ask());
+  } catch (err) {
+    // One retry, told plainly what went wrong last time.
+    log(`    ! ${err.message} — retrying with a stricter instruction`);
+    parsed = extractJson(await ask(
+      'CRITICAL: your previous attempt did not return usable JSON. Return ONLY the JSON '
+      + 'object, starting with { and ending with }. No prose before or after it. Keep the '
+      + 'summary and findings short so the object completes.',
+    ));
   }
 
-  const text = message.content.filter((b) => b.type === 'text').map((b) => b.text).join('\n');
-  const result = normalise(extractJson(text), topic, now, pages);
+  const result = normalise(parsed, topic, now, pages);
 
   const { kept, rejected } = verifyQuotes(result.quotes, pages);
   if (rejected.length) {
