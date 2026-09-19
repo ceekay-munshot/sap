@@ -66,6 +66,32 @@ export async function onRequestPost({ request, env }) {
 
   const { repo, headers } = gh(env);
 
+  /**
+   * A readiness probe must never start a paid run, so it stops here: it checks
+   * the token can actually reach the workflow and reports what GitHub said.
+   */
+  if (body.probe === true) {
+    try {
+      const res = await fetch(
+        `https://api.github.com/repos/${repo}/actions/workflows/${WORKFLOW}`, { headers },
+      );
+      if (res.ok) return json({ status: 'ready', repo });
+      return json({
+        status: 'not_ready',
+        repo,
+        githubStatus: res.status,
+        detail: (await res.text()).slice(0, 200),
+        hint: res.status === 404
+          ? 'Token cannot see this repo or workflow — check the repository it is scoped to.'
+          : res.status === 403 || res.status === 401
+            ? 'Token lacks Actions: Read and write on this repository.'
+            : 'Unexpected response from GitHub.',
+      }, 200);
+    } catch (err) {
+      return json({ status: 'not_ready', detail: String(err.message || err) }, 200);
+    }
+  }
+
   // Spend control without extra storage: GitHub itself remembers the last run.
   // Refuse while one is in flight, and for a short cooldown after the last.
   const cooldown = Number(env.MIN_MINUTES_BETWEEN || 10);
@@ -105,7 +131,15 @@ export async function onRequestPost({ request, env }) {
 
   if (dispatch.status !== 204) {
     const detail = await dispatch.text();
-    return json({ error: 'Could not start the run.', detail: detail.slice(0, 200) }, 502);
+    const hint = dispatch.status === 403 || dispatch.status === 401
+      ? 'The token needs Actions: Read and write on this repository.'
+      : dispatch.status === 404
+        ? 'The token cannot see this repository or workflow.'
+        : '';
+    return json({
+      error: `Could not start the run (GitHub ${dispatch.status}).${hint ? ` ${hint}` : ''}`,
+      detail: detail.slice(0, 200),
+    }, 502);
   }
   return json({ status: 'started', topic: topic || 'all' });
 }

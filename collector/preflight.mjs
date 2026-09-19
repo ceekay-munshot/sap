@@ -139,17 +139,25 @@ try {
   const res = await fetch(`${SITE}/api/research`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
+    // probe:true asks the Function to verify its token without starting a run,
+    // so this health check never spends money.
     body: JSON.stringify({ probe: true }),
   });
   const ctype = res.headers.get('content-type') || '';
+  const text = await res.text();
   if (res.status === 405) {
     line(false, 'POST /api/research', '405 — hitting the static handler, not a Function');
   } else if (!ctype.includes('json')) {
     line(false, 'POST /api/research', `returned ${ctype.split(';')[0] || 'no content-type'}, not JSON`);
   } else {
-    // 400/401/429 all mean the Function ran and made a decision, which is what
-    // we are checking for here.
-    line(true, 'POST /api/research', `Function is live (HTTP ${res.status})`);
+    let body = {};
+    try { body = JSON.parse(text); } catch { /* reported below */ }
+    if (body.status === 'ready') {
+      line(true, 'Run Research button', `ready · ${body.repo}`);
+    } else {
+      line(false, 'Run Research button', `${body.hint || body.error || text.slice(0, 120)}`
+        + (body.githubStatus ? ` (GitHub ${body.githubStatus})` : ''));
+    }
   }
 } catch (err) {
   line(false, 'POST /api/research', String(err.message || err).slice(0, 110));
