@@ -142,11 +142,18 @@ export async function onRequestPost({ request, env }) {
         return json({ status: 'already_running', runId: latest.id });
       }
       if (latest?.updated_at) {
+        // The cooldown is there to stop repeated expensive runs. A run that
+        // failed produced no data, so waiting the full ten minutes punishes
+        // the reader for our bug; a short floor still stops a stuck button
+        // from hammering it.
+        const wait = latest.conclusion === 'success' ? cooldown : Math.min(2, cooldown);
         const sinceMin = (Date.now() - new Date(latest.updated_at).getTime()) / 60000;
-        if (sinceMin < cooldown) {
+        if (sinceMin < wait) {
           return json({
-            error: `A run finished ${Math.round(sinceMin)} min ago. `
-              + `Please wait ${Math.ceil(cooldown - sinceMin)} more min.`,
+            error: latest.conclusion === 'success'
+              ? `A run finished ${Math.round(sinceMin)} min ago. `
+                + `Please wait ${Math.ceil(wait - sinceMin)} more min.`
+              : `The last run just failed. Please wait ${Math.ceil(wait - sinceMin)} min and try again.`,
           }, 429);
         }
       }
