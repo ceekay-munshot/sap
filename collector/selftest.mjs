@@ -22,11 +22,17 @@ assert.equal(frameFor(new Date('2027-01-02Z')).tiers[2].label, 'pre-2026');
 assert.equal(frameFor(new Date('2031-06-02Z')).tiers[2].label, 'pre-2030');
 
 /* ── recent evidence must dominate legacy evidence ──────────────────────── */
-const fresh = weightFor('2026-09-10T00:00:00Z', NOW);
+const fresh = weightFor('2026-09-10T00:00:00Z', NOW);      // 9 days old
+const twoMonths = weightFor('2026-07-26T00:00:00Z', NOW);   // 55 days old
+const june = weightFor('2026-06-05T00:00:00Z', NOW);        // ~106 days old
 const legacy = weightFor('2023-04-02T00:00:00Z', NOW);
-assert.equal(fresh, 4.05, 'current year + 90-day boost');
+assert.equal(fresh, 7.5, 'current year x last-30-days boost');
 assert.equal(legacy, 0.25, 'legacy floor');
-assert.ok(fresh / legacy > 15, `recent must outweigh legacy (got ${fresh / legacy}:1)`);
+assert.ok(fresh / legacy > 25, `recent must dominate legacy (got ${fresh / legacy}:1)`);
+// What a customer cares about is this month and last, so the last two months
+// must clearly outweigh anything older within the same year.
+assert.ok(twoMonths > june, 'inside 60 days must beat June');
+assert.ok(fresh / june > 2, `this month must beat June by more than 2:1 (got ${(fresh / june).toFixed(1)}:1)`);
 assert.equal(tierFor(null, NOW), 'legacy', 'undated is treated as legacy, never guessed');
 assert.equal(explainWeight('2025-06-01', NOW).tier, 'prior');
 

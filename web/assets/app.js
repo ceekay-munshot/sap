@@ -551,7 +551,9 @@ function series(topicId, metric) {
   return (state.trend?.days || []).map((day) => {
     const bucket = topicId === 'overall' ? day.overall : day.topics?.[topicId];
     const value = bucket?.[metric];
-    return typeof value === 'number' ? { date: day.date, value, items: bucket.items } : null;
+    return typeof value === 'number'
+      ? { date: day.date, value, items: bucket.items, bucket, reconstructed: Boolean(day.reconstructed) }
+      : null;
   }).filter(Boolean);
 }
 
@@ -608,6 +610,13 @@ function trendChart(points, metric, { width = 860, height = 260 } = {}) {
         fill="#3b82f6" opacity="0.10"/>`
     : '';
 
+  // One dot per weekly collection, so the cadence is visible rather than implied.
+  const dots = points.map((p, i) => {
+    const filled = p.reconstructed ? 'var(--bg)' : '#3b82f6';
+    return `<circle cx="${xOf(times[i])}" cy="${yOf(p.value)}" r="3"
+      fill="${filled}" stroke="#3b82f6" stroke-width="1.5"/>`;
+  }).join('');
+
   const last = points[points.length - 1];
   const lastX = xOf(times[points.length - 1]);
   const lastY = yOf(last.value);
@@ -618,7 +627,8 @@ function trendChart(points, metric, { width = 860, height = 260 } = {}) {
     ${area}
     ${points.length > 1 ? `<path d="${line}" fill="none" stroke="#3b82f6" stroke-width="2"
       stroke-linejoin="round" stroke-linecap="round"/>` : ''}
-    <circle cx="${lastX}" cy="${lastY}" r="4.5" fill="#3b82f6" stroke="var(--bg)" stroke-width="2"/>
+    ${dots}
+    <circle cx="${lastX}" cy="${lastY}" r="5" fill="#3b82f6" stroke="var(--bg)" stroke-width="2"/>
     <text x="${lastX + 9}" y="${lastY + 4}" fill="var(--text2)" font-size="11"
       font-family="'DM Mono',monospace" font-weight="600">${spec.fmt(last.value)}</text>
     ${dateLabels}
@@ -680,12 +690,24 @@ function wireCrosshair(root) {
     cross.setAttribute('opacity', '1');
 
     const point = points[nearest];
+    const b = point.bucket || {};
+    const topicLabel = state.historyTopic === 'overall'
+      ? 'All topics'
+      : (state.topics.find((t) => t.id === state.historyTopic)?.label || state.historyTopic);
+    const row = (value, name, colour) =>
+      `<div class="t-row"><span class="t-val"${colour ? ` style="color:${colour}"` : ''}>${esc(value)}</span>`
+      + `<span class="t-name">${esc(name)}</span></div>`;
+
     const tip = $('tooltip');
-    tip.innerHTML = `<div class="t-title">${esc(fmtDate(point.date))}</div>`
-      + `<div class="t-row"><span class="t-val">${esc(spec.fmt(point.value))}</span>`
-      + `<span class="t-name">${esc(spec.short)}</span></div>`
-      + `<div class="t-row"><span class="t-val">${point.items ?? '—'}</span>`
-      + `<span class="t-name">items in corpus</span></div>`;
+    tip.innerHTML = `<div class="t-title">${esc(topicLabel)} · ${esc(fmtDate(point.date))}</div>`
+      + row(typeof b.score === 'number' ? `${b.score.toFixed(1)}/5` : '—', 'score', scoreColor(b.score))
+      + row(`${b.pctPositive ?? '—'}%`, 'positive', '#22c55e')
+      + row(`${b.pctNegative ?? '—'}%`, 'negative', '#ef4444')
+      + row(`${b.pctMixed ?? '—'}%`, 'mixed')
+      + row(`${b.pctNoView ?? '—'}%`, 'no clear view')
+      + row(b.items ?? '—', 'items counted')
+      + (b.tiers ? row(`${b.tiers.current}/${b.tiers.prior}/${b.tiers.legacy}`,
+        'current / prior / legacy') : '');
     tip.style.opacity = '1';
     const tb = tip.getBoundingClientRect();
     tip.style.left = `${Math.min(Math.max(8, ev.clientX + 14), window.innerWidth - tb.width - 8)}px`;
@@ -723,7 +745,7 @@ function historyView() {
   const deltaHTML = delta === null ? ''
     : `<span class="change-badge" style="color:${Math.abs(delta) < (metric === 'score' ? 0.15 : 2) ? 'var(--text4)' : delta > 0 ? '#22c55e' : '#ef4444'}">
         ${Math.abs(delta) < (metric === 'score' ? 0.15 : 2) ? 'STABLE' : `${delta > 0 ? '▲' : '▼'} ${spec.fmt(Math.abs(delta))}`}
-        over ${points.length} day${points.length === 1 ? '' : 's'}</span>`;
+        over ${points.length} week${points.length === 1 ? '' : 's'}</span>`;
 
   const metricBtns = Object.entries(METRICS).map(([key, def]) =>
     `<button class="filter-btn${metric === key ? ' active' : ''}" data-metric="${key}" type="button"
@@ -752,7 +774,7 @@ function historyView() {
           <span style="font-weight:700">${cur === null ? '—' : esc(spec.fmt(cur))}</span></span>
       </div>
       ${sparkline(tp, metric)}
-      <div class="card-meta">${tp.length} point${tp.length === 1 ? '' : 's'}</div>
+      <div class="card-meta">${tp.length} week${tp.length === 1 ? '' : 's'}</div>
     </button>`;
   }).join('');
 
@@ -774,7 +796,7 @@ function historyView() {
       <span class="tlc-icon">📈</span>
       <div style="flex:1;min-width:0">
         <div class="card-title">Sentiment over time — ${esc(topicLabel)}</div>
-        <div class="card-meta">${esc(spec.label.toUpperCase())} · ${days.length} COLLECTION DAY${days.length === 1 ? '' : 'S'} · FREE DAILY TRACKER</div>
+        <div class="card-meta">${esc(spec.label.toUpperCase())} · ${days.length} WEEKLY POINT${days.length === 1 ? '' : 'S'} · FREE TRACKER</div>
         <div class="card-meta" style="color:var(--text5)">percentages are of items that express a view, not of everything collected</div>
       </div>
       ${deltaHTML}
@@ -785,11 +807,18 @@ function historyView() {
         <select id="historyTopic" class="history-select" aria-label="Topic">${topicOptions}</select>
       </div>
       ${trendChart(points, metric)}
-      <div class="card-meta" style="text-align:right;margin-top:6px">${(() => {
+      <div class="card-meta" style="margin-top:6px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <span>${(() => {
+    const rebuilt = points.filter((p) => p.reconstructed).length;
+    return rebuilt === 0 ? 'all points collected live'
+      : `${rebuilt} earlier point${rebuilt === 1 ? '' : 's'} computed from dated sources (hollow), later points collected live (filled)`;
+  })()}</span>
+        <span>${(() => {
     const d = domainFor(points, spec);
     return d.full ? 'axis at full scale'
       : `axis ${spec.fmt(d.lo)}–${spec.fmt(d.hi)}, fitted to the data`;
-  })()}</div>
+  })()}</span>
+      </div>
       <div class="findings-label" style="margin-top:18px">BY TOPIC</div>
       <div class="stable-grid">${smalls}</div>
       <details style="margin-top:16px">

@@ -22,8 +22,10 @@ export const POLICY = {
    * months and quarters" outrun the rest of the current year. First match wins.
    */
   freshness: [
-    { maxDays: 90, factor: 1.35, label: 'last 90 days' },
-    { maxDays: 180, factor: 1.15, label: 'last 180 days' },
+    { maxDays: 30, factor: 2.5, label: 'last 30 days' },
+    { maxDays: 60, factor: 1.9, label: 'last 60 days' },
+    { maxDays: 90, factor: 1.4, label: 'last 90 days' },
+    { maxDays: 180, factor: 1.1, label: 'last 180 days' },
   ],
 
   /** Items with no usable date are treated as legacy rather than guessed at. */

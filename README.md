@@ -42,9 +42,10 @@ and barely counted.
 | Prior year | **1.5×** | 2025 | 2026 |
 | Legacy | **0.25×** | pre-2025 | pre-2026 |
 
-On top of the tier, a freshness boost of **1.35×** for the last 90 days and **1.15×**
-for the last 180, so the newest quarter outruns the rest of the current year. A quote
-from this month carries **4.05×** against a 2023 quote's **0.25×** — **16:1**.
+On top of the tier, a freshness boost of **2.5×** for the last 30 days, **1.9×** for
+the last 60, **1.4×** for 90 and **1.1×** for 180 — because what a reader cares about
+is this month and last. An item from this month carries **7.5×** against June's
+**4.2×** and a 2023 post's **0.25×**: **2.3:1** over June, **30:1** over legacy.
 
 **It rolls over by itself.** Tiers are derived from the current year *at render time*
 in one module, [`web/lib/recency.mjs`](web/lib/recency.mjs), imported by both the Node
@@ -68,7 +69,7 @@ so the weighting is visible at the evidence rather than buried in a methodology 
 |---|---|---|
 | What | Scrapes Hacker News, Reddit (posts *and* comments), Stack Overflow, press/news RSS, YouTube, SAP's own pages. Buckets each post into the nine topics, scores it with a keyword lexicon. | Claude reads the web and writes the scored report: summary, key findings, attributed quotes, sources. |
 | Cost | **Nothing.** No API key. | Anthropic API, billed per run. |
-| When | Daily, 06:00 UTC (`track.yml`) | Only when someone asks (`research.yml`) |
+| When | Weekly, Mondays 06:00 UTC (`track.yml`) | Only when someone asks (`research.yml`) |
 | Feeds | The **Sentiment History** time series | The topic report cards |
 
 The trend line comes from the free pass, so it stays dense without spending
@@ -97,7 +98,8 @@ default 5) when a KV namespace is bound. Set both before making the URL public.
 ```bash
 npm install
 node collector/selftest.mjs        # offline: no network, no API key
-node collector/track.mjs           # free pass: scrape, score, append a trend point
+node collector/track.mjs           # free pass: scrape, score, append a weekly point
+node collector/backfill.mjs        # rebuild the weekly history from dated corpus items
 node collector/track.mjs --dry-run
 node collector/run.mjs             # paid pass: all nine topics
 node collector/run.mjs --only=joule_sentiment
@@ -131,8 +133,8 @@ retrieval is Firecrawl's job rather than the model's.
 | `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` (secrets) | Enables the Pages deploy step; skipped when absent. |
 | `CLOUDFLARE_PAGES_PROJECT` (variable) | Defaults to `sap-dashboard`. |
 
-The daily workflow runs at 06:00 UTC, commits `web/data/dashboard.json`, and appends
-one history point per topic per run — that is what the Sentiment History view draws.
+The tracking workflow runs weekly on Mondays at 06:00 UTC and appends one point per
+topic per run — that is what the Sentiment History view draws.
 A topic that fails does not cost the other eight; if all nine fail the existing data
 is left untouched rather than overwritten with nothing.
 
@@ -151,7 +153,8 @@ web/                     the deployed site (Cloudflare Pages output directory)
   data/topics.json       the nine topics, mirrored from config/
   data/site.json         workerUrl for the Run Research button
 collector/
-  track.mjs              free daily pass: scrape, bucket, score, append trend
+  track.mjs              free weekly pass: scrape, bucket, score, append a point
+  backfill.mjs           rebuilds weekly history from dated corpus items
   run.mjs                paid pass: Claude research per topic
   lib/research.mjs       prompt, evidence pack, parsing, validation
   lib/firecrawl.mjs      search and page fetching
@@ -166,6 +169,15 @@ reference/               captured design of the previous build, for comparison
 tools/fetch-reference.mjs  re-captures it (runs in CI, which has open internet)
 ```
 
+## Where the history comes from
+
+The weekly line is built two ways, and the chart says which is which. Points before
+the first live run are **reconstructed**: for each past week the backfill takes only
+the items already published by that date and scores them with the same rollup the
+live pass uses, weighted relative to that week. That is what the index would have
+read on that date, given what existed — a backfill, not an estimate. Those points
+draw hollow; live ones draw filled. A live point is never overwritten by a rebuild.
+
 ## Honesty rules this repo follows
 
 - No placeholder or synthetic numbers are ever committed. Before the first run the
@@ -177,3 +189,5 @@ tools/fetch-reference.mjs  re-captures it (runs in CI, which has open internet)
 - Every quote shows its date, platform, recency tier and exact multiplier, with a link
   out where one was captured.
 - Run failures are recorded per topic in `data/run-report.json`.
+- Reconstructed history is labelled as such on the chart rather than passed off as
+  live collection.

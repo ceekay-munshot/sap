@@ -26,6 +26,8 @@ const TREND = 'web/data/trend.json';
 export function rollupTopic(items, now) {
   let num = 0;
   let den = 0;
+  let opinionNum = 0;
+  let opinionDen = 0;
   const stance = { positive: 0, negative: 0, neutral: 0, mixed: 0 };
   const tiers = { current: 0, prior: 0, legacy: 0 };
 
@@ -34,6 +36,12 @@ export function rollupTopic(items, now) {
     const w = weightFor(item.date, now);
     num += item.sentiment * w;
     den += w;
+    // A mean taken over everything is dominated by neutral press headlines and
+    // sits on 3.0 forever. The score describes the items with a view.
+    if (item.sentiment !== 0) {
+      opinionNum += item.sentiment * w;
+      opinionDen += w;
+    }
     const key = stance[item.stance] === undefined ? 'neutral' : item.stance;
     stance[key] += w;
     tiers[tierFor(item.date, now)] += 1;
@@ -48,7 +56,8 @@ export function rollupTopic(items, now) {
   const pct = (part) => (opinionated === 0 ? 0 : Math.round((part / opinionated) * 100));
 
   return {
-    score: toFiveScale(num / den),
+    score: opinionDen === 0 ? 3 : toFiveScale(opinionNum / opinionDen),
+    scoreAllItems: toFiveScale(num / den),
     pctPositive: pct(stance.positive),
     pctNegative: pct(stance.negative),
     pctMixed: pct(stance.mixed),
