@@ -15,8 +15,24 @@ import { verifyQuotes } from './verify.mjs';
  * Bedrock has no server-side web search, so retrieval is Firecrawl's job and the
  * model only ever reads text we fetched. Provider is chosen from the environment.
  */
-export const PROVIDER = process.env.AI_PROVIDER
-  || (process.env.AWS_ACCESS_KEY_ID || process.env.AWS_REGION ? 'bedrock' : 'anthropic');
+/**
+ * The credential may be an Anthropic key (sk-ant-…) or one of AWS's long-lived
+ * Bedrock API keys, which is a bearer token the Bedrock client accepts as
+ * `apiKey`. Either can arrive in ANTHROPIC_API_KEY, so tell them apart by shape
+ * rather than making anyone rename a secret.
+ */
+const RAW_KEY = process.env.BEDROCK_API_KEY
+  || process.env.AWS_BEARER_TOKEN_BEDROCK
+  || process.env.ANTHROPIC_API_KEY
+  || '';
+
+const LOOKS_ANTHROPIC = RAW_KEY.startsWith('sk-ant-');
+
+export const PROVIDER = process.env.AI_PROVIDER || (
+  LOOKS_ANTHROPIC ? 'anthropic'
+    : (RAW_KEY || process.env.AWS_ACCESS_KEY_ID) ? 'bedrock'
+      : 'anthropic'
+);
 
 export const MODEL = process.env.RESEARCH_MODEL
   || (PROVIDER === 'bedrock' ? 'anthropic.claude-opus-5' : 'claude-opus-5');
@@ -27,7 +43,11 @@ const MAX_PAGE_CHARS = Number(process.env.MAX_PAGE_CHARS || 6000);
 export async function makeClient() {
   if (PROVIDER === 'bedrock') {
     const { AnthropicBedrockMantle } = await import('@anthropic-ai/bedrock-sdk');
-    return new AnthropicBedrockMantle({ awsRegion: process.env.AWS_REGION || 'us-east-1' });
+    return new AnthropicBedrockMantle({
+      awsRegion: process.env.AWS_REGION || 'us-east-1',
+      // With no key the client falls back to the normal AWS credential chain.
+      ...(RAW_KEY && !LOOKS_ANTHROPIC ? { apiKey: RAW_KEY } : {}),
+    });
   }
   const { default: Anthropic } = await import('@anthropic-ai/sdk');
   return new Anthropic();

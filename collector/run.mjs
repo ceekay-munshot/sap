@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
-import { researchTopic, MODEL } from './lib/research.mjs';
+import { researchTopic, makeClient, MODEL, PROVIDER } from './lib/research.mjs';
 import { readJson, writeJson } from './lib/store.mjs';
 import { frameFor, describePolicy } from '../web/lib/recency.mjs';
 
@@ -28,14 +28,19 @@ async function main() {
   log(`${selected.length} topic(s), model ${MODEL}`);
   if (DRY_RUN) log('(dry run: nothing will be written)');
 
-  if (!process.env.ANTHROPIC_API_KEY && !process.env.ANTHROPIC_AUTH_TOKEN) {
-    log('\n! No ANTHROPIC_API_KEY. Research needs one — nothing collected.');
-    log('  Add it as a repository secret, then re-run the workflow.');
+  if (!process.env.FIRECRAWL_API_KEY) {
+    log('\n! No FIRECRAWL_API_KEY. Research cannot fetch anything — nothing collected.');
+    process.exit(1);
+  }
+  const hasModelKey = process.env.ANTHROPIC_API_KEY || process.env.BEDROCK_API_KEY
+    || process.env.AWS_BEARER_TOKEN_BEDROCK || process.env.AWS_ACCESS_KEY_ID;
+  if (!hasModelKey) {
+    log('\n! No model credential. Research needs one — nothing collected.');
     process.exit(1);
   }
 
-  const { default: Anthropic } = await import('@anthropic-ai/sdk');
-  const client = new Anthropic();
+  const client = await makeClient();
+  log(`provider ${PROVIDER}`);
 
   const previous = readJson(DASHBOARD, { topics: {}, history: {} });
   const results = { ...(previous.topics || {}) };
