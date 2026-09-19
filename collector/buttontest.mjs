@@ -9,7 +9,7 @@
  * that press, run by hand, on one topic so it costs a ninth of a full pass.
  */
 const SITE = process.env.SITE_URL || 'https://sap-8nz.pages.dev';
-const TOPIC = process.env.TOPIC || 'data-readiness';
+const TOPIC = process.env.TOPIC || 'rpt1';
 const PASS = process.env.RESEARCH_PASSPHRASE || '';
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));

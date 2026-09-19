@@ -25,6 +25,12 @@ async function main() {
   const selected = ONLY ? topics.filter((t) => t.id === ONLY) : topics;
 
   log(`SAP AI Intelligence — research run ${startedAt.toISOString()}`);
+  // An id that matches nothing would otherwise start a client, research zero
+  // topics, and report that every topic failed. Say what actually happened.
+  if (ONLY && selected.length === 0) {
+    log(`\n! No topic has the id "${ONLY}". Known ids: ${topics.map((t) => t.id).join(', ')}`);
+    process.exit(1);
+  }
   log(`${selected.length} topic(s), model ${MODEL}`);
   if (DRY_RUN) log('(dry run: nothing will be written)');
 
