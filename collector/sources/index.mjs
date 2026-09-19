@@ -8,5 +8,6 @@ import * as arxiv from './arxiv.mjs';
 import * as huggingface from './huggingface.mjs';
 import * as bluesky from './bluesky.mjs';
 import * as github from './github.mjs';
+import * as npm from './npm.mjs';
 
-export const SOURCES = [hackernews, reddit, stackexchange, rss, youtube, vendorpages, arxiv, huggingface, bluesky, github];
+export const SOURCES = [hackernews, reddit, stackexchange, rss, youtube, vendorpages, arxiv, huggingface, bluesky, github, npm];

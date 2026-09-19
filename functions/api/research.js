@@ -56,13 +56,27 @@ function gh(env) {
   };
 }
 
-/** A GitHub call reduced to what the caller needs: the status, and why if it failed. */
+const KNOWN_TOPICS = new Set([
+  'joule_sentiment', 'btp_ai', 'partner_views', 'vs_competitors',
+  'bdc_cloud', 'customer_sat', 's4hana_ai', 'risks_gaps', 'rpt1',
+]);
+
+/** A GitHub call reduced to status, response JSON/body, and why if it failed. */
 async function call(url, init) {
   try {
     const res = await fetch(url, init);
-    return { status: res.status, detail: res.ok ? '' : (await res.text()).slice(0, 160) };
+    const text = await res.text();
+    let data = null;
+    try { data = JSON.parse(text); } catch {}
+    return {
+      status: res.status,
+      ok: res.ok,
+      headers: res.headers,
+      data,
+      detail: res.ok ? '' : text.slice(0, 200),
+    };
   } catch (err) {
-    return { status: 0, detail: String(err.message || err).slice(0, 160) };
+    return { status: 0, ok: false, data: null, detail: String(err.message || err).slice(0, 160) };
   }
 }
 
@@ -72,35 +86,27 @@ export async function onRequestPost({ request, env }) {
   }
 
   let body = {};
-  try { body = await request.json(); } catch { /* empty body is fine */ }
+  try {
+    const rawBody = await request.text();
+    if (rawBody && rawBody.trim()) {
+      body = JSON.parse(rawBody);
+      if (typeof body !== 'object' || body === null || Array.isArray(body)) {
+        return json({ error: 'Request body must be a JSON object.' }, 400);
+      }
+    } else {
+      return json({ error: 'Request body cannot be empty.' }, 400);
+    }
+  } catch {
+    return json({ error: 'Malformed JSON in request body.' }, 400);
+  }
 
   if (env.RESEARCH_PASSPHRASE && !safeEqual(body.passphrase, env.RESEARCH_PASSPHRASE)) {
     return json({ error: 'Wrong passphrase.', needsPassphrase: true }, 401);
   }
 
-  // Topic ids are hyphenated (data-readiness), and this value reaches a shell
-  // variable in the workflow, so keep it to the characters an id can contain.
-  const topic = String(body.topic || '').trim();
-  if (topic && !/^[a-z0-9][a-z0-9_-]{0,39}$/.test(topic)) {
-    return json({ error: 'Unknown topic.' }, 400);
-  }
-
   const { repo, branch, headers } = gh(env);
   const base = `https://api.github.com/repos/${repo}`;
 
-  /**
-   * A readiness probe must never start a paid run, so it never really
-   * dispatches. It asks the questions that can break the button: can the token
-   * see the workflow, does the branch it would run on exist, and may it start
-   * runs either way.
-   *
-   * Permission to start a run has no read-only form, so each route is asked for
-   * something it will refuse on its own terms. workflow_dispatch is given a ref
-   * that cannot exist: allowed means 422, and nothing runs. repository_dispatch
-   * is given an event type no workflow listens for: allowed means 204, and
-   * nothing runs. In both cases the answer separates "not permitted" from
-   * "permitted, but that request was nonsense".
-   */
   if (body.probe === true) {
     const checks = {};
     checks.workflow = await call(`${base}/actions/workflows/${WORKFLOW}`, { headers });
@@ -131,21 +137,34 @@ export async function onRequestPost({ request, env }) {
     return json({ status: ready ? 'ready' : 'not_ready', repo, branch, route, checks, ...(hint ? { hint } : {}) });
   }
 
+  // Validate topic
+  const topic = String(body.topic || '').trim();
+  const runAll = body.all === true || topic === 'all';
+  if (!runAll) {
+    if (!topic) {
+      return json({ error: 'Topic ID is required. Pass a valid topic id or set all: true.' }, 400);
+    }
+    if (!KNOWN_TOPICS.has(topic)) {
+      return json({ error: `Unknown topic "${topic}". Known topics: ${Array.from(KNOWN_TOPICS).join(', ')}` }, 400);
+    }
+  }
+
   // Spend control without extra storage: GitHub itself remembers the last run.
-  // Refuse while one is in flight, and for a short cooldown after the last.
   const cooldown = Number(env.MIN_MINUTES_BETWEEN || 10);
   try {
     const res = await fetch(`${base}/actions/workflows/${WORKFLOW}/runs?per_page=1`, { headers });
     if (res.ok) {
       const latest = (await res.json()).workflow_runs?.[0];
       if (latest && latest.status !== 'completed') {
-        return json({ status: 'already_running', runId: latest.id });
+        return json({
+          status: 'already_running',
+          runId: latest.id,
+          htmlUrl: latest.html_url,
+          startedAt: latest.run_started_at,
+          message: 'A research run is already in progress.',
+        });
       }
       if (latest?.updated_at) {
-        // The cooldown is there to stop repeated expensive runs. A run that
-        // failed produced no data, so waiting the full ten minutes punishes
-        // the reader for our bug; a short floor still stops a stuck button
-        // from hammering it.
         const wait = latest.conclusion === 'success' ? cooldown : Math.min(2, cooldown);
         const sinceMin = (Date.now() - new Date(latest.updated_at).getTime()) / 60000;
         if (sinceMin < wait) {
@@ -158,26 +177,84 @@ export async function onRequestPost({ request, env }) {
         }
       }
     }
-  } catch { /* if the check fails, fall through and let the dispatch decide */ }
+  } catch { /* if check fails, let dispatch decide */ }
 
-  // Preferred route: it reports the run under the workflow, with the inputs
-  // visible in the Actions UI.
+  const requestId = `req_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+  const inputs = topic && !runAll ? { only: topic } : {};
+
+  // Preferred route: workflow_dispatch
   const wf = await call(`${base}/actions/workflows/${WORKFLOW}/dispatches`, {
     method: 'POST',
     headers,
-    body: JSON.stringify({ ref: branch, inputs: topic ? { only: topic } : {} }),
+    body: JSON.stringify({ ref: branch, inputs }),
   });
-  if (wf.status === 204) return json({ status: 'started', topic: topic || 'all', via: 'workflow_dispatch' });
 
-  // Refused for permissions only — try the route that needs Contents: write
-  // instead. Any other refusal (a bad ref, say) would fail the same way twice.
+  let runDetails = null;
+  if (wf.status === 200 || wf.status === 201 || wf.status === 204) {
+    if (wf.data && (wf.data.workflow_run_id || wf.data.id)) {
+      runDetails = {
+        runId: wf.data.workflow_run_id || wf.data.id,
+        htmlUrl: wf.data.html_url || null,
+      };
+    }
+    if (!runDetails) {
+      try {
+        await new Promise((r) => setTimeout(r, 600));
+        const rRes = await fetch(`${base}/actions/workflows/${WORKFLOW}/runs?per_page=1`, { headers });
+        if (rRes.ok) {
+          const latest = (await rRes.json()).workflow_runs?.[0];
+          if (latest) {
+            runDetails = { runId: latest.id, htmlUrl: latest.html_url };
+          }
+        }
+      } catch {}
+    }
+    return json({
+      status: 'started',
+      topic: runAll ? 'all' : topic,
+      runId: runDetails?.runId || null,
+      htmlUrl: runDetails?.htmlUrl || null,
+      startedAt: new Date().toISOString(),
+      via: 'workflow_dispatch',
+    });
+  }
+
+  // Fallback route: repository_dispatch
   if (wf.status === 401 || wf.status === 403 || wf.status === 404) {
     const rd = await call(`${base}/dispatches`, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ event_type: EVENT_TYPE, client_payload: topic ? { only: topic } : {} }),
+      body: JSON.stringify({
+        event_type: EVENT_TYPE,
+        client_payload: {
+          ...(topic && !runAll ? { only: topic } : {}),
+          request_id: requestId,
+          started_at: new Date().toISOString(),
+        },
+      }),
     });
-    if (rd.status === 204) return json({ status: 'started', topic: topic || 'all', via: 'repository_dispatch' });
+    if (rd.status === 204 || rd.status === 200) {
+      let rdRunDetails = null;
+      try {
+        await new Promise((r) => setTimeout(r, 600));
+        const rRes = await fetch(`${base}/actions/workflows/${WORKFLOW}/runs?per_page=1`, { headers });
+        if (rRes.ok) {
+          const latest = (await rRes.json()).workflow_runs?.[0];
+          if (latest) {
+            rdRunDetails = { runId: latest.id, htmlUrl: latest.html_url };
+          }
+        }
+      } catch {}
+      return json({
+        status: 'started',
+        topic: runAll ? 'all' : topic,
+        runId: rdRunDetails?.runId || null,
+        htmlUrl: rdRunDetails?.htmlUrl || null,
+        requestId,
+        startedAt: new Date().toISOString(),
+        via: 'repository_dispatch',
+      });
+    }
 
     return json({
       error: 'Could not start the run: the saved GitHub token is not allowed to. '

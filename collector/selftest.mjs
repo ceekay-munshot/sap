@@ -148,8 +148,18 @@ assert.equal(config.length, 9, 'nine topics');
 assert.deepEqual(config.map((t) => t.id), web.map((t) => t.id),
   'web/data/topics.json is out of sync with config/topics.json');
 
+/* ── official SAP AI SDK telemetry dataset must be valid ────────────────── */
+const sdk = JSON.parse(fs.readFileSync('web/data/sdk-downloads.json', 'utf8'));
+assert.ok(sdk.packages?.length === 5, '5 official SAP AI SDK packages');
+assert.ok(sdk.summary?.allTimeGrandTotal > 5000000, 'over 5M cumulative SDK downloads');
+assert.ok(sdk.summary?.weeklyGrandTotal > 100000, 'over 100k weekly SDK downloads');
+assert.ok(sdk.weeklySeries?.length >= 50, 'at least 50 weeks of telemetry history');
+assert.ok(sdk.dailySeries?.length >= 365, 'at least 365 days of daily points');
+
 console.log('selftest passed');
 console.log(`  ${frameFor(NOW).tiers.map((t) => t.badge).join('  |  ')}`);
 console.log(`  recent ${fresh}× vs legacy ${legacy}× = ${(fresh / legacy).toFixed(0)}:1`);
 console.log(`  ${config.length} topics in sync between config and web`);
 console.log(`  free tracker: legacy-heavy mix scores ${tracked.score}/5`);
+console.log(`  sdk telemetry: ${sdk.summary.allTimeGrandTotal.toLocaleString()} cumulative downloads (${sdk.weeklySeries.length} weeks)`);
+

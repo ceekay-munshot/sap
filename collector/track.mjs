@@ -151,6 +151,9 @@ async function main() {
       harvested.push(...items);
       const entry = { id: source.id, status: 'ok', items: items.length, ms: Date.now() - t0 };
       if (items.errors) { entry.status = 'partial'; entry.errors = items.errors; }
+      if (source.id === 'npm' && typeof source.syncSdkDownloads === 'function') {
+        await source.syncSdkDownloads();
+      }
       report.sources.push(entry);
       log(`  ${source.id}: ${items.length} items`);
     } catch (err) {
