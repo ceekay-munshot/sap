@@ -4,6 +4,17 @@ name: Preflight (check the keys)
 # version answers. Prints key prefixes and lengths only, never a key.
 on:
   workflow_dispatch:
+    inputs:
+      press_button:
+        description: 'Also press Run Research for real on one topic (costs money)'
+        required: false
+        default: false
+        type: boolean
+      topic:
+        description: 'Which topic to press it for'
+        required: false
+        default: 'data-readiness'
+        type: string
 
 jobs:
   preflight:
@@ -24,3 +35,12 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
         run: node collector/preflight.mjs
+
+      # Off by default: the checks above cost a fraction of a cent, this starts
+      # a real research pass.
+      - name: Press the button for real
+        if: ${{ inputs.press_button }}
+        env:
+          TOPIC: ${{ inputs.topic }}
+          RESEARCH_PASSPHRASE: ${{ secrets.RESEARCH_PASSPHRASE }}
+        run: node collector/buttontest.mjs
