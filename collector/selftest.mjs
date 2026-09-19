@@ -1,64 +1,75 @@
 #!/usr/bin/env node
 /**
- * Offline pipeline check. Runs the taxonomy → heuristic classifier → aggregate →
- * trend path over synthetic fixtures and asserts the recency weighting actually
- * bites. Writes nothing to web/data — fixtures must never reach the dashboard.
+ * Offline checks — no network, no API key. Covers the two things that would
+ * silently corrupt the dashboard: the recency policy rolling over, and the
+ * research parser accepting a malformed payload.
  */
 import assert from 'node:assert/strict';
-import { classifyHeuristic } from './lib/classify.mjs';
-import { aggregate, appendTrend } from './lib/aggregate.mjs';
-import { frameFor, weightFor } from '../web/lib/recency.mjs';
+import fs from 'node:fs';
+import { extractJson, normalise } from './lib/research.mjs';
+import { frameFor, weightFor, tierFor, explainWeight } from '../web/lib/recency.mjs';
 
 const NOW = new Date('2026-09-19T00:00:00Z');
 
-const fixtures = [
-  { id: 'f1', source: 'reddit', sourceLabel: 'r/SAP', kind: 'comment', date: '2023-04-02T00:00:00Z',
-    title: '', text: 'SAP AI is vaporware, the Joule demo was terrible and overpriced', engagement: 5 },
-  { id: 'f2', source: 'reddit', sourceLabel: 'r/SAP', kind: 'comment', date: '2024-02-02T00:00:00Z',
-    title: '', text: 'Joule is half-baked and clunky on S/4HANA, useless for real work', engagement: 3 },
-  { id: 'f3', source: 'hackernews', sourceLabel: 'Hacker News', kind: 'comment', date: '2026-08-20T00:00:00Z',
-    title: '', text: 'Business Data Cloud finally delivers, zero copy to Databricks works well and saves us weeks', engagement: 40 },
-  { id: 'f4', source: 'hackernews', sourceLabel: 'Hacker News', kind: 'comment', date: '2026-09-10T00:00:00Z',
-    title: '', text: 'The accounts payable agent is impressive, straight-through processing is solid', engagement: 12 },
-  { id: 'f5', source: 'rss', sourceLabel: 'SAP News Center', kind: 'article', stance: 'vendor',
-    date: '2026-09-01T00:00:00Z', title: 'SAP announces Joule agents', text: 'SAP today announced new AI agents for S/4HANA.' },
-];
+/* ── the weighting rolls over by itself ─────────────────────────────────── */
+assert.equal(frameFor(NOW).tiers[0].label, '2026');
+assert.equal(frameFor(NOW).tiers[2].label, 'pre-2025');
+assert.equal(frameFor(new Date('2027-01-02Z')).tiers[0].label, '2027');
+assert.equal(frameFor(new Date('2027-01-02Z')).tiers[2].label, 'pre-2026');
+assert.equal(frameFor(new Date('2031-06-02Z')).tiers[2].label, 'pre-2030');
 
-const rows = classifyHeuristic(fixtures);
-const snapshot = aggregate(rows, { now: NOW, engine: 'heuristic' });
+/* ── recent evidence must dominate legacy evidence ──────────────────────── */
+const fresh = weightFor('2026-09-10T00:00:00Z', NOW);
+const legacy = weightFor('2023-04-02T00:00:00Z', NOW);
+assert.equal(fresh, 4.05, 'current year + 90-day boost');
+assert.equal(legacy, 0.25, 'legacy floor');
+assert.ok(fresh / legacy > 15, `recent must outweigh legacy (got ${fresh / legacy}:1)`);
+assert.equal(tierFor(null, NOW), 'legacy', 'undated is treated as legacy, never guessed');
+assert.equal(explainWeight('2025-06-01', NOW).tier, 'prior');
 
-const frame = frameFor(NOW);
-assert.equal(frame.currentYear, 2026);
-assert.equal(frame.tiers[2].label, 'pre-2025', 'legacy label must roll with the year');
+/* ── the parser survives what models actually return ────────────────────── */
+const messy = 'Here is the analysis:\n```json\n'
+  + JSON.stringify({
+    score: '3.7',
+    sub: { adoption: 9, maturity: 2.4, satisfaction: 0.2, competitive: 3 },
+    recencyMix: { current: 6, prior: 3, legacy: 1 },
+    summary: 'Mixed.',
+    findings: ['a', '', 'b'],
+    quotes: [
+      { text: 'too short' },
+      { text: 'x'.repeat(40), name: 'A B', date: '2026-01-02', url: 'https://e.test' },
+    ],
+    sources: [{ url: 'https://e.test' }, { nothing: true }],
+  })
+  + '\n```\nHope that helps.';
 
-// The 2023 comment must be worth a fraction of the fresh ones.
-assert.ok(weightFor('2026-09-10T00:00:00Z', NOW) / weightFor('2023-04-02T00:00:00Z', NOW) > 15,
-  'recent items must dominate legacy ones');
+const topic = { id: 't', label: 'L', icon: '🤖', category: 'product' };
+const out = normalise(extractJson(messy), topic, NOW);
+assert.equal(out.score, 3.7, 'string score coerced');
+assert.equal(out.sub.adoption, 5, 'out-of-range clamped to the 1-5 scale');
+assert.equal(out.sub.satisfaction, 1, 'below-range clamped');
+assert.equal(out.quotes.length, 1, 'quotes under 20 chars dropped');
+assert.equal(out.findings.length, 2, 'empty findings dropped');
+assert.equal(out.sources.length, 1, 'sources without url or title dropped');
+assert.equal(out.id, 't');
 
-// Vendor copy must not reach the practitioner headline.
-assert.equal(snapshot.corpus.practitioners, 4, 'vendor article must be excluded from practitioner set');
-assert.ok(snapshot.voices.vendor, 'vendor voice still tracked separately');
+assert.throws(() => normalise({ sub: {} }, topic, NOW), /missing overall score/,
+  'a payload with no score must fail loudly, not render as zero');
+assert.throws(() => extractJson('no json here'), /no JSON object/);
 
-// The whole point: weighting must pull the index up off the 2023/24 negativity.
-assert.ok(snapshot.headline.weighted > snapshot.headline.raw,
-  `weighting should lift the index (weighted ${snapshot.headline.weighted} vs raw ${snapshot.headline.raw})`);
+/* ── the shipped scaffold must not carry invented numbers ───────────────── */
+const shipped = JSON.parse(fs.readFileSync('web/data/dashboard.json', 'utf8'));
+assert.equal(Object.keys(shipped.topics || {}).length === 0 || shipped.generatedAt !== null, true,
+  'a scaffold with topics must also carry a real generatedAt');
 
-// byTier describes the whole corpus, vendor copy included (3 items dated 2026);
-// the practitioner cut is tracked separately above.
-assert.equal(snapshot.corpus.byTier.legacy, 2);
-assert.equal(snapshot.corpus.byTier.current, 3);
-assert.equal(snapshot.corpus.byTier.prior, 0);
-
-const trend = appendTrend({ days: [] }, snapshot, { now: NOW });
-assert.equal(trend.days.length, 1);
-const again = appendTrend(trend, snapshot, { now: NOW });
-assert.equal(again.days.length, 1, 'same-day reruns must replace, not duplicate');
-
-const bdc = snapshot.pillars.find((p) => p.id === 'bdc');
-assert.ok(bdc.items >= 1, 'BDC pillar should catch the Business Data Cloud comment');
+/* ── the page and the collector read the same topic list ────────────────── */
+const config = JSON.parse(fs.readFileSync('config/topics.json', 'utf8')).topics;
+const web = JSON.parse(fs.readFileSync('web/data/topics.json', 'utf8')).topics;
+assert.equal(config.length, 9, 'nine topics');
+assert.deepEqual(config.map((t) => t.id), web.map((t) => t.id),
+  'web/data/topics.json is out of sync with config/topics.json');
 
 console.log('selftest passed');
-console.log(`  weighted ${snapshot.headline.weighted}  vs  raw ${snapshot.headline.raw}`
-  + `  (shift ${snapshot.headline.shift})`);
-console.log(`  tiers: ${JSON.stringify(snapshot.corpus.byTier)}`);
-console.log(`  policy: ${snapshot.policy.prose.headline}`);
+console.log(`  ${frameFor(NOW).tiers.map((t) => t.badge).join('  |  ')}`);
+console.log(`  recent ${fresh}× vs legacy ${legacy}× = ${(fresh / legacy).toFixed(0)}:1`);
+console.log(`  ${config.length} topics in sync between config and web`);

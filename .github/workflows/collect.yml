@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       only:
-        description: 'Run a single source (hackernews, reddit, stackexchange, rss, youtube)'
+        description: 'Research a single topic id (e.g. joule_sentiment); blank runs all nine'
         required: false
         type: string
   push:
@@ -47,10 +47,7 @@ jobs:
         if: github.event_name != 'push'
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
-          REDDIT_CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
-          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
-          STACKEXCHANGE_KEY: ${{ secrets.STACKEXCHANGE_KEY }}
+          RESEARCH_MODEL: ${{ vars.RESEARCH_MODEL || 'claude-opus-5' }}
         run: node collector/run.mjs ${{ inputs.only && format('--only={0}', inputs.only) || '' }}
 
       - name: Commit the day's data
@@ -75,7 +72,6 @@ jobs:
           name: dashboard-data
           path: |
             web/data/dashboard.json
-            web/data/trend.json
             data/run-report.json
           if-no-files-found: warn
 

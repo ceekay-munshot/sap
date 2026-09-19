@@ -3,180 +3,65 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SAP AI Radar</title>
-<meta name="description" content="Recency-weighted practitioner sentiment on SAP's AI strategy: S/4HANA migration, Business Data Cloud, Joule and agentic workflows.">
+<title>SAP AI Intelligence</title>
+<meta name="description" content="Numerical practitioner-sentiment scores and verbatim quotes on SAP's AI strategy, recency-weighted and refreshed daily.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Lora:ital,wght@0,400;0,500;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="./assets/styles.css">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='14'>📡</text></svg>">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13'>⬡</text></svg>">
 </head>
 <body>
-<div class="wrap">
 
-  <header class="masthead">
-    <div>
-      <h1>SAP AI Radar</h1>
-      <p>What technical practitioners — customer-side engineers, consultants and implementation
-         partners — actually say about SAP's AI strategy. Collected daily, weighted so recent
-         evidence outranks stale evidence.</p>
-    </div>
-    <div class="spacer"></div>
-    <div class="chip-row">
-      <span class="chip" id="chip-updated">Loading…</span>
-      <span class="chip" id="chip-engine"></span>
-      <button class="ghost" id="theme-toggle" type="button">Dark</button>
-    </div>
-  </header>
-
-  <div class="policy" id="policy">
-    <h2>Recency weighting — live, rolls over by itself</h2>
-    <div class="tiers" id="policy-tiers"></div>
-    <p class="note" id="policy-freshness"></p>
-    <p class="note" id="policy-rollover"></p>
+<!-- NAV -->
+<nav class="nav" id="nav">
+  <div class="nav-logo">⬡</div>
+  <span class="nav-title">SAP AI INTELLIGENCE</span>
+  <span class="nav-divider">|</span>
+  <span class="nav-sub">PRACTITIONER SENTIMENT TRACKER</span>
+  <div class="nav-right" id="navRight">
+    <span class="nav-sub" id="coverage">0/9</span>
+    <button class="theme-toggle" id="themeToggle" type="button" title="Toggle light/dark mode">
+      <span class="theme-toggle-icon" id="themeIcon">🌙</span>
+      <span id="themeLabel">DARK</span>
+    </button>
   </div>
+</nav>
 
-  <div id="empty" hidden>
-    <div class="empty">
-      <h3>No data collected yet</h3>
-      <p>Nothing has been harvested, so there is nothing to show. No placeholder numbers are
-         displayed here on purpose — an empty dashboard is honest, a fabricated one is not.</p>
-      <ol>
-        <li>Add repository secrets: <code>ANTHROPIC_API_KEY</code> (classification), optionally
-            <code>REDDIT_CLIENT_ID</code> / <code>REDDIT_CLIENT_SECRET</code> and
-            <code>YOUTUBE_API_KEY</code>.</li>
-        <li>Run the <strong>Collect SAP AI signal</strong> workflow from the Actions tab, or wait
-            for the 06:00 UTC schedule.</li>
-        <li>The workflow commits <code>web/data/dashboard.json</code> and this page fills in.</li>
-      </ol>
-    </div>
-  </div>
-
-  <main id="dash" hidden>
-
-    <div class="filters" role="group" aria-label="Filters">
-      <label for="f-range">Range</label>
-      <select id="f-range">
-        <option value="90">Last 90 days</option>
-        <option value="365">Last 12 months</option>
-        <option value="730">Last 24 months</option>
-        <option value="all" selected>All evidence</option>
-      </select>
-      <label for="f-pillar">Pillar</label>
-      <select id="f-pillar"><option value="all">All pillars</option></select>
-      <label for="f-source">Source</label>
-      <select id="f-source"><option value="all">All sources</option></select>
-      <label for="f-tier">Tier</label>
-      <select id="f-tier">
-        <option value="all">All tiers</option>
-        <option value="current">Current year</option>
-        <option value="prior">Prior year</option>
-        <option value="legacy">Legacy</option>
-      </select>
-      <input type="search" id="f-text" placeholder="Search text…" aria-label="Search evidence">
-      <div class="spacer"></div>
-      <span class="count" id="f-count"></span>
+<!-- LAYOUT -->
+<div class="layout">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div style="margin-bottom:18px">
+      <h1 class="sidebar-title">SAP AI<br>Intel</h1>
+      <p class="sidebar-sub">Numerical sentiment scores + practitioner quotes</p>
     </div>
 
-    <section>
-      <h2>Headline</h2>
-      <div class="card">
-        <div class="hero">
-          <div>
-            <div class="figure" id="hero-figure">—</div>
-            <div class="stat"><span class="label" id="hero-label">Weighted practitioner index</span></div>
-          </div>
-          <div class="meta">
-            <p class="sub" id="hero-explain"></p>
-            <div class="scale" id="hero-scale"></div>
-          </div>
-        </div>
-      </div>
-      <div class="grid k4" style="margin-top:20px" id="kpis"></div>
-    </section>
+    <div id="serverStatus" style="background:var(--tracker-bg);border:1px solid var(--border2);border-radius:8px;padding:9px 12px;margin-bottom:14px;display:flex;align-items:center;gap:7px">
+      <div id="statusDot" style="width:7px;height:7px;border-radius:50%;background:var(--text5);flex-shrink:0"></div>
+      <span id="statusText" style="font-size:10px;color:var(--text4);font-family:'DM Mono',monospace">CHECKING STATUS…</span>
+    </div>
 
-    <section>
-      <h2>Where practitioners land, by pillar</h2>
-      <div class="card">
-        <h3>Share of weighted opinion</h3>
-        <p class="sub">Each bar is one pillar's opinion split, centred on neutral. Bars are shares of
-           <em>weight</em>, not raw counts — a 2023 complaint occupies a sliver of the space a
-           current-year one does.</p>
-        <div id="pillar-chart"></div>
-        <div class="legend" id="pillar-legend"></div>
-        <details style="margin-top:14px">
-          <summary style="cursor:pointer;font-size:13px;color:var(--ink-2)">Table view</summary>
-          <div class="scroll" id="pillar-table"></div>
-        </details>
-      </div>
-    </section>
+    <div id="miniTracker"></div>
 
-    <section>
-      <h2>Trend</h2>
-      <div class="card">
-        <h3>Weighted sentiment by pillar, per collection day</h3>
-        <p class="sub">One point per daily run. A flat line means the corpus did not move, not that
-           nothing was collected.</p>
-        <div id="trend-chart"></div>
-        <div class="legend" id="trend-legend"></div>
-        <details style="margin-top:14px">
-          <summary style="cursor:pointer;font-size:13px;color:var(--ink-2)">Table view</summary>
-          <div class="scroll" id="trend-table"></div>
-        </details>
-      </div>
-    </section>
+    <div style="margin-bottom:16px">
+      <div class="section-label">FILTER</div>
+      <div id="categoryFilters"></div>
+    </div>
 
-    <section>
-      <h2>Why the weighting matters</h2>
-      <div class="grid k2">
-        <div class="card">
-          <h3>Corpus by year</h3>
-          <p class="sub">The age profile of the evidence. Stronger colour means more recent — and more weight.</p>
-          <div id="age-chart"></div>
-          <div class="legend" id="age-legend"></div>
-        </div>
-        <div class="card">
-          <h3>Weighted vs raw</h3>
-          <p class="sub">What recency weighting does to the reading. If these two diverge, the raw
-             corpus is being dragged by old material.</p>
-          <div id="shift-panel"></div>
-        </div>
-      </div>
-    </section>
+    <div style="margin-top:14px">
+      <div class="section-label">TOPICS</div>
+      <div id="topicList"></div>
+    </div>
 
-    <section>
-      <h2>What they actually say</h2>
-      <div class="grid k2">
-        <div class="card">
-          <h3>Recurring concerns</h3>
-          <p class="sub">Themes ordered by weighted volume, not raw count.</p>
-          <div class="scroll" id="concerns"></div>
-        </div>
-        <div class="card">
-          <h3>Recurring praise</h3>
-          <p class="sub">Same ordering, opposite polarity.</p>
-          <div class="scroll" id="praise"></div>
-        </div>
-      </div>
-    </section>
+    <div style="margin-top:16px">
+      <div class="section-label">WEIGHTING</div>
+      <div id="weightKey"></div>
+    </div>
+  </aside>
 
-    <section>
-      <h2>Evidence</h2>
-      <div class="card">
-        <h3>Every scored practitioner item</h3>
-        <p class="sub">The filters above scope this table. Each row shows the exact multiplier it
-           carried into the index.</p>
-        <div class="scroll" id="evidence"></div>
-      </div>
-    </section>
-
-    <section>
-      <h2>Source health</h2>
-      <div class="card">
-        <div class="scroll" id="sources"></div>
-      </div>
-    </section>
-
-  </main>
-
-  <footer id="footer"></footer>
+  <!-- MAIN CONTENT -->
+  <main id="main"></main>
 </div>
 
 <div class="tooltip" id="tooltip" role="status" aria-live="polite"></div>

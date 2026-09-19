@@ -1,18 +1,19 @@
 {
-  "name": "sap-ai-radar",
+  "name": "sap-ai-intelligence",
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Daily practitioner-sentiment radar for SAP's AI strategy, with recency-weighted scoring.",
+  "description": "Recency-weighted practitioner sentiment on SAP's AI strategy, researched daily.",
   "scripts": {
-    "collect": "node collector/run.mjs",
-    "collect:dry": "node collector/run.mjs --dry-run",
-    "serve": "node --run serve:py || python3 -m http.server 8080 --directory web",
-    "check": "node collector/selftest.mjs"
+    "research": "node collector/run.mjs",
+    "research:dry": "node collector/run.mjs --dry-run",
+    "check": "node collector/selftest.mjs",
+    "serve": "python3 -m http.server 8080 --directory web"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.70.0",
-    "zod": "^3.25.0"
+    "@anthropic-ai/sdk": "^0.70.0"
   },
-  "engines": { "node": ">=20" }
+  "engines": {
+    "node": ">=20"
+  }
 }
