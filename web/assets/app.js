@@ -514,6 +514,12 @@ async function startResearch(topicId) {
   const before = reportFor(topicId)?.ranAt || null;
   state.runNote[topicId] = null;
 
+  // 0ms INSTANT FEEDBACK: Switch to active loader immediately
+  const startedAt = Date.now();
+  state.running[topicId] = { startedAt, step: 'Starting the run', runId: null };
+  render();
+  startTicker();
+
   const send = async (pass) => fetch(`${apiBase()}/api/research`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
@@ -526,9 +532,14 @@ async function startResearch(topicId) {
 
     // Only prompt when the server actually requires a passphrase.
     if (res.status === 401 && body.needsPassphrase) {
+      state.running[topicId] = null;
+      render();
       let pass = passphrase();
       if (!pass) pass = promptPassphrase();
       if (!pass) throw new Error('Cancelled.');
+      state.running[topicId] = { startedAt, step: 'Starting the run', runId: null };
+      render();
+      startTicker();
       res = await send(pass);
       body = await res.json().catch(() => ({}));
       if (res.status === 401) {
@@ -550,6 +561,7 @@ async function startResearch(topicId) {
 
     // Server reports an existing run in progress
     if (body.status === 'already_running') {
+      state.running[topicId] = null;
       state.runNote[topicId] = {
         error: true,
         text: body.message || 'Another research run is already in progress. Please wait for it to finish.',
@@ -559,18 +571,20 @@ async function startResearch(topicId) {
     }
 
     const runId = body.runId || null;
-    state.running[topicId] = { startedAt: Date.now(), step: 'Starting the run', runId };
+    if (state.running[topicId]) {
+      state.running[topicId].runId = runId;
+      state.running[topicId].step = 'Queued in pipeline…';
+      updateRunningUI();
+    }
     try {
       sessionStorage.setItem('sap_active_run', JSON.stringify({
         topicId,
         runId,
-        startedAt: Date.now(),
+        startedAt,
         beforeRanAt: before,
       }));
     } catch {}
 
-    render();
-    startTicker();
     watchRun(topicId, before, runId);
   } catch (err) {
     state.running[topicId] = null;
@@ -1758,7 +1772,12 @@ function render() {
   main.innerHTML = body;
 
   for (const btn of main.querySelectorAll('[data-research]')) {
-    btn.addEventListener('click', () => startResearch(btn.dataset.research));
+    btn.addEventListener('click', (ev) => {
+      ev.preventDefault();
+      btn.disabled = true;
+      btn.classList.add('is-starting');
+      startResearch(btn.dataset.research);
+    });
   }
   for (const btn of main.querySelectorAll('[data-check-published]')) {
     btn.addEventListener('click', () => checkPublishedResult(btn.dataset.checkPublished));
