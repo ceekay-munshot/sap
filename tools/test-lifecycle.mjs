@@ -14,6 +14,7 @@ import { validateScore, validateConfidence, normalise, extractJson } from '../co
 import { quoteAppearsIn, verifyQuotes } from '../collector/lib/verify.mjs';
 import { onRequestGet as statusHandler } from '../functions/api/status.js';
 import { onRequestPost as researchHandler } from '../functions/api/research.js';
+import { getCorpusPages, gather } from '../collector/lib/firecrawl.mjs';
 
 console.log('RUNNING SAP DASHBOARD LIFECYCLE & REGRESSION TESTS\n');
 

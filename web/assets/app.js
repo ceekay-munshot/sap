@@ -716,7 +716,7 @@ function scorecard(report) {
     </div>` : '';
 
   return `<div class="scorecard">
-    <div class="scorecard-title">📊 HOW SCORES ARE COMPUTED — ${frame.currentYear} TEMPORAL WEIGHTING<span style="font-size:8px;color:var(--text4);font-family:'Lora',serif;font-style:italic;font-weight:400"> · Hover cells for definitions · Scale 1.0–5.0</span></div>
+    <div class="scorecard-title">📊 HOW SCORES ARE COMPUTED — ${frame.currentYear} TEMPORAL WEIGHTING<span style="font-size:8px;color:var(--text3);font-family:'Lora',serif;font-style:italic;font-weight:400"> · Hover cells for definitions · Scale 1.0–5.0</span></div>
     <div class="scorecard-grid">${cells}</div>
     <div class="scorecard-legend">${legend}</div>
     ${sdkFootnote}
@@ -857,7 +857,7 @@ function trendChart(points, metric, { width = 860, height = 260 } = {}) {
     const y = yOf(tick);
     return `<line x1="${m.l}" y1="${y}" x2="${m.l + plotW}" y2="${y}"
       stroke="var(--border2)" stroke-width="1"/>
-      <text x="${m.l - 8}" y="${y + 4}" text-anchor="end" fill="var(--text5)"
+      <text x="${m.l - 8}" y="${y + 4}" text-anchor="end" fill="var(--text4)"
         font-size="9" font-family="'DM Mono',monospace">${spec.fmt(tick)}</text>`;
   }).join('');
 
@@ -877,7 +877,7 @@ function trendChart(points, metric, { width = 860, height = 260 } = {}) {
     const anchor = i === 0 ? 'start' : i === points.length - 1 ? 'end' : 'middle';
     const label = new Date(points[i].date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
     return `<text x="${xOf(times[i])}" y="${height - 8}" text-anchor="${anchor}"
-      fill="var(--text5)" font-size="9" font-family="'DM Mono',monospace">${esc(label)}</text>`;
+      fill="var(--text4)" font-size="9" font-family="'DM Mono',monospace">${esc(label)}</text>`;
   }).join('');
 
   const line = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${xOf(times[i])},${yOf(p.value)}`).join(' ');
@@ -1057,7 +1057,7 @@ const STANCE_STYLE = {
   positive: ['#22c55e', 'POSITIVE'],
   negative: ['#ef4444', 'NEGATIVE'],
   mixed: ['#f59e0b', 'MIXED'],
-  neutral: ['var(--text5)', 'NO VIEW'],
+  neutral: ['var(--text4)', 'NO VIEW'],
 };
 
 function evidenceRow(item) {
@@ -1236,7 +1236,7 @@ function historyView() {
         <div class="timeline-row">
           <span class="tlc-icon">${topic.icon}</span>
           <span class="card-title" style="font-size:12px">${esc(topic.label)}</span>
-          <span class="change-badge" style="margin-left:auto;color:var(--text5)">no data</span>
+          <span class="change-badge" style="margin-left:auto;color:var(--text4)">no data</span>
         </div>
         <div class="card-meta">too few opinions to plot</div>
       </button>`;
@@ -1246,7 +1246,7 @@ function historyView() {
     const dir = cur === null || prev === null ? '' :
       (cur - prev) > (metric === 'score' ? 0.15 : 2) ? '<span style="color:#22c55e">▲</span>'
         : (prev - cur) > (metric === 'score' ? 0.15 : 2) ? '<span style="color:#ef4444">▼</span>'
-          : '<span style="color:var(--text5)">■</span>';
+          : '<span style="color:var(--text4)">■</span>';
     return `<button class="timeline-card" data-history="${esc(topic.id)}" type="button"
         style="text-align:left;cursor:pointer;width:100%">
       <div class="timeline-row">

@@ -274,7 +274,11 @@ export async function researchTopic(client, topic, { now = new Date(), log = con
   // One extra, year-stamped query so retrieval leans on the current year. The
   // year comes from the shared policy, so this rolls over like everything else.
   const queries = [...base, `SAP ${topic.label} ${frameFor(now).currentYear}`];
-  const { pages, errors } = await gather(queries, { log });
+  const { pages, errors } = await gather(queries, {
+    log,
+    topicId: topic.id,
+    topicLabel: topic.label,
+  });
   if (!pages.length) {
     throw new Error(`no usable pages fetched${errors.length ? ` (${errors[0]})` : ''}`);
   }

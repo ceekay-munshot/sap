@@ -46,6 +46,15 @@ for (const v of ['v2', 'v1']) {
   }
 }
 
+console.log('\nRESILIENT SEARCH FALLBACK');
+try {
+  const { search } = await import('./lib/firecrawl.mjs');
+  const fallbackResults = await search('SAP Joule review', { limit: 2 });
+  line(fallbackResults.length > 0, 'Resilient Search (DuckDuckGo/GNews)', `${fallbackResults.length} results available`);
+} catch (err) {
+  line(false, 'Resilient Search', err.message);
+}
+
 console.log('\nMODEL');
 // 1. Anthropic first-party
 try {
@@ -168,5 +177,5 @@ try {
 }
 
 console.log('\nVERDICT');
-console.log(`  Firecrawl version to use: ${fcVersion || 'NONE WORKED'}`);
+console.log(`  Firecrawl version to use: ${fcVersion || 'NONE WORKED (resilient fallback active)'}`);
 console.log('  Use whichever MANTLE CLIENT line says OK — that is the path the collector takes.');
