@@ -136,7 +136,7 @@ retrieval is Firecrawl's job rather than the model's.
 
 | Setting | Effect |
 |---|---|
-| `FIRECRAWL_API_KEY` (secret) | Required for research — no retrieval without it. |
+| `FIRECRAWL_API_KEY` (secret) | Optional — accelerates search/scraping. Automatically falls back to free web search & practitioner corpus if empty or out of credits. |
 | `AWS_ACCESS_KEY_ID` + `AWS_SECRET_ACCESS_KEY` (secrets) | Use Bedrock for reasoning. |
 | `AWS_REGION` (variable) | Defaults to `us-east-1`. |
 | `ANTHROPIC_API_KEY` (secret) | Used instead when no AWS credentials are set. |
