@@ -1442,8 +1442,13 @@ function sdkChart(points, pkgId, { width = 860, height = 270 } = {}) {
     <text x="${lastX + 9}" y="${lastY + 4}" fill="var(--text)" font-size="11"
       font-family="'DM Mono',monospace" font-weight="700">${fmtK(last.value)}</text>
     ${dateLabels}
-    <line class="sdk-crosshair" y1="${m.t}" y2="${m.t + plotH}" stroke="var(--border3)" stroke-width="1" opacity="0"/>
-    <rect class="sdk-hit" x="${m.l}" y="${m.t}" width="${plotW}" height="${plotH}" fill="transparent"/>
+    <line class="sdk-crosshair" y1="${m.t}" y2="${m.t + plotH}" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="3 3" opacity="0"/>
+    <circle class="sdk-hover-dot" r="6" fill="#3b82f6" stroke="var(--bg)" stroke-width="2.5" opacity="0"/>
+    <g class="sdk-hover-badge" opacity="0" pointer-events="none">
+      <rect class="sdk-badge-bg" rx="4" ry="4" fill="var(--bg3)" stroke="#3b82f6" stroke-width="1"/>
+      <text class="sdk-badge-txt" fill="#60a5fa" font-size="11" font-family="'DM Mono',monospace" font-weight="700" text-anchor="middle"></text>
+    </g>
+    <rect class="sdk-hit" x="${m.l}" y="${m.t}" width="${plotW}" height="${plotH}" fill="transparent" style="cursor:crosshair"/>
   </svg>`;
 }
 
@@ -1453,13 +1458,22 @@ function wireSdkCrosshair(root, points) {
   const cross = root.querySelector('.sdk-crosshair');
   if (!svg || !hit || !cross || !points.length) return;
 
+  const hoverDot = svg.querySelector('.sdk-hover-dot');
+  const badge = svg.querySelector('.sdk-hover-badge');
+  const badgeBg = svg.querySelector('.sdk-badge-bg');
+  const badgeTxt = svg.querySelector('.sdk-badge-txt');
+  const tip = $('tooltip');
+
   const box = svg.viewBox.baseVal;
-  const m = { l: 56, r: 64 };
+  const m = { t: 18, r: 64, b: 30, l: 56 };
   const plotW = box.width - m.l - m.r;
+  const plotH = box.height - m.t - m.b;
   const times = points.map((p) => new Date(p.date).getTime());
   const tMin = Math.min(...times);
   const tMax = Math.max(...times);
+  const dom = sdkDomainFor(points);
   const xOf = (t) => (tMax === tMin ? m.l + plotW / 2 : m.l + ((t - tMin) / (tMax - tMin)) * plotW);
+  const yOf = (v) => m.t + plotH - ((Math.max(dom.lo, Math.min(dom.hi, v)) - dom.lo) / (dom.hi - dom.lo)) * plotH;
 
   const move = (ev) => {
     const rect = svg.getBoundingClientRect();
@@ -1470,41 +1484,80 @@ function wireSdkCrosshair(root, points) {
       const dist = Math.abs(xOf(t) - px);
       if (dist < best) { best = dist; nearest = i; }
     });
+    const pt = points[nearest];
     const x = xOf(times[nearest]);
+    const y = yOf(pt.value);
+
+    // Crosshair line
     cross.setAttribute('x1', x);
     cross.setAttribute('x2', x);
     cross.setAttribute('opacity', '1');
 
-    const pt = points[nearest];
-    const friendlyPkg = {
-      orchestration: 'Orchestration (routes AI calls)',
-      core: 'Core (security & auth)',
-      'ai-api': 'AI API (AI Core deployment)',
-      'foundation-models': 'Foundation Models (model wrappers)',
-      langchain: 'LangChain Adapter (3rd-party)',
-    };
-    const row = (val, name, colour) =>
-      `<div class="t-row"><span class="t-val"${colour ? ` style="color:${colour}"` : ''}>${esc(val)}</span>`
-      + `<span class="t-name">${esc(friendlyPkg[name] || name)}</span></div>`;
+    // On-chart dot directly on curve
+    if (hoverDot) {
+      hoverDot.setAttribute('cx', x);
+      hoverDot.setAttribute('cy', y);
+      hoverDot.setAttribute('opacity', '1');
+    }
 
-    tip.innerHTML = `<div class="t-title">Week ending ${esc(fmtDate(pt.date))}</div>`
-      + row(pt.value.toLocaleString(), state.sdkPackage === 'all' ? 'All Packages' : (friendlyPkg[state.sdkPackage] || state.sdkPackage), '#3b82f6')
-      + (state.sdkPackage !== 'all' ? row(pt.total.toLocaleString(), 'Total All Packages') : '')
-      + (pt.packages?.orchestration ? row(pt.packages.orchestration.toLocaleString(), 'orchestration') : '')
-      + (pt.packages?.core ? row(pt.packages.core.toLocaleString(), 'core') : '')
-      + (pt.packages?.['ai-api'] ? row(pt.packages['ai-api'].toLocaleString(), 'ai-api') : '')
-      + (pt.packages?.['foundation-models'] ? row(pt.packages['foundation-models'].toLocaleString(), 'foundation-models') : '')
-      + (pt.packages?.langchain ? row(pt.packages.langchain.toLocaleString(), 'langchain') : '');
-    tip.style.opacity = '1';
-    const tb = tip.getBoundingClientRect();
-    tip.style.left = `${Math.min(Math.max(8, ev.clientX + 14), window.innerWidth - tb.width - 8)}px`;
-    tip.style.top = `${Math.max(8, ev.clientY - tb.height - 12)}px`;
+    // On-chart exact number badge
+    if (badge && badgeTxt && badgeBg) {
+      const numStr = pt.value.toLocaleString();
+      badgeTxt.textContent = numStr;
+      badgeTxt.setAttribute('x', x);
+      const badgeY = y > m.t + 28 ? y - 12 : y + 24;
+      badgeTxt.setAttribute('y', badgeY);
+
+      const textW = Math.max(54, numStr.length * 8 + 16);
+      badgeBg.setAttribute('x', x - textW / 2);
+      badgeBg.setAttribute('y', badgeY - 13);
+      badgeBg.setAttribute('width', textW);
+      badgeBg.setAttribute('height', 18);
+      badge.setAttribute('opacity', '1');
+    }
+
+    // Floating HTML tooltip
+    if (tip) {
+      const friendlyPkg = {
+        orchestration: 'Orchestration (routes AI calls)',
+        core: 'Core (security & auth)',
+        'ai-api': 'AI API (AI Core deployment)',
+        'foundation-models': 'Foundation Models (model wrappers)',
+        langchain: 'LangChain Adapter (3rd-party)',
+      };
+      const activePkgLabel = state.sdkPackage === 'all'
+        ? 'All Packages (@sap-ai-sdk)'
+        : (friendlyPkg[state.sdkPackage] || state.sdkPackage);
+
+      const row = (val, name, colour, isLarge = false) =>
+        `<div class="t-row"><span class="t-val"${colour ? ` style="color:${colour}${isLarge ? ';font-size:13px;font-weight:700' : ''}"` : ''}>${esc(val)}</span>`
+        + `<span class="t-name">${esc(name)}</span></div>`;
+
+      tip.innerHTML = `<div class="t-title">WEEK ENDING ${esc(fmtDate(pt.date)).toUpperCase()}</div>`
+        + `<div style="padding-bottom:5px;margin-bottom:6px;border-bottom:1px solid var(--border2)">`
+        + row(pt.value.toLocaleString(), activePkgLabel, '#3b82f6', true)
+        + `</div>`
+        + (state.sdkPackage !== 'all' ? row(pt.total.toLocaleString(), 'Total All Packages') : '')
+        + (pt.packages?.orchestration ? row(pt.packages.orchestration.toLocaleString(), 'Orchestration') : '')
+        + (pt.packages?.core ? row(pt.packages.core.toLocaleString(), 'Core') : '')
+        + (pt.packages?.['ai-api'] ? row(pt.packages['ai-api'].toLocaleString(), 'AI API') : '')
+        + (pt.packages?.['foundation-models'] ? row(pt.packages['foundation-models'].toLocaleString(), 'Foundation Models') : '')
+        + (pt.packages?.langchain ? row(pt.packages.langchain.toLocaleString(), 'LangChain') : '');
+
+      tip.style.opacity = '1';
+      const tb = tip.getBoundingClientRect();
+      tip.style.left = `${Math.min(Math.max(8, ev.clientX + 16), window.innerWidth - tb.width - 12)}px`;
+      tip.style.top = `${Math.max(8, ev.clientY - tb.height - 12)}px`;
+    }
   };
 
   hit.addEventListener('pointermove', move);
+  hit.addEventListener('pointerdown', move);
   hit.addEventListener('pointerleave', () => {
     cross.setAttribute('opacity', '0');
-    $('tooltip').style.opacity = '0';
+    if (hoverDot) hoverDot.setAttribute('opacity', '0');
+    if (badge) badge.setAttribute('opacity', '0');
+    if (tip) tip.style.opacity = '0';
   });
 }
 
