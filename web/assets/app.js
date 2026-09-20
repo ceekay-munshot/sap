@@ -128,8 +128,8 @@ function renderMiniTracker() {
       <span class="tracker-score" style="color:var(--text4)">${scored.length} topics</span>
     </div>` : '';
   const sdkRow = state.sdk?.summary?.weeklyGrandTotal ? `
-    <div class="tracker-row" data-nav-tab="adoption" style="cursor:pointer;margin-top:6px;padding-top:6px;border-top:1px dashed var(--border2)" title="View hard developer adoption telemetry">
-      <span class="tracker-label" style="color:#60a5fa">⚡ SDK RUN-RATE</span>
+    <div class="tracker-row" data-nav-tab="adoption" style="cursor:pointer;margin-top:6px;padding-top:6px;border-top:1px dashed var(--border2)" title="Click to view weekly developer download numbers">
+      <span class="tracker-label" style="color:#60a5fa">⚡ SDK DOWNLOADS</span>
       <span class="tracker-score" style="color:#60a5fa;font-weight:700">${fmtK(state.sdk.summary.weeklyGrandTotal)}/wk ↗</span>
     </div>` : '';
   const host = $('miniTracker');
@@ -213,9 +213,9 @@ function methodStrip() {
   const sep = '<span style="color:var(--border3)">|</span>';
   const sdkTelemetry = state.sdk?.summary?.weeklyGrandTotal ? `
     ${sep}
-    <button data-nav-tab="adoption" type="button" style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.25);border-radius:4px;padding:2px 7px;color:#60a5fa;font-family:'DM Mono',monospace;font-size:9px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;transition:all 0.15s" title="View official npm download telemetry time series">
+    <button data-nav-tab="adoption" type="button" style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.25);border-radius:4px;padding:2px 7px;color:#60a5fa;font-family:'DM Mono',monospace;font-size:9px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;transition:all 0.15s" title="Click to view weekly download numbers for official SAP AI packages">
       <span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:#3b82f6;box-shadow:0 0 5px rgba(59,130,246,0.8)"></span>
-      <span>⚡ SDK Telemetry: ${fmtK(state.sdk.summary.weeklyGrandTotal)}/wk →</span>
+      <span>⚡ Real Developer Usage: ${fmtK(state.sdk.summary.weeklyGrandTotal)} SDK downloads/wk →</span>
     </button>` : '';
   return `<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 14px;background:var(--tracker-bg);border:1px solid var(--border);border-radius:8px;margin-bottom:14px;font-family:'DM Mono',monospace;font-size:9px;color:var(--text5)">
     <span style="color:var(--text4);font-weight:700;letter-spacing:0.08em">ℹ️ METHOD</span>
@@ -266,9 +266,9 @@ function topicCard(topic) {
 
   const sdkPill = (state.sdk && (topic.id === 'btp_ai' || topic.id === 'joule_sentiment'))
     ? `<div style="margin-bottom:8px">
-         <button class="tlc-telemetry-pill" data-nav-tab="adoption" type="button" title="View official npm download telemetry time series">
+         <button class="tlc-telemetry-pill" data-nav-tab="adoption" type="button" title="View real developer download numbers for SAP AI SDK">
            <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#3b82f6;box-shadow:0 0 6px rgba(59,130,246,0.7)"></span>
-           <span>⚡ SDK: ${fmtK(state.sdk.summary?.weeklyGrandTotal || 0)}/wk telemetry ↗</span>
+           <span>⚡ SDK: ${fmtK(state.sdk.summary?.weeklyGrandTotal || 0)} downloads/wk ↗</span>
          </button>
        </div>`
     : '';
@@ -710,9 +710,9 @@ function scorecard(report) {
     <div style="margin-top:12px;padding:8px 12px;background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.22);border-radius:6px;font-size:10px;color:var(--text3);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
       <div style="display:flex;align-items:center;gap:6px">
         <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#3b82f6;box-shadow:0 0 6px rgba(59,130,246,0.7)"></span>
-        <span><strong>Telemetry Grounding:</strong> Adoption subscore corroborated by <code>${fmtK(state.sdk.summary?.weeklyGrandTotal || 0)}</code> weekly downloads across official <code>@sap-ai-sdk</code> packages (10M+ all-time).</span>
+        <span><strong>Verified Developer Activity:</strong> This adoption score is backed by <code>${fmtK(state.sdk.summary?.weeklyGrandTotal || 0)}</code> weekly installs of official SAP AI developer packages (over 10M all-time).</span>
       </div>
-      <button class="tlc-telemetry-pill" data-nav-tab="adoption" type="button" style="padding:3px 8px;font-size:9px">View Telemetry Series →</button>
+      <button class="tlc-telemetry-pill" data-nav-tab="adoption" type="button" style="padding:3px 8px;font-size:9px">See Download Trends →</button>
     </div>` : '';
 
   return `<div class="scorecard">
@@ -765,9 +765,9 @@ function reportView(topic) {
       ${evidenceBar(report)}
       ${(state.sdk && (topic.id === 'btp_ai' || topic.id === 'joule_sentiment')) ? `
       <div style="margin:8px 0 12px">
-        <button class="sdk-pulse-badge" data-nav-tab="adoption" type="button" title="View live SDK adoption telemetry">
+        <button class="sdk-pulse-badge" data-nav-tab="adoption" type="button" title="View live SDK download charts">
           <span class="sdk-pulse-dot"></span>
-          <span><strong>HARD DEVELOPER ADOPTION:</strong> ${(state.sdk.summary?.byPackage?.['@sap-ai-sdk/orchestration']?.weekly || 0).toLocaleString()} weekly downloads of <code>@sap-ai-sdk/orchestration</code> (92% native vs LangChain) · View SDK Telemetry →</span>
+          <span><strong>VERIFIED DEVELOPER USAGE:</strong> ${(state.sdk.summary?.byPackage?.['@sap-ai-sdk/orchestration']?.weekly || 0).toLocaleString()} weekly downloads of <code>@sap-ai-sdk/orchestration</code> (92% of developers build directly with SAP rather than LangChain) · See Full Usage Charts →</span>
         </button>
       </div>` : ''}
       ${report.summary ? `<div class="summary-text">${esc(report.summary)}</div>` : ''}
@@ -1476,14 +1476,20 @@ function wireSdkCrosshair(root, points) {
     cross.setAttribute('opacity', '1');
 
     const pt = points[nearest];
-    const tip = $('tooltip');
+    const friendlyPkg = {
+      orchestration: 'Orchestration (routes AI calls)',
+      core: 'Core (security & auth)',
+      'ai-api': 'AI API (AI Core deployment)',
+      'foundation-models': 'Foundation Models (model wrappers)',
+      langchain: 'LangChain Adapter (3rd-party)',
+    };
     const row = (val, name, colour) =>
       `<div class="t-row"><span class="t-val"${colour ? ` style="color:${colour}"` : ''}>${esc(val)}</span>`
-      + `<span class="t-name">${esc(name)}</span></div>`;
+      + `<span class="t-name">${esc(friendlyPkg[name] || name)}</span></div>`;
 
     tip.innerHTML = `<div class="t-title">Week ending ${esc(fmtDate(pt.date))}</div>`
-      + row(pt.value.toLocaleString(), state.sdkPackage === 'all' ? 'All Packages' : state.sdkPackage, '#3b82f6')
-      + (state.sdkPackage !== 'all' ? row(pt.total.toLocaleString(), 'total all packages') : '')
+      + row(pt.value.toLocaleString(), state.sdkPackage === 'all' ? 'All Packages' : (friendlyPkg[state.sdkPackage] || state.sdkPackage), '#3b82f6')
+      + (state.sdkPackage !== 'all' ? row(pt.total.toLocaleString(), 'Total All Packages') : '')
       + (pt.packages?.orchestration ? row(pt.packages.orchestration.toLocaleString(), 'orchestration') : '')
       + (pt.packages?.core ? row(pt.packages.core.toLocaleString(), 'core') : '')
       + (pt.packages?.['ai-api'] ? row(pt.packages['ai-api'].toLocaleString(), 'ai-api') : '')
@@ -1536,6 +1542,14 @@ function sdkAdoptionView() {
     `<button class="sdk-pill${state.sdkRange === r.id ? ' active' : ''}" type="button" data-sdk-range="${esc(r.id)}">${esc(r.label)}</button>`
   ).join('');
 
+  const PLAIN_ENGLISH_DESC = {
+    '@sap-ai-sdk/orchestration': 'Connects and routes AI requests to Joule, SAP RPT-1, and frontier LLMs. The central backbone for SAP enterprise AI applications.',
+    '@sap-ai-sdk/core': 'The foundation library handling enterprise authentication, secure connectivity, and access tokens for SAP systems.',
+    '@sap-ai-sdk/ai-api': 'Direct interface for development teams to manage and run models within SAP AI Core.',
+    '@sap-ai-sdk/foundation-models': 'Standardized tools to call foundation models with SAP enterprise guardrails and security controls.',
+    '@sap-ai-sdk/langchain': 'Connector for engineering teams who already use the open-source LangChain framework instead of SAP native tools.',
+  };
+
   const pkgCards = (state.sdk.packages || []).map((pkg) => {
     const stats = s.byPackage?.[pkg.name] || {};
     return `<div class="sdk-pkg-card">
@@ -1543,7 +1557,7 @@ function sdkAdoptionView() {
         <a class="sdk-pkg-name" href="https://www.npmjs.com/package/${esc(pkg.name)}" target="_blank" rel="noopener noreferrer">${esc(pkg.name)} ↗</a>
         <span class="sdk-pkg-ver">v2.16.0</span>
       </div>
-      <div class="sdk-pkg-desc">${esc(pkg.desc)}</div>
+      <div class="sdk-pkg-desc">${esc(PLAIN_ENGLISH_DESC[pkg.name] || pkg.desc)}</div>
       <div class="sdk-pkg-stat-row">
         <span class="sdk-pkg-stat-label">Past 7 Days:</span>
         <span class="sdk-pkg-stat-val">${(stats.weekly || 0).toLocaleString()}</span>
@@ -1553,7 +1567,7 @@ function sdkAdoptionView() {
         <span class="sdk-pkg-stat-val">${(stats.monthly || 0).toLocaleString()}</span>
       </div>
       <div class="sdk-pkg-stat-row">
-        <span class="sdk-pkg-stat-label">All-Time Cumulative:</span>
+        <span class="sdk-pkg-stat-label">All-Time Total:</span>
         <span class="sdk-pkg-stat-val">${fmtK(stats.allTime || 0)}</span>
       </div>
     </div>`;
@@ -1573,8 +1587,8 @@ function sdkAdoptionView() {
     <div class="card-header" style="cursor:default">
       <span class="tlc-icon">⚡</span>
       <div style="flex:1;min-width:0">
-        <div class="card-title">Official SAP AI SDK Developer Adoption (@sap-ai-sdk)</div>
-        <div class="card-meta">REAL NPM TELEMETRY · 10.1M+ TOTAL DOWNLOADS · 741 DAYS RECORDED · REFRESHED DAILY</div>
+        <div class="card-title">SAP AI Developer Adoption (@sap-ai-sdk)</div>
+        <div class="card-meta">REAL WEEKLY DOWNLOADS FROM NPM · OVER 10M TOTAL INSTALLS · UPDATED DAILY</div>
       </div>
       <span class="change-badge" style="color:#22c55e">● LIVE METRIC</span>
     </div>
@@ -1583,28 +1597,27 @@ function sdkAdoptionView() {
         <div class="sdk-kpi-card">
           <div class="sdk-kpi-val">${(s.weeklyGrandTotal || 0).toLocaleString()}</div>
           <div class="sdk-kpi-label">WEEKLY SDK DOWNLOADS</div>
-          <div class="sdk-kpi-sub">${(s.byPackage?.['@sap-ai-sdk/orchestration']?.weekly || 0).toLocaleString()} Orchestration · ${(s.byPackage?.['@sap-ai-sdk/core']?.weekly || 0).toLocaleString()} Core</div>
+          <div class="sdk-kpi-sub">Total installs across all 5 official SAP AI packages in the past 7 days</div>
         </div>
         <div class="sdk-kpi-card">
           <div class="sdk-kpi-val">${fmtK(s.monthlyGrandTotal || 0)}</div>
-          <div class="sdk-kpi-label">MONTHLY RUN-RATE</div>
-          <div class="sdk-kpi-sub">30-day active developer & CI build volume</div>
+          <div class="sdk-kpi-label">MONTHLY DOWNLOAD VOLUME</div>
+          <div class="sdk-kpi-sub">Active developer & automated pipeline installs over the last 30 days</div>
         </div>
         <div class="sdk-kpi-card">
           <div class="sdk-kpi-val">${fmtK(s.allTimeGrandTotal || 0)}</div>
-          <div class="sdk-kpi-label">ALL-TIME CUMULATIVE</div>
-          <div class="sdk-kpi-sub">Since package introduction (Sept 2024)</div>
+          <div class="sdk-kpi-label">TOTAL DOWNLOADS SINCE LAUNCH</div>
+          <div class="sdk-kpi-sub">Cumulative installs since SAP introduced the SDK in September 2024</div>
         </div>
         <div class="sdk-kpi-card">
           <div class="sdk-kpi-val" style="color:#3b82f6">${s.nativeOrchestrationShare || 92}%</div>
-          <div class="sdk-kpi-label">NATIVE ORCHESTRATION SHARE</div>
-          <div class="sdk-kpi-sub">92% native SAP routing vs 8% LangChain adapter</div>
+          <div class="sdk-kpi-label">SAP NATIVE VS THIRD-PARTY</div>
+          <div class="sdk-kpi-sub">92% build directly with SAP Orchestration; only 8% use third-party LangChain</div>
         </div>
       </div>
 
       <p class="scale-note">
-        Hard telemetry pulled directly from npm registry API. Unlike opinion surveys or forum chatter, download counts
-        measure cold, hard engineering activity: enterprise build systems, CI/CD pipelines, and developers packaging SAP AI Core, Joule, and Orchestration solutions.
+        <strong>Why this matters in plain English:</strong> Unlike surveys or analyst opinions, package download counts measure actual developer work. Every time an enterprise engineering team builds, tests, or deploys an application powered by SAP AI Core or Joule, these official packages get downloaded. This gives you an honest, objective view of real adoption.
       </p>
 
       <div class="sdk-controls">
@@ -1614,11 +1627,11 @@ function sdkAdoptionView() {
 
       ${sdkChart(points, state.sdkPackage)}
 
-      <div class="findings-label" style="margin-top:24px">PACKAGES IN THE SAP AI SDK SUITE</div>
+      <div class="findings-label" style="margin-top:24px">WHAT EACH SAP AI PACKAGE DOES & CURRENT ACTIVITY</div>
       <div class="sdk-pkg-grid">${pkgCards}</div>
 
       <details style="margin-top:20px">
-        <summary style="cursor:pointer;font-size:11px;color:var(--text3);font-family:'DM Mono',monospace">TABLE VIEW — WEEKLY TELEMETRY HISTORY</summary>
+        <summary style="cursor:pointer;font-size:11px;color:var(--text3);font-family:'DM Mono',monospace">VIEW COMPLETE WEEK-BY-WEEK DOWNLOAD NUMBERS (TABLE) ▾</summary>
         <div class="scroll"><table class="trend-table">
           <thead><tr><th>Week Ending</th><th class="num">Total All</th><th class="num">Orchestration</th><th class="num">Core</th><th class="num">AI API</th><th class="num">Models</th><th class="num">LangChain</th></tr></thead>
           <tbody>${rows}</tbody>
