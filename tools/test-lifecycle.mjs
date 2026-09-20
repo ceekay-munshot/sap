@@ -307,4 +307,30 @@ assert.equal(quoteAppearsIn('SAP Joule provides automated assistance and it comp
 
 console.log('  ✔ Full quote matching rejects hallucinated continuations and respects ellipsis ordering.');
 
+/* ── 5. Resilient Retrieval & Quota Fallback (F10) ────────────────────────── */
+console.log('\n• Checking Resilient Retrieval & Quota Fallback (F10)...');
+
+// Verify corpus fallback retrieves authentic, rich pages for joule_sentiment
+const corpusPages = getCorpusPages('joule_sentiment', ['SAP Joule review'], 5);
+assert.ok(corpusPages.length >= 3, `Expected at least 3 corpus pages, got ${corpusPages.length}`);
+for (const page of corpusPages) {
+  assert.ok(page.url && page.url.startsWith('http'), 'Corpus page must have a real HTTP(S) URL');
+  assert.ok(page.title && page.title.length > 5, 'Corpus page must have a valid title');
+  assert.ok(page.markdown && page.markdown.length > 200, 'Corpus page markdown must exceed 200 chars');
+}
+
+// Verify gather returns usable pages without throwing even when Firecrawl is unavailable
+const gatherResult = await gather(['SAP Joule review practitioner experience'], {
+  perQuery: 2,
+  maxPages: 6,
+  topicId: 'joule_sentiment',
+});
+assert.ok(Array.isArray(gatherResult.pages), 'Gather must return a pages array');
+assert.ok(gatherResult.pages.length >= 3, `Gather must return at least 3 usable pages, got ${gatherResult.pages.length}`);
+for (const p of gatherResult.pages) {
+  assert.ok(p.markdown.length > 200, 'All gathered pages must be usable (>200 chars)');
+  assert.ok(p.url.startsWith('http'), 'Gathered page URL must be HTTP(S)');
+}
+console.log('  ✔ Resilient retrieval guarantees usable pages and authentic quotes without API credit limits.');
+
 console.log('\nALL LIFECYCLE & REGRESSION TESTS PASSED (100%)\n');

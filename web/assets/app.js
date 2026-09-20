@@ -1287,7 +1287,7 @@ function historyView() {
         <strong style="color:var(--text);font-family:'Syne',sans-serif">Automated Public Feeds Tracker:</strong>
         This series measures organic sentiment across Hacker News, Reddit, Stack Exchange, RSS feeds, and GitHub.
         Deep Research passes (on-demand via Claude) evaluate multi-page web search evidence with verified citations and write directly to each topic's detailed report.
-        <div style="margin-top:6px;font-family:'DM Mono',monospace;font-size:9px;color:var(--text5)">
+        <div style="margin-top:6px;font-family:'DM Mono',monospace;font-size:9px;color:var(--text4)">
           TRACKER DATASET: ${days.length ? fmtDate(days[days.length - 1].date) : '—'} ·
           DEEP RESEARCH SNAPSHOT: ${state.data?.generatedAt ? fmtDate(state.data.generatedAt) : '—'}
         </div>
@@ -1392,7 +1392,7 @@ function sdkChart(points, pkgId, { width = 860, height = 270 } = {}) {
   const grid = dom.ticks.map((tick) => {
     const y = yOf(tick);
     return `<line x1="${m.l}" y1="${y}" x2="${m.l + plotW}" y2="${y}" stroke="var(--border2)" stroke-width="1"/>
-      <text x="${m.l - 10}" y="${y + 3}" text-anchor="end" fill="var(--text5)"
+      <text x="${m.l - 10}" y="${y + 3}" text-anchor="end" fill="var(--text4)"
         font-size="9" font-family="'DM Mono',monospace">${fmtK(tick)}</text>`;
   }).join('');
 
@@ -1413,7 +1413,7 @@ function sdkChart(points, pkgId, { width = 860, height = 270 } = {}) {
     const d = new Date(points[i].date);
     const label = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: '2-digit' });
     return `<text x="${xOf(times[i])}" y="${height - 8}" text-anchor="${anchor}"
-      fill="var(--text5)" font-size="9" font-family="'DM Mono',monospace">${esc(label)}</text>`;
+      fill="var(--text4)" font-size="9" font-family="'DM Mono',monospace">${esc(label)}</text>`;
   }).join('');
 
   const line = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${xOf(times[i])},${yOf(p.value)}`).join(' ');
