@@ -88,7 +88,26 @@ export async function onRequestGet({ request, env }) {
       step: null,
       stepIndex: 0,
       stepTotal: 0,
+      dashboard: null,
     };
+
+    if (state === 'succeeded') {
+      try {
+        const ref = run.head_sha || 'main';
+        const dataRes = await fetch(
+          `https://api.github.com/repos/${repo}/contents/web/data/dashboard.json?ref=${ref}`,
+          {
+            headers: {
+              ...headers,
+              accept: 'application/vnd.github.raw+json',
+            },
+          },
+        );
+        if (dataRes.ok) {
+          payload.dashboard = await dataRes.json();
+        }
+      } catch {}
+    }
 
     if (run.status !== 'completed') {
       const jobsRes = await fetch(

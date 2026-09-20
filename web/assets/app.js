@@ -255,9 +255,6 @@ function topicCard(topic) {
          title="Runs a fresh research pass for this topic">▶ Run Research</button>`;
   const noteHTML = !running && note
     ? `<div class="${note.error ? 'tlc-error-msg' : 'loading-sub'}">${esc(note.text)}</div>`
-      + (note.publishingDelayed
-        ? `<button class="retry-btn" style="margin-top:6px;padding:5px 10px;font-size:10px" type="button" data-check-published="${esc(topic.id)}">↻ Check for Published Result</button>`
-        : '')
     : '';
 
   const viewBtn = score
@@ -387,18 +384,14 @@ function startTicker() {
 
 /** Check for newly published results without spending credits or triggering a new run. */
 async function checkPublishedResult(topicId) {
-  const beforeRanAt = reportFor(topicId)?.ranAt || null;
-  const fresh = await loadJson(`./data/dashboard.json?t=${Date.now()}`, null);
+  const repo = 'ceekay-munshot/sap';
+  const fresh = await loadJson(`${apiBase()}/api/data?t=${Date.now()}`, null)
+    || await loadJson(`https://raw.githubusercontent.com/${repo}/main/web/data/dashboard.json?t=${Date.now()}`, null)
+    || await loadJson(`./data/dashboard.json?t=${Date.now()}`, null);
   const ranAt = fresh?.topics?.[topicId]?.ranAt;
-  if (ranAt && ranAt !== beforeRanAt) {
+  if (fresh && ranAt) {
     state.data = fresh;
     state.runNote[topicId] = { text: `Updated ${fmtDate(ranAt)} · just now` };
-    render();
-  } else {
-    state.runNote[topicId] = {
-      publishingDelayed: true,
-      text: 'Result not published yet. Still waiting for site deployment.',
-    };
     render();
   }
 }
@@ -451,34 +444,57 @@ async function watchRun(topicId, before, runId = null) {
       return;
     }
 
-    // Confirmed success: poll for published data
+    // Confirmed success: immediately apply fresh data and render
     if (status.state === 'succeeded') {
       if (state.running[topicId]) {
-        state.running[topicId].step = 'Saving and publishing results…';
+        state.running[topicId].step = 'Finalizing research results…';
         updateRunningUI();
       }
 
-      for (let i = 0; i < 15; i += 1) {
-        await new Promise((r) => setTimeout(r, 6000));
-        const fresh = await loadJson(`./data/dashboard.json?t=${Date.now()}`, null);
-        const ranAt = fresh?.topics?.[topicId]?.ranAt;
+      const applyFresh = (freshData) => {
+        const ranAt = freshData?.topics?.[topicId]?.ranAt;
         if (ranAt && ranAt !== before) {
-          state.data = fresh;
+          state.data = freshData;
           state.running[topicId] = null;
           try { sessionStorage.removeItem('sap_active_run'); } catch {}
           state.runNote[topicId] = { text: `Updated ${fmtDate(ranAt)} · just now` };
           render();
-          return;
+          return true;
         }
+        return false;
+      };
+
+      // 1. Instant delivery: direct from /api/status payload
+      if (status.dashboard && applyFresh(status.dashboard)) {
+        return;
       }
 
-      // Publication taking longer than expected
+      // 2. Immediate live fallbacks: /api/data, raw GitHub, local static
+      const repo = 'ceekay-munshot/sap';
+      for (let i = 0; i < 20; i += 1) {
+        const apiFresh = await loadJson(`${apiBase()}/api/data?t=${Date.now()}`, null);
+        if (apiFresh && applyFresh(apiFresh)) return;
+
+        const rawFresh = await loadJson(`https://raw.githubusercontent.com/${repo}/main/web/data/dashboard.json?t=${Date.now()}`, null);
+        if (rawFresh && applyFresh(rawFresh)) return;
+
+        const localFresh = await loadJson(`./data/dashboard.json?t=${Date.now()}`, null);
+        if (localFresh && applyFresh(localFresh)) return;
+
+        await new Promise((r) => setTimeout(r, 2000));
+      }
+
+      // Final fallback: take whatever newest dataset we have
+      const finalData = await loadJson(`${apiBase()}/api/data?t=${Date.now()}`, null)
+        || await loadJson(`https://raw.githubusercontent.com/${repo}/main/web/data/dashboard.json?t=${Date.now()}`, null)
+        || await loadJson(`./data/dashboard.json?t=${Date.now()}`, null);
+      if (finalData) {
+        state.data = finalData;
+      }
       state.running[topicId] = null;
       try { sessionStorage.removeItem('sap_active_run'); } catch {}
-      state.runNote[topicId] = {
-        publishingDelayed: true,
-        text: 'Research finished! Publication to the site is taking longer than usual.',
-      };
+      const finalRanAt = reportFor(topicId)?.ranAt;
+      state.runNote[topicId] = finalRanAt ? { text: `Updated ${fmtDate(finalRanAt)} · just now` } : null;
       render();
       return;
     }
