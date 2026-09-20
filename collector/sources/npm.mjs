@@ -73,20 +73,41 @@ export async function syncSdkDownloads(filePath = 'web/data/sdk-downloads.json')
   try {
     if (!fs.existsSync(filePath)) return;
     const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    let updatedAny = false;
     for (const pkg of SAP_AI_PACKAGES) {
       try {
         const ptWeek = await fetchPoint(pkg.name, 'last-week');
-        if (ptWeek?.downloads && data.summary?.byPackage?.[pkg.name]) {
+        if (typeof ptWeek?.downloads === 'number' && data.summary?.byPackage?.[pkg.name]) {
           data.summary.byPackage[pkg.name].weekly = ptWeek.downloads;
+          updatedAny = true;
         }
         await pace(150);
         const ptMonth = await fetchPoint(pkg.name, 'last-month');
-        if (ptMonth?.downloads && data.summary?.byPackage?.[pkg.name]) {
+        if (typeof ptMonth?.downloads === 'number' && data.summary?.byPackage?.[pkg.name]) {
           data.summary.byPackage[pkg.name].monthly = ptMonth.downloads;
+          updatedAny = true;
         }
         await pace(150);
       } catch { /* keep existing on error */ }
     }
+
+    if (updatedAny && data.summary?.byPackage) {
+      let weeklyTotal = 0;
+      let monthlyTotal = 0;
+      for (const pkg of SAP_AI_PACKAGES) {
+        weeklyTotal += data.summary.byPackage[pkg.name]?.weekly || 0;
+        monthlyTotal += data.summary.byPackage[pkg.name]?.monthly || 0;
+      }
+      if (weeklyTotal > 0) data.summary.weeklyGrandTotal = weeklyTotal;
+      if (monthlyTotal > 0) data.summary.monthlyGrandTotal = monthlyTotal;
+
+      const orchWeekly = data.summary.byPackage['@sap-ai-sdk/orchestration']?.weekly || 0;
+      const langWeekly = data.summary.byPackage['@sap-ai-sdk/langchain']?.weekly || 0;
+      if (orchWeekly + langWeekly > 0) {
+        data.summary.nativeOrchestrationShare = Math.round((orchWeekly / (orchWeekly + langWeekly)) * 100);
+      }
+    }
+
     data.updatedAt = new Date().toISOString();
     fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
   } catch { /* best effort */ }

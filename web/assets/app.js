@@ -30,7 +30,7 @@ const CATEGORIES = [
 const CAT_LABEL = { product: 'PRODUCT', ecosystem: 'ECOSYSTEM', competitive: 'COMPETITIVE' };
 
 function scoreColor(s) {
-  if (!s) return '#475569';
+  if (!s) return 'var(--text4)';
   if (s >= 4.2) return '#22c55e';
   if (s >= 3.5) return '#4ade80';
   if (s >= 2.8) return '#f59e0b';
@@ -39,7 +39,7 @@ function scoreColor(s) {
 }
 
 function scoreBand(s) {
-  if (!s) return { label: 'N/A', color: '#475569' };
+  if (!s) return { label: 'N/A', color: 'var(--text4)' };
   if (s >= 4.2) return { label: 'BULLISH', color: '#22c55e' };
   if (s >= 3.5) return { label: 'POSITIVE', color: '#4ade80' };
   if (s >= 2.8) return { label: 'MIXED', color: '#f59e0b' };
@@ -125,7 +125,7 @@ function renderMiniTracker() {
     </div>
     <div class="tracker-row">
       <span class="tracker-label">${esc(band.label)}</span>
-      <span class="tracker-score" style="color:var(--text4)">${scored.length} topics</span>
+      <span class="tracker-score" style="color:var(--text3)">${scored.length} topics</span>
     </div>` : '';
   const sdkRow = state.sdk?.summary?.weeklyGrandTotal ? `
     <div class="tracker-row" data-nav-tab="adoption" style="cursor:pointer;margin-top:6px;padding-top:6px;border-top:1px dashed var(--border2)" title="Click to view weekly developer download numbers">
@@ -201,7 +201,7 @@ function renderWeightKey() {
   $('weightKey').innerHTML = frame.tiers.map((tier) => `
     <div class="tracker-row">
       <span class="tracker-label" style="color:${TIER_COLOR[tier.id]}">${esc(tier.label)}</span>
-      <span class="tracker-score" style="color:var(--text4)">${esc(tier.multiplier)}</span>
+      <span class="tracker-score" style="color:var(--text3)">${esc(tier.multiplier)}</span>
     </div>`).join('');
 }
 
@@ -217,8 +217,8 @@ function methodStrip() {
       <span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:#3b82f6;box-shadow:0 0 5px rgba(59,130,246,0.8)"></span>
       <span>⚡ Real Developer Usage: ${fmtK(state.sdk.summary.weeklyGrandTotal)} SDK downloads/wk →</span>
     </button>` : '';
-  return `<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 14px;background:var(--tracker-bg);border:1px solid var(--border);border-radius:8px;margin-bottom:14px;font-family:'DM Mono',monospace;font-size:9px;color:var(--text5)">
-    <span style="color:var(--text4);font-weight:700;letter-spacing:0.08em">ℹ️ METHOD</span>
+  return `<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 14px;background:var(--tracker-bg);border:1px solid var(--border);border-radius:8px;margin-bottom:14px;font-family:'DM Mono',monospace;font-size:9px;color:var(--text3)">
+    <span style="color:var(--text);font-weight:700;letter-spacing:0.08em">ℹ️ METHOD</span>
     ${sep}
     <span>Scores 1–5 · ${current.label} sources weighted ${current.multiplier}</span>
     ${sep}
