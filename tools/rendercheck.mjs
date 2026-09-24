@@ -242,6 +242,65 @@ else {
       note(`hovering the last sdk week at ${width}px showed "${hover.title}", not ${hover.want}`);
     }
   }
+
+  // The package and range pills. Each package used to be drawn on a scale
+  // fitted to itself, and since the packages rise and fall together every pill
+  // drew the same curve: a reader saw nothing change. So every package has to
+  // draw a line of its own on the one scale all of them share, and every range
+  // its own number of weeks. A pill redraws the chart alone, so it keeps the
+  // focus, and the old plot it fades out is gone once the fade is over.
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.waitForTimeout(600);
+  const drawn = () => page.evaluate(() => {
+    const svg = document.querySelector('.sdk-trend-svg');
+    const ticks = svg ? [...svg.querySelectorAll('text[text-anchor="end"]')]
+      .filter((t) => Number(t.getAttribute('x')) < 60).map((t) => t.textContent).join(' ') : '';
+    return {
+      pkg: document.querySelector('.sdk-plot')?.dataset.pkg,
+      line: document.querySelector('.sdk-line')?.getAttribute('d') || '',
+      ticks,
+      weeks: svg?.querySelectorAll('circle[r="2.5"]').length || 0,
+      leftover: document.querySelectorAll('.sdk-plot-leaving').length,
+      focused: document.activeElement?.dataset?.sdkPkg || document.activeElement?.dataset?.sdkRange || '',
+      pressed: [...document.querySelectorAll('[data-sdk-pkg][aria-pressed="true"], [data-sdk-range][aria-pressed="true"]')]
+        .map((b) => b.dataset.sdkPkg || b.dataset.sdkRange).join(','),
+    };
+  });
+  const pkgs = await page.locator('[data-sdk-pkg]').evaluateAll((bs) => bs.map((b) => b.dataset.sdkPkg));
+  if (pkgs.length < 6) note(`expected six SDK package pills, found ${pkgs.length}`);
+  const lines = new Map();
+  let scale = null;
+  for (const id of pkgs) {
+    await page.locator(`[data-sdk-pkg="${id}"]`).click();
+    await page.waitForTimeout(400);
+    const d = await drawn();
+    console.log(`  sdk pill ${id.padEnd(18)} drew ${d.pkg}, axis ${d.ticks}, pressed ${d.pressed}`);
+    if (d.pkg !== id) note(`the ${id} SDK pill drew ${d.pkg || 'nothing'}`);
+    if (d.focused !== id) note(`the ${id} SDK pill lost the focus when pressed`);
+    if (d.leftover) note(`switching to ${id} left the old SDK plot behind`);
+    if (scale === null) scale = d.ticks;
+    else if (d.ticks !== scale) note(`the ${id} SDK pill changed the scale (${scale} → ${d.ticks})`);
+    const same = [...lines].find(([, line]) => line === d.line);
+    if (same) note(`the ${id} SDK pill drew the same line as ${same[0]}`);
+    lines.set(id, d.line);
+  }
+  const series = await page.evaluate(async () =>
+    (await fetch('./data/sdk-downloads.json').then((r) => r.json())).weeklySeries.length);
+  for (const [id, want] of [['90', 13], ['all', series], ['365', 52]]) {
+    await page.locator(`[data-sdk-range="${id}"]`).click();
+    await page.waitForTimeout(400);
+    const d = await drawn();
+    console.log(`  sdk range ${id.padEnd(4)} ${d.weeks} week(s)`);
+    if (d.weeks !== Math.min(want, series)) note(`the ${id} SDK range drew ${d.weeks} weeks, not ${Math.min(want, series)}`);
+    if (d.focused !== id) note(`the ${id} SDK range pill lost the focus when pressed`);
+  }
+
+  // The package cards once held the card 14px past a 320px screen.
+  await page.setViewportSize({ width: 320, height: 800 });
+  await page.waitForTimeout(600);
+  const narrow = await page.evaluate(() => [document.documentElement.scrollWidth, document.documentElement.clientWidth]);
+  console.log(`  sdk adoption at 320px: page ${narrow[0]}px wide`);
+  if (narrow[0] > narrow[1]) note(`the SDK view is ${narrow[0]}px wide on a ${narrow[1]}px screen`);
 }
 
 await browser.close();
