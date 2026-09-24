@@ -115,6 +115,19 @@ assert.ok(tracked.score > 4,
 assert.equal(tracked.tiers.legacy, 1);
 assert.equal(rollupTopic([], NOW), null, 'no items must yield no point, never a zero');
 
+// The bars are counts of posts, not weights: one each way however old, a
+// hedged post is neutral, and SAP's own post is read but never counted.
+const counted = rollupTopic([
+  { sentiment: 0.8, stance: 'positive', date: '2026-09-10T00:00:00Z' },
+  { sentiment: -0.9, stance: 'negative', date: '2023-05-10T00:00:00Z' },
+  { sentiment: 0, stance: 'mixed', date: '2026-09-11T00:00:00Z' },
+  { sentiment: 0, stance: 'neutral', date: '2026-09-12T00:00:00Z' },
+  { sentiment: 0.7, stance: 'positive', voice: 'vendor', date: '2026-09-12T00:00:00Z' },
+], NOW);
+assert.deepEqual(counted.counts, { positive: 1, negative: 1, neutral: 2 });
+assert.equal(counted.counts.positive + counted.counts.negative + counted.counts.neutral,
+  counted.items - counted.vendorItems, 'the counts must add up to every item that counts');
+
 let trend = appendDay({ days: [] }, '2026-09-19', { overall: tracked });
 trend = appendDay(trend, '2026-09-19', { overall: tracked });
 assert.equal(trend.days.length, 1, 'a same-day rerun replaces the point');

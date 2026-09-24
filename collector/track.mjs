@@ -52,6 +52,11 @@ export function rollupTopic(items, now) {
   let opinionNum = 0;
   let opinionDen = 0;
   const stance = { positive: 0, negative: 0, neutral: 0, mixed: 0 };
+  // The same split as whole posts rather than weights, which the history view
+  // draws as bars. Weighted shares cannot be turned back into counts, so they
+  // are kept here. Neutral is everything that took no clear side, the hedged
+  // "mixed" posts included, so the three add up to every item that counts.
+  const counts = { positive: 0, negative: 0, neutral: 0 };
   const tiers = { current: 0, prior: 0, legacy: 0 };
   let vendorItems = 0;
 
@@ -61,6 +66,7 @@ export function rollupTopic(items, now) {
     // still counts as read — it shows up in the scanned list — but it does not
     // get a vote in the score it is the subject of.
     if (item.voice === 'vendor') { vendorItems += 1; continue; }
+    counts[item.stance === 'positive' || item.stance === 'negative' ? item.stance : 'neutral'] += 1;
     const w = weightFor(item.date, now);
     num += item.sentiment * w;
     den += w;
@@ -99,6 +105,7 @@ export function rollupTopic(items, now) {
     pctNoView: Math.round((stance.neutral / den) * 100),
     items: items.length,
     vendorItems,
+    counts,
     opinionatedWeight: Math.round(opinionated * 10) / 10,
     tiers,
     // The ids behind the number, so a reader can click a week and check it
