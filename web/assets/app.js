@@ -68,6 +68,12 @@ const fmtDate = (iso) => {
 
 /* ─── state ────────────────────────────────────────────────────────────────── */
 
+// Line or bars on the history view. Remembered per reader, like the theme.
+const CHART_MODE_KEY = 'sap-ai-chart-mode';
+function readChartMode() {
+  try { return localStorage.getItem(CHART_MODE_KEY) === 'bars' ? 'bars' : 'line'; } catch { return 'line'; }
+}
+
 const state = {
   data: null,
   trend: null,
@@ -82,6 +88,8 @@ const state = {
   topics: [],
   metric: 'score',
   historyTopic: 'overall',
+  chartMode: readChartMode(),
+  historyTableOpen: false,
   now: new Date(),
   category: 'all',
   open: null,
@@ -859,6 +867,41 @@ function series(topicId, metric) {
   }).filter(Boolean);
 }
 
+/** Where the line chart puts each point — shared by the drawing and the pointer. */
+function lineGeometry(points, spec, width, height) {
+  const m = { t: 16, r: 54, b: 28, l: 42 };
+  const plotW = width - m.l - m.r;
+  const plotH = height - m.t - m.b;
+  const times = points.map((p) => new Date(p.date).getTime());
+  const tMin = Math.min(...times);
+  const tMax = Math.max(...times);
+  const dom = domainFor(points, spec);
+  const xOf = (t) => (tMax === tMin ? m.l + plotW / 2 : m.l + ((t - tMin) / (tMax - tMin)) * plotW);
+  const yOf = (v) => m.t + plotH - ((Math.max(dom.lo, Math.min(dom.hi, v)) - dom.lo) / (dom.hi - dom.lo)) * plotH;
+  return { m, plotW, plotH, dom, yOf, x: (i) => xOf(times[i]), y: (i) => yOf(points[i].value) };
+}
+
+/** Date labels along the bottom, thinned so they never collide. */
+function axisDates(points, xAt, height, { flushEdges = true } = {}) {
+  const MIN_TICK_PX = 74;
+  const keep = [];
+  points.forEach((p, i) => {
+    const x = xAt(i);
+    if (i === points.length - 1) {
+      while (keep.length && xAt(keep[keep.length - 1]) > x - MIN_TICK_PX) keep.pop();
+      keep.push(i);
+    } else if (!keep.length || x - xAt(keep[keep.length - 1]) >= MIN_TICK_PX) {
+      keep.push(i);
+    }
+  });
+  return keep.map((i) => {
+    const edge = i === 0 ? 'start' : i === points.length - 1 ? 'end' : 'middle';
+    const label = new Date(points[i].date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    return `<text x="${xAt(i)}" y="${height - 8}" text-anchor="${flushEdges ? edge : 'middle'}"
+      fill="var(--text4)" font-size="9" font-family="'DM Mono',monospace">${esc(label)}</text>`;
+  }).join('');
+}
+
 /**
  * The trend chart. One series, so no legend box — the title names it.
  * Crosshair finds the date; every value is also in the table view below.
@@ -873,15 +916,7 @@ function trendChart(points, metric, { width = 860, height = 260 } = {}) {
       research runs collect more.</div></div>`;
   }
 
-  const m = { t: 16, r: 54, b: 28, l: 42 };
-  const plotW = width - m.l - m.r;
-  const plotH = height - m.t - m.b;
-  const times = points.map((p) => new Date(p.date).getTime());
-  const tMin = Math.min(...times);
-  const tMax = Math.max(...times);
-  const dom = domainFor(points, spec);
-  const xOf = (t) => (tMax === tMin ? m.l + plotW / 2 : m.l + ((t - tMin) / (tMax - tMin)) * plotW);
-  const yOf = (v) => m.t + plotH - ((Math.max(dom.lo, Math.min(dom.hi, v)) - dom.lo) / (dom.hi - dom.lo)) * plotH;
+  const { m, plotW, plotH, dom, yOf, x: xAt } = lineGeometry(points, spec, width, height);
 
   const grid = dom.ticks.map((tick) => {
     const y = yOf(tick);
@@ -891,28 +926,9 @@ function trendChart(points, metric, { width = 860, height = 260 } = {}) {
         font-size="9" font-family="'DM Mono',monospace">${spec.fmt(tick)}</text>`;
   }).join('');
 
-  // Thin out date labels so they never collide.
-  const MIN_TICK_PX = 74;
-  const keep = [];
-  points.forEach((p, i) => {
-    const x = xOf(times[i]);
-    if (i === points.length - 1) {
-      while (keep.length && xOf(times[keep[keep.length - 1]]) > x - MIN_TICK_PX) keep.pop();
-      keep.push(i);
-    } else if (!keep.length || x - xOf(times[keep[keep.length - 1]]) >= MIN_TICK_PX) {
-      keep.push(i);
-    }
-  });
-  const dateLabels = keep.map((i) => {
-    const anchor = i === 0 ? 'start' : i === points.length - 1 ? 'end' : 'middle';
-    const label = new Date(points[i].date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-    return `<text x="${xOf(times[i])}" y="${height - 8}" text-anchor="${anchor}"
-      fill="var(--text4)" font-size="9" font-family="'DM Mono',monospace">${esc(label)}</text>`;
-  }).join('');
-
-  const line = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${xOf(times[i])},${yOf(p.value)}`).join(' ');
+  const line = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${xAt(i)},${yOf(p.value)}`).join(' ');
   const area = points.length > 1
-    ? `<path d="${line} L${xOf(times[points.length - 1])},${m.t + plotH} L${xOf(times[0])},${m.t + plotH} Z"
+    ? `<path d="${line} L${xAt(points.length - 1)},${m.t + plotH} L${xAt(0)},${m.t + plotH} Z"
         fill="#3b82f6" opacity="0.10"/>`
     : '';
 
@@ -924,8 +940,8 @@ function trendChart(points, metric, { width = 860, height = 260 } = {}) {
   const segments = points.slice(1).map((p, i) => {
     const a = points[i];
     const weak = a.thin || p.thin;
-    return `<line x1="${xOf(times[i])}" y1="${yOf(a.value)}"
-      x2="${xOf(times[i + 1])}" y2="${yOf(p.value)}"
+    return `<line x1="${xAt(i)}" y1="${yOf(a.value)}"
+      x2="${xAt(i + 1)}" y2="${yOf(p.value)}"
       stroke="#3b82f6" stroke-width="2" stroke-linecap="round"
       ${weak ? 'stroke-dasharray="3 4" opacity="0.5"' : ''}/>`;
   }).join('');
@@ -933,17 +949,17 @@ function trendChart(points, metric, { width = 860, height = 260 } = {}) {
   // One dot per weekly collection, so the cadence is visible rather than implied.
   const dots = points.map((p, i) => {
     const filled = p.reconstructed ? 'var(--bg)' : '#3b82f6';
-    return `<circle cx="${xOf(times[i])}" cy="${yOf(p.value)}" r="${p.thin ? 2 : 3}"
+    return `<circle cx="${xAt(i)}" cy="${yOf(p.value)}" r="${p.thin ? 2 : 3}"
       fill="${filled}" stroke="#3b82f6" stroke-width="1.5"
       ${p.thin ? 'opacity="0.5"' : ''}/>`;
   }).join('');
 
   const last = points[points.length - 1];
-  const lastX = xOf(times[points.length - 1]);
+  const lastX = xAt(points.length - 1);
   const lastY = yOf(last.value);
 
   return `<svg class="trend-svg" viewBox="0 0 ${width} ${height}" width="100%" height="${height}"
-      role="img" aria-label="${esc(spec.label)} over time">
+      role="img" tabindex="0" aria-label="${esc(spec.label)} over time. Arrow keys step through the weeks; Enter opens the posts behind one.">
     ${grid}
     ${area}
     ${segments}
@@ -951,7 +967,7 @@ function trendChart(points, metric, { width = 860, height = 260 } = {}) {
     <circle cx="${lastX}" cy="${lastY}" r="5" fill="#3b82f6" stroke="var(--bg)" stroke-width="2"/>
     <text x="${lastX + 9}" y="${lastY + 4}" fill="var(--text2)" font-size="11"
       font-family="'DM Mono',monospace" font-weight="600">${spec.fmt(last.value)}</text>
-    ${dateLabels}
+    ${axisDates(points, xAt, height)}
     <line class="trend-crosshair" y1="${m.t}" y2="${m.t + plotH}" stroke="var(--border3)"
       stroke-width="1" opacity="0"/>
     <rect class="trend-hit" x="${m.l}" y="${m.t}" width="${plotW}" height="${plotH}" fill="transparent"/>
@@ -977,82 +993,301 @@ function sparkline(points, metric, width = 150, height = 34) {
   </svg>`;
 }
 
-/** Crosshair + tooltip on the trend chart. Readers aim at a date, not a 2px line. */
-function wireCrosshair(root) {
+/* ─── the same history as review counts ────────────────────────────────────── */
+
+/**
+ * The posts behind one point as whole counts: positive, negative, and neutral
+ * — everything that took no clear side, hedged posts included — which add up to
+ * every item the score was allowed to count. A point written before the tracker
+ * kept counts has none, and is left out of the bars rather than estimated.
+ */
+function countsOf(bucket) {
+  const c = bucket?.counts;
+  if (!c) return null;
+  const positive = c.positive || 0;
+  const negative = c.negative || 0;
+  const neutral = c.neutral || 0;
+  return { positive, negative, neutral, total: positive + negative + neutral };
+}
+
+/** Every point with a recorded split, including weeks in which nobody took a side. */
+function barSeries(topicId) {
+  return (state.trend?.days || []).map((day) => {
+    const bucket = topicId === 'overall' ? day.overall : day.topics?.[topicId];
+    const counts = countsOf(bucket);
+    return counts ? { date: day.date, counts, bucket, reconstructed: Boolean(day.reconstructed) } : null;
+  }).filter(Boolean);
+}
+
+/**
+ * Bottom to top. The opinions sit on the baseline, where lengths compare best,
+ * so the coloured part of a bar is everyone who took a side; the neutral rest
+ * caps it, so the top edge is everything read.
+ */
+const BAR_STACK = [
+  { key: 'positive', label: 'positive', fill: 'var(--viz-pos)' },
+  { key: 'negative', label: 'negative', fill: 'var(--viz-neg)' },
+  { key: 'neutral', label: 'neutral', fill: 'var(--viz-neutral)' },
+];
+
+/** A count axis from zero in round steps, so a bar's height is its count. */
+function countDomain(max) {
+  const raw = Math.max(1, max) / 4;
+  const mag = 10 ** Math.floor(Math.log10(raw));
+  // Quarter steps only where they stay whole: nobody wrote 2.5 posts.
+  const steps = (mag >= 10 ? [1, 2, 2.5, 5, 10] : [1, 2, 5, 10]).map((f) => Math.max(1, f * mag));
+  const step = steps.find((s) => s >= raw) || steps[steps.length - 1];
+  const hi = Math.max(step, Math.ceil(max / step) * step);
+  const ticks = [];
+  for (let v = 0; v <= hi; v += step) ticks.push(v);
+  return { hi, ticks };
+}
+
+/** Equal slots, one bar each, so a run of daily points never piles bars on top of each other. */
+function bandLayout(n, left, span, maxBar) {
+  const slot = span / Math.max(1, n);
+  const width = Math.max(1, Math.min(maxBar, slot * 0.64));
+  return { width, center: (i) => left + slot * (i + 0.5) };
+}
+
+const px2 = (n) => Math.round(n * 100) / 100;
+
+/** A column's top: a rounded data-end, square where it meets the segment below. */
+function capPath(x, y, w, h, r) {
+  const rr = px2(Math.max(0, Math.min(r, w / 2, h)));
+  return `M${px2(x)},${px2(y + h)}V${px2(y + rr)}A${rr},${rr} 0 0 1 ${px2(x + rr)},${px2(y)}`
+    + `H${px2(x + w - rr)}A${rr},${rr} 0 0 1 ${px2(x + w)},${px2(y + rr)}V${px2(y + h)}Z`;
+}
+
+/**
+ * One column's segments, bottom up. Touching segments are parted by a gap of
+ * surface rather than an outline. A segment too thin to survive the gap is left
+ * to the tooltip and the table, which carry every count exactly.
+ */
+function stackSegments(counts, x, w, yOf, { gap = 2, radius = 4 } = {}) {
+  const parts = BAR_STACK.filter((s) => counts[s.key] > 0);
+  let below = 0;
+  return parts.map((s, i) => {
+    const bottom = yOf(below) - (i > 0 ? gap / 2 : 0);
+    below += counts[s.key];
+    const top = yOf(below) + (i < parts.length - 1 ? gap / 2 : 0);
+    const h = bottom - top;
+    if (h < 0.5) return '';
+    return i === parts.length - 1
+      ? `<path d="${capPath(x, top, w, h, radius)}" fill="${s.fill}"/>`
+      : `<rect x="${px2(x)}" y="${px2(top)}" width="${px2(w)}" height="${px2(h)}" fill="${s.fill}"/>`;
+  }).join('');
+}
+
+/** Where the bar chart puts each column — shared by the drawing and the pointer. */
+function barGeometry(points, width, height) {
+  // The line's frame, so switching views leaves the plot exactly where it was.
+  const m = { t: 16, r: 54, b: 28, l: 42 };
+  const plotW = width - m.l - m.r;
+  const plotH = height - m.t - m.b;
+  const dom = countDomain(Math.max(...points.map((p) => p.counts.total)));
+  const yOf = (v) => m.t + plotH - (v / dom.hi) * plotH;
+  const band = bandLayout(points.length, m.l, plotW, 24);
+  return { m, plotW, plotH, dom, yOf, band, x: (i) => band.center(i), y: (i) => yOf(points[i].counts.total) };
+}
+
+/**
+ * The same weeks as review counts: one column per point, stacked positive,
+ * negative, neutral. Columns take equal slots rather than a time scale, because
+ * the tracker now runs daily and columns placed by date would overlap.
+ */
+function barChart(points, { width = 860, height = 260 } = {}) {
+  if (points.length === 0) {
+    return `<div class="no-history"><div class="no-history-icon">◌</div>
+      <div class="no-history-title">No review counts yet</div>
+      <div class="no-history-text">The tracker records how many posts lean each way from its
+      next run on. The line view has the score history in the meantime.</div></div>`;
+  }
+
+  const { m, plotW, plotH, dom, yOf, band, x: xAt } = barGeometry(points, width, height);
+  const base = m.t + plotH;
+
+  const grid = dom.ticks.map((tick) => {
+    const y = yOf(tick);
+    return `<line x1="${m.l}" y1="${y}" x2="${m.l + plotW}" y2="${y}"
+      stroke="var(--border2)" stroke-width="1"/>
+      <text x="${m.l - 8}" y="${y + 4}" text-anchor="end" fill="var(--text4)"
+        font-size="9" font-family="'DM Mono',monospace">${fmtNum(tick)}</text>`;
+  }).join('');
+
+  const columns = points.map((p, i) => `<g class="trend-bar">${
+    stackSegments(p.counts, xAt(i) - band.width / 2, band.width, yOf)}</g>`).join('');
+
+  // The line's hollow and filled dots, kept under each column: which points
+  // were rebuilt from dated sources and which were collected on the day.
+  const provenance = points.map((p, i) => (p.reconstructed
+    ? `<circle cx="${px2(xAt(i))}" cy="${base + 6}" r="1.75" fill="none" stroke="var(--text5)" stroke-width="1"/>`
+    : `<circle cx="${px2(xAt(i))}" cy="${base + 6}" r="2.25" fill="var(--text4)"/>`)).join('');
+
+  const last = points[points.length - 1];
+  const labelX = px2(xAt(points.length - 1) + band.width / 2 + 6);
+  const labelY = px2(Math.max(m.t + 4, yOf(last.counts.total) + 4));
+
+  return `<svg class="trend-svg" viewBox="0 0 ${width} ${height}" width="100%" height="${height}"
+      role="img" tabindex="0" aria-label="Reviews behind each week, positive, negative and neutral. Arrow keys step through the weeks; Enter opens the posts behind one.">
+    ${grid}
+    <g class="bars">${columns}</g>
+    ${provenance}
+    <text x="${labelX}" y="${labelY}" fill="var(--text2)" font-size="11"
+      font-family="'DM Mono',monospace" font-weight="600">${fmtNum(last.counts.total)}</text>
+    ${axisDates(points, (i) => px2(xAt(i)), height, { flushEdges: false })}
+    <rect class="trend-hit" x="${m.l}" y="${m.t}" width="${plotW}" height="${plotH}" fill="transparent"/>
+  </svg>`;
+}
+
+/** The topic cards' version: the same columns, small, each card on its own scale. */
+function sparkBars(points, width = 150, height = 34) {
+  if (!points.length) return `<svg width="${width}" height="${height}"></svg>`;
+  const top = 3;
+  const bottom = height - 2;
+  const hi = Math.max(...points.map((p) => p.counts.total));
+  const yOf = (v) => bottom - (v / hi) * (bottom - top);
+  const band = bandLayout(points.length, 1, width - 2, 6);
+  const columns = points.map((p, i) =>
+    stackSegments(p.counts, band.center(i) - band.width / 2, band.width, yOf, { gap: 1, radius: 1 })).join('');
+  return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" aria-hidden="true">
+    <g class="bars">${columns}</g>
+  </svg>`;
+}
+
+/* ─── reading a point ──────────────────────────────────────────────────────── */
+
+const topicName = (id) => (id === 'overall'
+  ? 'All topics'
+  : (state.topics.find((t) => t.id === id)?.label || id));
+
+/** The line's readout: the score and the weighted split behind it. */
+function lineTip(point) {
+  const b = point.bucket || {};
+  const row = (value, name, colour) =>
+    `<div class="t-row"><span class="t-val"${colour ? ` style="color:${colour}"` : ''}>${esc(value)}</span>`
+    + `<span class="t-name">${esc(name)}</span></div>`;
+  return `<div class="t-title">${esc(topicName(state.historyTopic))} · ${esc(fmtDate(point.date))}</div>`
+    + row(typeof b.score === 'number' ? `${b.score.toFixed(1)}/5` : 'n/a', 'score', scoreColor(b.score))
+    + row(`${b.pctPositive ?? '—'}%`, 'positive', '#22c55e')
+    + row(`${b.pctNegative ?? '—'}%`, 'negative', '#ef4444')
+    + row(`${b.pctMixed ?? '—'}%`, 'mixed')
+    + row(b.opinionItems ?? '—', 'people with a view')
+    + row(b.items ?? '—', 'items scanned')
+    + (b.tiers ? row(`${b.tiers.current}/${b.tiers.prior}/${b.tiers.legacy}`,
+      'current / prior / legacy') : '')
+    + '<div class="t-hint">click to read the posts behind this week</div>';
+}
+
+/** The bars' readout, set out as the sum it is: three counts over their total. */
+function barTip(point) {
+  const c = point.counts;
+  const b = point.bucket || {};
+  const weeks = (state.trend?.days?.find((d) => d.date === point.date)?.windowDays || 56) / 7;
+  const row = (fill, value, name) => `<div class="t-row"><span class="t-key" style="background:${fill}"></span>`
+    + `<span class="t-val">${esc(fmtNum(value))}</span><span class="t-name">${esc(name)}</span></div>`;
+  return `<div class="t-title">${esc(topicName(state.historyTopic))} · ${esc(fmtDate(point.date))}</div>`
+    + row('var(--viz-pos)', c.positive, 'positive')
+    + row('var(--viz-neg)', c.negative, 'negative')
+    + row('var(--viz-neutral)', c.neutral, 'neutral · no clear side')
+    + `<div class="t-row t-total"><span class="t-key"></span><span class="t-val">${esc(fmtNum(c.total))}</span>`
+    + `<span class="t-name">reviews in the ${weeks} weeks to this date</span></div>`
+    + (b.vendorItems
+      ? `<div class="t-note">+ ${esc(fmtNum(b.vendorItems))} from SAP itself, read but not counted</div>`
+      : '')
+    + '<div class="t-hint">click to read the posts behind this week</div>';
+}
+
+/**
+ * Pointer and keyboard on the history chart, line or bars. Readers aim at a
+ * date, not at a 2px line or a thin column, so the whole plot answers with its
+ * nearest point. Arrow keys walk the same points and Enter opens the posts
+ * behind one, so none of it needs a mouse.
+ */
+function wireTrendChart(root) {
   const svg = root.querySelector('.trend-svg');
   const hit = root.querySelector('.trend-hit');
-  const cross = root.querySelector('.trend-crosshair');
-  if (!svg || !hit || !cross) return;
+  if (!svg || !hit) return;
 
-  const points = series(state.historyTopic, state.metric);
+  const bars = state.chartMode === 'bars';
+  const points = bars ? barSeries(state.historyTopic) : series(state.historyTopic, state.metric);
   if (!points.length) return;
-  const spec = METRICS[state.metric];
   const box = svg.viewBox.baseVal;
-  const m = { l: 42, r: 54 };
-  const plotW = box.width - m.l - m.r;
-  const times = points.map((p) => new Date(p.date).getTime());
-  const tMin = Math.min(...times);
-  const tMax = Math.max(...times);
-  const xOf = (t) => (tMax === tMin ? m.l + plotW / 2 : m.l + ((t - tMin) / (tMax - tMin)) * plotW);
+  const geo = bars
+    ? barGeometry(points, box.width, box.height)
+    : lineGeometry(points, METRICS[state.metric], box.width, box.height);
+  const cross = svg.querySelector('.trend-crosshair');
+  const columns = [...svg.querySelectorAll('.trend-bar')];
+  const tip = $('tooltip');
+  let active = -1;
 
-  const move = (ev) => {
-    const rect = svg.getBoundingClientRect();
-    const px = ((ev.clientX - rect.left) / rect.width) * box.width;
-    let nearest = 0;
-    let best = Infinity;
-    times.forEach((t, i) => {
-      const dist = Math.abs(xOf(t) - px);
-      if (dist < best) { best = dist; nearest = i; }
-    });
-    const x = xOf(times[nearest]);
-    cross.setAttribute('x1', x);
-    cross.setAttribute('x2', x);
-    cross.setAttribute('opacity', '1');
+  // Through the SVG's own transform, so the mapping holds when the card is
+  // wider than the viewBox and the plot sits letterboxed in the middle of it.
+  const toChart = (x, y) => new DOMPoint(x, y).matrixTransform(svg.getScreenCTM().inverse());
+  const toScreen = (x, y) => new DOMPoint(x, y).matrixTransform(svg.getScreenCTM());
 
-    const point = points[nearest];
-    const b = point.bucket || {};
-    const topicLabel = state.historyTopic === 'overall'
-      ? 'All topics'
-      : (state.topics.find((t) => t.id === state.historyTopic)?.label || state.historyTopic);
-    const row = (value, name, colour) =>
-      `<div class="t-row"><span class="t-val"${colour ? ` style="color:${colour}"` : ''}>${esc(value)}</span>`
-      + `<span class="t-name">${esc(name)}</span></div>`;
-
-    const tip = $('tooltip');
-    tip.innerHTML = `<div class="t-title">${esc(topicLabel)} · ${esc(fmtDate(point.date))}</div>`
-      + row(typeof b.score === 'number' ? `${b.score.toFixed(1)}/5` : 'n/a', 'score', scoreColor(b.score))
-      + row(`${b.pctPositive ?? '—'}%`, 'positive', '#22c55e')
-      + row(`${b.pctNegative ?? '—'}%`, 'negative', '#ef4444')
-      + row(`${b.pctMixed ?? '—'}%`, 'mixed')
-      + row(b.opinionItems ?? '—', 'people with a view')
-      + row(b.items ?? '—', 'items scanned')
-      + (b.tiers ? row(`${b.tiers.current}/${b.tiers.prior}/${b.tiers.legacy}`,
-        'current / prior / legacy') : '')
-      + '<div class="t-hint">click to read the posts behind this week</div>';
-    tip.style.opacity = '1';
-    const tb = tip.getBoundingClientRect();
-    tip.style.left = `${Math.min(Math.max(8, ev.clientX + 14), window.innerWidth - tb.width - 8)}px`;
-    tip.style.top = `${Math.max(8, ev.clientY - tb.height - 12)}px`;
+  const nearest = (clientX, clientY) => {
+    const px = toChart(clientX, clientY).x;
+    let best = 0;
+    for (let i = 1; i < points.length; i += 1) {
+      if (Math.abs(geo.x(i) - px) < Math.abs(geo.x(best) - px)) best = i;
+    }
+    return best;
   };
 
-  hit.addEventListener('pointermove', move);
-  hit.addEventListener('pointerleave', () => {
-    cross.setAttribute('opacity', '0');
-    $('tooltip').style.opacity = '0';
-  });
+  const show = (i, clientX, clientY) => {
+    active = i;
+    if (cross) {
+      cross.setAttribute('x1', geo.x(i));
+      cross.setAttribute('x2', geo.x(i));
+      cross.setAttribute('opacity', '1');
+    }
+    svg.classList.toggle('is-hovering', bars);
+    columns.forEach((col, j) => col.classList.toggle('is-active', j === i));
+    tip.innerHTML = bars ? barTip(points[i]) : lineTip(points[i]);
+    tip.style.opacity = '1';
+    const tb = tip.getBoundingClientRect();
+    tip.style.left = `${Math.min(Math.max(8, clientX + 14), window.innerWidth - tb.width - 8)}px`;
+    tip.style.top = `${Math.max(8, clientY - tb.height - 12)}px`;
+  };
+
+  const hide = () => {
+    cross?.setAttribute('opacity', '0');
+    svg.classList.remove('is-hovering');
+    columns.forEach((col) => col.classList.remove('is-active'));
+    tip.style.opacity = '0';
+  };
+
+  // From the keyboard, the readout pins beside the point instead of a pointer.
+  const showAt = (i) => {
+    const at = toScreen(geo.x(i), geo.y(i));
+    show(i, at.x, at.y);
+  };
+  const open = (i) => openEvidence(points[i].date, state.historyTopic, points[i].bucket);
+
+  hit.addEventListener('pointermove', (ev) => show(nearest(ev.clientX, ev.clientY), ev.clientX, ev.clientY));
+  hit.addEventListener('pointerleave', hide);
 
   // Hovering says what the number is. Clicking says where it came from.
   hit.style.cursor = 'pointer';
-  hit.addEventListener('click', (ev) => {
-    const rect = svg.getBoundingClientRect();
-    const px = ((ev.clientX - rect.left) / rect.width) * box.width;
-    let nearest = 0;
-    let best = Infinity;
-    times.forEach((t, i) => {
-      const dist = Math.abs(xOf(t) - px);
-      if (dist < best) { best = dist; nearest = i; }
-    });
-    openEvidence(points[nearest].date, state.historyTopic, points[nearest].bucket);
+  hit.addEventListener('click', (ev) => open(nearest(ev.clientX, ev.clientY)));
+
+  svg.addEventListener('focus', () => {
+    if (svg.matches(':focus-visible')) showAt(active >= 0 ? active : points.length - 1);
+  });
+  svg.addEventListener('blur', hide);
+  svg.addEventListener('keydown', (ev) => {
+    const from = active >= 0 ? active : points.length - 1;
+    const to = { ArrowLeft: from - 1, ArrowRight: from + 1, Home: 0, End: points.length - 1 }[ev.key];
+    if (to !== undefined) {
+      ev.preventDefault();
+      showAt(Math.max(0, Math.min(points.length - 1, to)));
+    } else if (ev.key === 'Enter' || ev.key === ' ') {
+      ev.preventDefault();
+      open(from);
+    } else if (ev.key === 'Escape') {
+      hide();
+    }
   });
 }
 
@@ -1227,6 +1462,217 @@ function coveragePanel() {
   </div>`;
 }
 
+/** The history card's header: which topic, and how far its score has moved. */
+function historyHead() {
+  const days = state.trend?.days || [];
+  const metric = state.metric;
+  const spec = METRICS[metric];
+  const points = series(state.historyTopic, metric);
+  const first = points[0];
+  const last = points[points.length - 1];
+  const delta = points.length >= 2 ? last.value - first.value : null;
+  const deltaHTML = delta === null ? ''
+    : `<span class="change-badge" style="color:${Math.abs(delta) < (metric === 'score' ? 0.15 : 2) ? 'var(--text4)' : delta > 0 ? '#22c55e' : '#ef4444'}">
+        ${Math.abs(delta) < (metric === 'score' ? 0.15 : 2) ? 'STABLE' : `${delta > 0 ? '▲' : '▼'} ${spec.fmt(Math.abs(delta))}`}
+        over ${points.length} week${points.length === 1 ? '' : 's'}</span>`;
+
+  return `<span class="tlc-icon">📈</span>
+      <div style="flex:1;min-width:0">
+        <div class="card-title">Sentiment over time — ${esc(topicName(state.historyTopic))}</div>
+        <div class="card-meta">AUTOMATED SOURCE TRACKER (PUBLIC FEEDS) · ${days.length} WEEKLY POINT${days.length === 1 ? '' : 'S'}</div>
+      </div>
+      ${deltaHTML}`;
+}
+
+/** What the colours mean: the score scale for the line, the three counts for the bars. */
+function historyKey() {
+  if (state.chartMode === 'bars') {
+    return BAR_STACK.map((s) =>
+      `<span class="bar-key"><i style="background:${s.fill}"></i>${esc(s.label)}</span>`).join('');
+  }
+  return `<span class="sk-dot" style="background:#ef4444"></span>1 mostly criticism
+          <span class="sk-dot" style="background:#f59e0b;margin-left:10px"></span>3 divided
+          <span class="sk-dot" style="background:#22c55e;margin-left:10px"></span>5 strong advocates`;
+}
+
+const MODE_ICONS = {
+  line: '<svg class="seg-icon" viewBox="0 0 14 14" width="13" height="13" aria-hidden="true">'
+    + '<path d="M1.5 10.5 5 6.5l2.5 2.5 5-6" fill="none" stroke="currentColor" stroke-width="1.6" '
+    + 'stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  bars: '<svg class="seg-icon" viewBox="0 0 14 14" width="13" height="13" aria-hidden="true">'
+    + '<path d="M2.5 12.5v-5M7 12.5v-10M11.5 12.5v-7" fill="none" stroke="currentColor" '
+    + 'stroke-width="2.4" stroke-linecap="round"/></svg>',
+};
+
+/** Line or bars, for the whole view at once: the main chart, the topic cards and the table. */
+function chartModeToggle() {
+  const option = (id, label) => `<button class="seg-btn" type="button" data-chart-mode="${id}"
+      aria-pressed="${state.chartMode === id}">${MODE_ICONS[id]}<span>${label}</span></button>`;
+  return `<div class="seg" role="group" aria-label="Chart type" data-mode="${state.chartMode}">
+      <span class="seg-thumb" aria-hidden="true"></span>
+      ${option('line', 'Line')}${option('bars', 'Bars')}
+    </div>`;
+}
+
+/** A card whose topic has nothing to draw yet. */
+function emptyTopicCard(topic, why) {
+  return `<button class="timeline-card" data-history="${esc(topic.id)}" type="button"
+      style="text-align:left;cursor:pointer;width:100%;opacity:.55">
+    <div class="timeline-row">
+      <span class="tlc-icon">${topic.icon}</span>
+      <span class="card-title" style="font-size:12px">${esc(topic.label)}</span>
+      <span class="change-badge" style="margin-left:auto;color:var(--text4)">no data</span>
+    </div>
+    <div class="card-meta">${esc(why)}</div>
+  </button>`;
+}
+
+/** A topic on the line: its latest score and which way it has moved. */
+function lineTopicCard(topic) {
+  const metric = state.metric;
+  const spec = METRICS[metric];
+  const tp = series(topic.id, metric);
+  if (tp.length === 0) return emptyTopicCard(topic, 'too few opinions to plot');
+  const cur = tp.length ? tp[tp.length - 1].value : null;
+  const prev = tp.length > 1 ? tp[0].value : null;
+  const dir = cur === null || prev === null ? '' :
+    (cur - prev) > (metric === 'score' ? 0.15 : 2) ? '<span style="color:#22c55e">▲</span>'
+      : (prev - cur) > (metric === 'score' ? 0.15 : 2) ? '<span style="color:#ef4444">▼</span>'
+        : '<span style="color:var(--text4)">■</span>';
+  return `<button class="timeline-card" data-history="${esc(topic.id)}" type="button"
+      style="text-align:left;cursor:pointer;width:100%">
+    <div class="timeline-row">
+      <span class="tlc-icon">${topic.icon}</span>
+      <span class="card-title" style="font-size:12px">${esc(topic.label)}</span>
+      <span class="change-badge" style="margin-left:auto;color:var(--text2)">${dir}
+        <span style="font-weight:700">${cur === null ? '—' : esc(spec.fmt(cur))}</span></span>
+    </div>
+    ${sparkline(tp, metric)}
+    <div class="card-meta">${tp.length} week${tp.length === 1 ? '' : 's'}</div>
+  </button>`;
+}
+
+/** A topic as bars: how many posts its latest point stands on, and how they split. */
+function barTopicCard(topic) {
+  const tp = barSeries(topic.id);
+  if (tp.length === 0) return emptyTopicCard(topic, 'no counts recorded yet');
+  const c = tp[tp.length - 1].counts;
+  return `<button class="timeline-card" data-history="${esc(topic.id)}" type="button"
+      style="text-align:left;cursor:pointer;width:100%">
+    <div class="timeline-row">
+      <span class="tlc-icon">${topic.icon}</span>
+      <span class="card-title" style="font-size:12px">${esc(topic.label)}</span>
+      <span class="change-badge" style="margin-left:auto;color:var(--text2)"
+        title="${esc(`${fmtNum(c.total)} reviews behind the latest point`)}"><span
+        style="font-weight:700">${esc(fmtNum(c.total))}</span></span>
+    </div>
+    ${sparkBars(tp)}
+    <div class="card-meta">${esc(fmtNum(c.positive))} positive · ${esc(fmtNum(c.negative))} negative ·
+      ${esc(fmtNum(c.neutral))} neutral</div>
+  </button>`;
+}
+
+/**
+ * The history chart is drawn at the width it is shown at. Drawn at a fixed 860
+ * and scaled, its 9px labels shrank to 3px on a phone, and on a wide screen the
+ * plot sat letterboxed between two empty bands.
+ */
+let drawnChartWidth = 0;
+function historyChartWidth() {
+  const block = $('historyChart');
+  const main = $('main');
+  const shown = block?.clientWidth || (main ? main.clientWidth - 36 : 0);
+  return Math.round(Math.max(300, Math.min(1400, shown || 860)));
+}
+
+/** Everything under the controls: caption, chart, provenance, topic cards, table. */
+function historyChartBlock() {
+  const days = state.trend?.days || [];
+  const metric = state.metric;
+  const spec = METRICS[metric];
+  const bars = state.chartMode === 'bars';
+  const width = historyChartWidth();
+  drawnChartWidth = width;
+  const weeks = (days[days.length - 1]?.windowDays || 56) / 7;
+  const bucketOf = (day) => (state.historyTopic === 'overall' ? day.overall : day.topics?.[state.historyTopic]);
+
+  const note = bars
+    ? `<p class="scale-note">Each bar counts the posts behind that week's score: everything read in the
+        ${weeks} weeks ending that date, split into positive, negative and neutral, which is anything that
+        took no clear side. SAP's own posts are read but not counted. Hover for the numbers —
+        <b>click a bar to read the posts</b>.</p>`
+    : `<p class="scale-note">Each week's score is the recency-weighted average view of everyone
+        who expressed one in the ${weeks} weeks ending that date. Hover for the split behind a week —
+        <b>click it to read the posts the score is made of</b>.</p>`;
+
+  const points = bars ? barSeries(state.historyTopic) : series(state.historyTopic, metric);
+  const rebuilt = points.filter((p) => p.reconstructed).length;
+  let provenance;
+  let axis;
+  if (bars) {
+    const unsplit = days.filter((d) => bucketOf(d) && !countsOf(bucketOf(d))).length;
+    provenance = (rebuilt === 0 ? 'all bars collected live'
+      : `${rebuilt} earlier bar${rebuilt === 1 ? '' : 's'} computed from dated sources (hollow marker), later bars collected live (filled)`)
+      + (unsplit ? ` · ${unsplit} point${unsplit === 1 ? '' : 's'} recorded no split and ${unsplit === 1 ? 'is' : 'are'} left out` : '');
+    axis = 'counts of posts, axis from zero';
+  } else {
+    const thin = points.filter((p) => p.thin).length;
+    const where = rebuilt === 0 ? 'all points collected live'
+      : `${rebuilt} earlier point${rebuilt === 1 ? '' : 's'} computed from dated sources (hollow), later points collected live (filled)`;
+    // The sparsity is the first thing a reader should know about a line like
+    // this, so it is stated next to the line rather than left to be inferred.
+    provenance = thin
+      ? `${where} · ${thin} of ${points.length} week${points.length === 1 ? '' : 's'} rested on fewer than three opinions (dashed)`
+      : where;
+    const d = domainFor(points, spec);
+    axis = d.full ? 'axis at full scale' : `axis ${spec.fmt(d.lo)}–${spec.fmt(d.hi)}, fitted to the data`;
+  }
+
+  const smalls = state.topics.map(bars ? barTopicCard : lineTopicCard).join('');
+
+  const rows = days.slice().reverse().slice(0, 30).map((day) => {
+    const bucket = bucketOf(day);
+    if (!bucket) return '';
+    if (bars) {
+      const c = countsOf(bucket);
+      return `<tr>
+      <td>${esc(fmtDate(day.date))}</td>
+      <td class="num">${fmtNum(c?.positive)}</td>
+      <td class="num">${fmtNum(c?.negative)}</td>
+      <td class="num">${fmtNum(c?.neutral)}</td>
+      <td class="num">${fmtNum(c?.total)}</td>
+    </tr>`;
+    }
+    return `<tr>
+      <td>${esc(fmtDate(day.date))}</td>
+      <td class="num">${typeof bucket.score === 'number' ? bucket.score.toFixed(1) : '—'}</td>
+      <td class="num">${bucket.pctPositive ?? '—'}%</td>
+      <td class="num">${bucket.pctNegative ?? '—'}%</td>
+      <td class="num">${bucket.opinionItems ?? '—'}</td>
+      <td class="num">${bucket.items ?? '—'}</td>
+    </tr>`;
+  }).join('');
+  const columns = bars
+    ? '<th>Week</th><th class="num">Positive</th><th class="num">Negative</th><th class="num">Neutral</th><th class="num">Reviews</th>'
+    : '<th>Week</th><th class="num">Score</th><th class="num">% positive</th><th class="num">% negative</th><th class="num">With a view</th><th class="num">Scanned</th>';
+
+  return `${note}
+      ${bars ? barChart(points, { width }) : trendChart(points, metric, { width })}
+      ${points.length ? `<div class="card-meta" style="margin-top:6px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <span>${provenance}</span>
+        <span>${axis}</span>
+      </div>` : ''}
+      <div class="findings-label" style="margin-top:18px">BY TOPIC</div>
+      <div class="stable-grid">${smalls}</div>
+      <details class="history-table" style="margin-top:16px"${state.historyTableOpen ? ' open' : ''}>
+        <summary style="cursor:pointer;font-size:11px;color:var(--text3);font-family:'DM Mono',monospace">TABLE VIEW</summary>
+        <div class="scroll"><table class="trend-table">
+          <thead><tr>${columns}</tr></thead>
+          <tbody>${rows}</tbody>
+        </table></div>
+      </details>`;
+}
+
 function historyView() {
   const days = state.trend?.days || [];
   if (days.length === 0) {
@@ -1238,80 +1684,11 @@ function historyView() {
     </div>`;
   }
 
-  const metric = state.metric;
-  const spec = METRICS[metric];
-  const points = series(state.historyTopic, metric);
-  const topicLabel = state.historyTopic === 'overall'
-    ? 'All topics'
-    : (state.topics.find((t) => t.id === state.historyTopic)?.label || state.historyTopic);
-
-  const first = points[0];
-  const last = points[points.length - 1];
-  const delta = points.length >= 2 ? last.value - first.value : null;
-  const deltaHTML = delta === null ? ''
-    : `<span class="change-badge" style="color:${Math.abs(delta) < (metric === 'score' ? 0.15 : 2) ? 'var(--text4)' : delta > 0 ? '#22c55e' : '#ef4444'}">
-        ${Math.abs(delta) < (metric === 'score' ? 0.15 : 2) ? 'STABLE' : `${delta > 0 ? '▲' : '▼'} ${spec.fmt(Math.abs(delta))}`}
-        over ${points.length} week${points.length === 1 ? '' : 's'}</span>`;
-
-  const topicOptions = ['overall', ...state.topics.map((t) => t.id)].map((id) => {
-    const label = id === 'overall' ? 'All topics' : state.topics.find((t) => t.id === id)?.label || id;
-    return `<option value="${esc(id)}"${id === state.historyTopic ? ' selected' : ''}>${esc(label)}</option>`;
-  }).join('');
-
-  const smalls = state.topics.map((topic) => {
-    const tp = series(topic.id, metric);
-    if (tp.length === 0) {
-      return `<button class="timeline-card" data-history="${esc(topic.id)}" type="button"
-          style="text-align:left;cursor:pointer;width:100%;opacity:.55">
-        <div class="timeline-row">
-          <span class="tlc-icon">${topic.icon}</span>
-          <span class="card-title" style="font-size:12px">${esc(topic.label)}</span>
-          <span class="change-badge" style="margin-left:auto;color:var(--text4)">no data</span>
-        </div>
-        <div class="card-meta">too few opinions to plot</div>
-      </button>`;
-    }
-    const cur = tp.length ? tp[tp.length - 1].value : null;
-    const prev = tp.length > 1 ? tp[0].value : null;
-    const dir = cur === null || prev === null ? '' :
-      (cur - prev) > (metric === 'score' ? 0.15 : 2) ? '<span style="color:#22c55e">▲</span>'
-        : (prev - cur) > (metric === 'score' ? 0.15 : 2) ? '<span style="color:#ef4444">▼</span>'
-          : '<span style="color:var(--text4)">■</span>';
-    return `<button class="timeline-card" data-history="${esc(topic.id)}" type="button"
-        style="text-align:left;cursor:pointer;width:100%">
-      <div class="timeline-row">
-        <span class="tlc-icon">${topic.icon}</span>
-        <span class="card-title" style="font-size:12px">${esc(topic.label)}</span>
-        <span class="change-badge" style="margin-left:auto;color:var(--text2)">${dir}
-          <span style="font-weight:700">${cur === null ? '—' : esc(spec.fmt(cur))}</span></span>
-      </div>
-      ${sparkline(tp, metric)}
-      <div class="card-meta">${tp.length} week${tp.length === 1 ? '' : 's'}</div>
-    </button>`;
-  }).join('');
-
-  const rows = days.slice().reverse().slice(0, 30).map((day) => {
-    const bucket = state.historyTopic === 'overall' ? day.overall : day.topics?.[state.historyTopic];
-    if (!bucket) return '';
-    return `<tr>
-      <td>${esc(fmtDate(day.date))}</td>
-      <td class="num">${typeof bucket.score === 'number' ? bucket.score.toFixed(1) : '—'}</td>
-      <td class="num">${bucket.pctPositive ?? '—'}%</td>
-      <td class="num">${bucket.pctNegative ?? '—'}%</td>
-      <td class="num">${bucket.opinionItems ?? '—'}</td>
-      <td class="num">${bucket.items ?? '—'}</td>
-    </tr>`;
-  }).join('');
+  const topicOptions = ['overall', ...state.topics.map((t) => t.id)].map((id) =>
+    `<option value="${esc(id)}"${id === state.historyTopic ? ' selected' : ''}>${esc(topicName(id))}</option>`).join('');
 
   return `<div class="result-card">
-    <div class="card-header" style="cursor:default">
-      <span class="tlc-icon">📈</span>
-      <div style="flex:1;min-width:0">
-        <div class="card-title">Sentiment over time — ${esc(topicLabel)}</div>
-        <div class="card-meta">AUTOMATED SOURCE TRACKER (PUBLIC FEEDS) · ${days.length} WEEKLY POINT${days.length === 1 ? '' : 'S'}</div>
-      </div>
-      ${deltaHTML}
-    </div>
+    <div class="card-header" id="historyHead" style="cursor:default">${historyHead()}</div>
     <div class="card-body">
       <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:11px;color:var(--text3);font-family:'Lora',serif;line-height:1.5">
         <strong style="color:var(--text);font-family:'Syne',sans-serif">Automated Public Feeds Tracker:</strong>
@@ -1322,52 +1699,86 @@ function historyView() {
           DEEP RESEARCH SNAPSHOT: ${state.data?.generatedAt ? fmtDate(state.data.generatedAt) : '—'}
         </div>
       </div>
-      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px">
+      <div class="history-controls">
         <select id="historyTopic" class="history-select" aria-label="Topic">${topicOptions}</select>
-        <span class="scale-key">
-          <span class="sk-dot" style="background:#ef4444"></span>1 mostly criticism
-          <span class="sk-dot" style="background:#f59e0b;margin-left:10px"></span>3 divided
-          <span class="sk-dot" style="background:#22c55e;margin-left:10px"></span>5 strong advocates
-        </span>
+        ${chartModeToggle()}
+        <span class="scale-key" id="historyKey">${historyKey()}</span>
       </div>
-      <p class="scale-note">Each week's score is the recency-weighted average view of everyone
-        who expressed one in the ${(() => {
-    const d = state.trend?.days || [];
-    const w = d[d.length - 1]?.windowDays || 56;
-    return w / 7;
-  })()} weeks ending that date. Hover for the split behind a week —
-        <b>click it to read the posts the score is made of</b>.</p>
-      ${trendChart(points, metric)}
-      <div class="card-meta" style="margin-top:6px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap">
-        <span>${(() => {
-    const rebuilt = points.filter((p) => p.reconstructed).length;
-    const thin = points.filter((p) => p.thin).length;
-    const provenance = rebuilt === 0 ? 'all points collected live'
-      : `${rebuilt} earlier point${rebuilt === 1 ? '' : 's'} computed from dated sources (hollow), later points collected live (filled)`;
-    // The sparsity is the first thing a reader should know about a line like
-    // this, so it is stated next to the line rather than left to be inferred.
-    return thin
-      ? `${provenance} · ${thin} of ${points.length} week${points.length === 1 ? '' : 's'} `
-        + 'rested on fewer than three opinions (dashed)'
-      : provenance;
-  })()}</span>
-        <span>${(() => {
-    const d = domainFor(points, spec);
-    return d.full ? 'axis at full scale'
-      : `axis ${spec.fmt(d.lo)}–${spec.fmt(d.hi)}, fitted to the data`;
-  })()}</span>
-      </div>
-      <div class="findings-label" style="margin-top:18px">BY TOPIC</div>
-      <div class="stable-grid">${smalls}</div>
-      <details style="margin-top:16px">
-        <summary style="cursor:pointer;font-size:11px;color:var(--text3);font-family:'DM Mono',monospace">TABLE VIEW</summary>
-        <div class="scroll"><table class="trend-table">
-          <thead><tr><th>Week</th><th class="num">Score</th><th class="num">% positive</th><th class="num">% negative</th><th class="num">With a view</th><th class="num">Scanned</th></tr></thead>
-          <tbody>${rows}</tbody>
-        </table></div>
-      </details>
+      <div class="history-chart" id="historyChart">${historyChartBlock()}</div>
     </div>
   </div>`;
+}
+
+/**
+ * The controls stay where they are; only what they change is redrawn. A full
+ * render would replay the card's entrance, drop keyboard focus and snap the
+ * toggle instead of sliding it.
+ */
+function wireHistory(root) {
+  const select = root.querySelector('#historyTopic');
+  if (!select) return;
+  select.addEventListener('change', () => {
+    state.historyTopic = select.value;
+    refreshHistory();
+  });
+  for (const btn of root.querySelectorAll('[data-chart-mode]')) {
+    // A keyboard press arrives as a click with no pointer detail. It switches
+    // without motion: animating a keyboard action only makes it feel slow.
+    btn.addEventListener('click', (ev) => setChartMode(btn.dataset.chartMode, ev.detail > 0));
+  }
+  wireHistoryBlock(root);
+}
+
+function wireHistoryBlock(root) {
+  for (const btn of root.querySelectorAll('[data-history]')) {
+    btn.addEventListener('click', () => {
+      state.historyTopic = btn.dataset.history;
+      const select = $('historyTopic');
+      if (select) select.value = state.historyTopic;
+      refreshHistory();
+      // The chart that just changed sits above the cards; bring it back into view.
+      const controls = document.querySelector('.history-controls');
+      if (controls && controls.getBoundingClientRect().top < 60) {
+        const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        controls.scrollIntoView({ behavior: still ? 'auto' : 'smooth', block: 'start' });
+      }
+    });
+  }
+  const table = root.querySelector('.history-table');
+  table?.addEventListener('toggle', () => { state.historyTableOpen = table.open; });
+  wireTrendChart(root);
+}
+
+/** Redraw what depends on the topic or the mode, and leave the controls alone. */
+function refreshHistory({ animate = false } = {}) {
+  const block = $('historyChart');
+  if (!block) { render(); return; }
+  $('tooltip').style.opacity = '0';
+  $('historyHead').innerHTML = historyHead();
+  $('historyKey').innerHTML = historyKey();
+  block.innerHTML = historyChartBlock();
+  block.classList.remove('is-swapping');
+  if (animate) {
+    void block.offsetWidth;   // restart the entrance if it is still running
+    block.classList.add('is-swapping');
+  }
+  wireHistoryBlock(block);
+}
+
+function setChartMode(mode, animate) {
+  if (mode !== 'line' && mode !== 'bars') return;
+  const seg = document.querySelector('.seg');
+  if (seg) {
+    seg.classList.toggle('is-instant', !animate);
+    seg.dataset.mode = mode;
+    for (const btn of seg.querySelectorAll('[data-chart-mode]')) {
+      btn.setAttribute('aria-pressed', String(btn.dataset.chartMode === mode));
+    }
+  }
+  if (mode === state.chartMode) return;
+  state.chartMode = mode;
+  try { localStorage.setItem(CHART_MODE_KEY, mode); } catch { /* private mode */ }
+  refreshHistory({ animate });
 }
 
 /* ─── sdk adoption telemetry ────────────────────────────────────────────────── */
@@ -1782,14 +2193,7 @@ function render() {
   for (const btn of main.querySelectorAll('[data-check-published]')) {
     btn.addEventListener('click', () => checkPublishedResult(btn.dataset.checkPublished));
   }
-  for (const btn of main.querySelectorAll('[data-history]')) {
-    btn.addEventListener('click', () => { state.historyTopic = btn.dataset.history; render(); });
-  }
-  const topicSelect = main.querySelector('#historyTopic');
-  if (topicSelect) {
-    topicSelect.addEventListener('change', (ev) => { state.historyTopic = ev.target.value; render(); });
-  }
-  wireCrosshair(main);
+  wireHistory(main);
 
   for (const btn of main.querySelectorAll('[data-sdk-pkg]')) {
     btn.addEventListener('click', () => {
@@ -1882,6 +2286,16 @@ async function loadJson(url, fallback, retries = 2) {
 
 async function boot() {
   wireTheme();
+
+  // Redraw the history chart when the width it is shown at changes — a resized
+  // window, a scrollbar arriving with the content — once it settles, not per frame.
+  let resizeTimer = null;
+  new ResizeObserver(() => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      if ($('historyChart') && Math.abs(historyChartWidth() - drawnChartWidth) >= 8) refreshHistory();
+    }, 120);
+  }).observe($('main'));
   const [topics, data, trend, site, sdk] = await Promise.all([
     loadJson('./data/topics.json', { topics: [] }),
     loadJson('./data/dashboard.json', null),

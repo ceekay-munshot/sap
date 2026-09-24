@@ -110,6 +110,39 @@ if (await hit.count()) {
   note('no chart hit area to click');
 }
 
+// The same history as review-count bars. One toggle switches the whole view,
+// so every topic has to draw columns — main chart and card alike — and a
+// column has to open its week just as a point on the line does.
+const barsToggle = page.locator('[data-chart-mode="bars"]').first();
+if (await barsToggle.count() && await select.count()) {
+  await barsToggle.click();
+  await page.waitForTimeout(400);
+  for (const value of await select.locator('option').evaluateAll((os) => os.map((o) => o.value))) {
+    await select.selectOption(value);
+    await page.waitForTimeout(250);
+    const columns = await page.locator('.trend-svg .trend-bar').count();
+    console.log(`  bars:  ${value.padEnd(18)} ${columns} column(s)`);
+    if (!columns) note(`bar chart for ${value} drew no columns`);
+  }
+  const cardBars = await page.locator('.stable-grid .bars').count();
+  if (cardBars < 9) note(`expected all nine topic cards in bars, found ${cardBars}`);
+
+  // Midway along, where every week is on the weekly grid and kept its evidence.
+  await select.selectOption('overall');
+  await page.waitForTimeout(250);
+  const barHit = page.locator('.trend-hit:visible').first();
+  const bb = await barHit.boundingBox();
+  await page.mouse.click(bb.x + bb.width * 0.5, bb.y + bb.height * 0.5);
+  await page.waitForTimeout(1500);
+  const rows = await page.locator('.ev-item').count();
+  console.log(`  evidence from a column: ${rows} row(s)`);
+  if (!rows) note('clicking a column did not open the posts behind it');
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(300);
+} else {
+  note('no line/bars toggle on the history view');
+}
+
 // Light mode is a second set of colour variables; it has broken on its own.
 const toggle = page.locator('#themeToggle').first();
 if (await toggle.count()) {
