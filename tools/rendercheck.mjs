@@ -5,8 +5,9 @@
  * Twice now a single undefined function has emptied a whole view, and both
  * times it reached the published site, because nothing here ever rendered the
  * page against the real data. This does: every topic report, the trend chart
- * for every topic, both themes. Any page error, failed request or view that
- * comes back empty fails the run.
+ * for every topic, both themes, and the front page at phone widths. Any page
+ * error, failed request, view that comes back empty or page wider than a
+ * phone screen fails the run.
  *
  *   node tools/rendercheck.mjs [url]     default http://127.0.0.1:8099
  */
@@ -151,6 +152,28 @@ if (await toggle.count()) {
   await check('light theme');
 } else {
   note('no theme toggle');
+}
+
+// Phones. The nav once ran ~70px past a 375px screen, which zooms the whole
+// page out or slides it sideways, and nothing here looked at a narrow screen.
+// The theme toggle is the nav's one control, so its tap target is held too.
+console.log('');
+for (const theme of ['dark', 'light']) {
+  for (const width of [320, 375, 414, 768]) {
+    await page.setViewportSize({ width, height: 800 });
+    await page.evaluate((t) => localStorage.setItem('sap-ai-theme', t), theme);
+    await page.goto(BASE, { waitUntil: 'networkidle' });
+    await page.waitForTimeout(300);
+    const m = await page.evaluate(() => {
+      const de = document.documentElement;
+      const t = document.getElementById('themeToggle')?.getBoundingClientRect();
+      return { sw: de.scrollWidth, cw: de.clientWidth, w: t?.width || 0, h: t?.height || 0, right: t?.right ?? Infinity };
+    });
+    const label = `${width}px ${theme}`;
+    console.log(`  phone ${label.padEnd(12)} page ${m.sw}px wide, toggle ${Math.round(m.w)}×${Math.round(m.h)}`);
+    if (m.sw > m.cw) note(`${label}: the page is ${m.sw}px wide on a ${m.cw}px screen`);
+    if (m.w < 44 || m.h < 44 || m.right > m.cw) note(`${label}: the theme toggle is not a full 44px target on screen`);
+  }
 }
 
 await browser.close();
