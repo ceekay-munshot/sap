@@ -1265,7 +1265,25 @@ function wireTrendChart(root) {
   };
   const open = (i) => openEvidence(points[i].date, state.historyTopic, points[i].bucket);
 
-  hit.addEventListener('pointermove', (ev) => show(nearest(ev.clientX, ev.clientY), ev.clientX, ev.clientY));
+  // A finger that has so far moved more up or down than across is the reader
+  // scrolling, and the browser is about to take it back. The readout waits for
+  // it to move across, rather than flashing up on its way past. Nothing is
+  // lost by waiting: only across picks a date.
+  let press = null;
+  hit.addEventListener('pointerdown', (ev) => {
+    press = ev.pointerType === 'touch' ? { x: ev.clientX, y: ev.clientY } : null;
+  });
+  hit.addEventListener('pointermove', (ev) => {
+    if (press && ev.pointerType === 'touch') {
+      if (Math.abs(ev.clientY - press.y) >= Math.abs(ev.clientX - press.x)) return;
+      press = null;
+    }
+    show(nearest(ev.clientX, ev.clientY), ev.clientX, ev.clientY);
+  });
+  // When the browser does take a gesture for itself, to scroll or to zoom,
+  // pointercancel says so, and the readout goes with it rather than hanging
+  // over the page while it moves underneath.
+  hit.addEventListener('pointercancel', hide);
   hit.addEventListener('pointerleave', hide);
 
   // Hovering says what the number is. Clicking says where it came from.
@@ -2012,14 +2030,19 @@ function wireSdkCrosshair(root, points) {
     }
   };
 
-  hit.addEventListener('pointermove', move);
-  hit.addEventListener('pointerdown', move);
-  hit.addEventListener('pointerleave', () => {
+  const hide = () => {
     cross.setAttribute('opacity', '0');
     if (hoverDot) hoverDot.setAttribute('opacity', '0');
     if (badge) badge.setAttribute('opacity', '0');
     if (tip) tip.style.opacity = '0';
-  });
+  };
+
+  hit.addEventListener('pointermove', move);
+  hit.addEventListener('pointerdown', move);
+  // Touching the chart shows its readout at once, so a swipe that starts here
+  // to scroll the page has to take it away again when the browser cancels it.
+  hit.addEventListener('pointercancel', hide);
+  hit.addEventListener('pointerleave', hide);
 }
 
 let drawnSdkWidth = 0;
