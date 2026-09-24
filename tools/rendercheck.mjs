@@ -90,7 +90,14 @@ if (await select.count()) {
 }
 
 // Clicking a week opens the posts behind its score. That panel fetches a
-// separate file and renders from it, so it can break on its own.
+// separate file and renders from it, so it can break on its own. On All
+// topics: the loop above leaves the last topic selected, and a topic with a
+// short series can put this click on its newest daily points, which sit off
+// the weekly grid and keep no record.
+if (await select.count()) {
+  await select.selectOption('overall');
+  await page.waitForTimeout(250);
+}
 const hit = page.locator('.trend-hit:visible').first();
 if (await hit.count()) {
   const bb = await hit.boundingBox();
