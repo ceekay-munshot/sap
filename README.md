@@ -181,6 +181,7 @@ config/topics.json       topic definitions and research prompts
 config/sources.json      feeds, subreddits, queries for the free pass
 reference/               captured design of the previous build, for comparison
 tools/fetch-reference.mjs  re-captures it (runs in CI, which has open internet)
+tools/backfill-counts.mjs  one-off: review counts for points written before the rollup kept them
 ```
 
 ## Where the history comes from
@@ -191,6 +192,22 @@ the items already published by that date and scores them with the same rollup th
 live pass uses, weighted relative to that week. That is what the index would have
 read on that date, given what existed — a backfill, not an estimate. Those points
 draw hollow; live ones draw filled. A live point is never overwritten by a rebuild.
+
+## Line or bars
+
+The Sentiment History view reads the same points two ways, switched by one toggle
+that covers the main chart, the topic cards and the table. The **line** is the
+score. The **bars** are what it stands on: every post read in the eight weeks to
+that date, counted as positive, negative or neutral, where neutral is anything that
+took no clear side, hedged posts included. A bar's height is the number of reviews
+and its colours show how they split. SAP's own posts are read but not counted,
+exactly as in the score.
+
+The bars are whole-post counts, not weights: the rollup records them per point as
+`counts` in `trend.json`. Points written before it did were given theirs by
+`tools/backfill-counts.mjs`, which reads the stance of every post in the evidence log
+of the run that wrote the point — exact, never estimated. The reader's choice of view
+is remembered in the browser.
 
 ## Honesty rules this repo follows
 

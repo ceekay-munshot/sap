@@ -33,6 +33,11 @@ html { scroll-behavior: smooth; }
   --input-bg:  #0f2240;
   --scorecard-bg: rgba(255,255,255,0.03);
   --scorecard-border: rgba(255,255,255,0.07);
+  /* Review-count bars: validated for red-green colour blindness as a stack
+     (adjacent ΔE ≥ 10.9); neutral recedes and is read from the table view. */
+  --viz-pos:   #22c55e;
+  --viz-neg:   #dc2626;
+  --viz-neutral: #475569;
 }
 [data-theme="light"] {
   --bg:        #f8fafc;
@@ -57,6 +62,9 @@ html { scroll-behavior: smooth; }
   --input-bg:  #e2e8f0;
   --scorecard-bg: rgba(0,0,0,0.03);
   --scorecard-border: rgba(0,0,0,0.08);
+  --viz-pos:   #16a34a;
+  --viz-neg:   #b91c1c;
+  --viz-neutral: #b4bfcd;   /* a step off the gridlines, so data never reads as chrome */
 }
 
 body { background: var(--bg); color: var(--text); font-family: 'Syne', sans-serif; min-height: 100vh; transition: background 0.25s, color 0.25s; }
@@ -506,6 +514,11 @@ svg.sparkline { overflow:visible;flex-shrink:0; }
 .tooltip .t-row { display:flex; align-items:baseline; gap:7px; margin-top:3px; }
 .tooltip .t-val { font-weight:600; color:var(--text); font-variant-numeric:tabular-nums; }
 .tooltip .t-name { color:var(--text3); }
+/* The bars' readout keys each row with a short stroke of its colour, never
+   colours the number, and sets the total under a rule like the sum it is. */
+.tooltip .t-key { flex:none; align-self:center; width:10px; height:3px; border-radius:2px; }
+.tooltip .t-total { margin-top:6px; padding-top:6px; border-top:1px solid var(--border2); }
+.tooltip .t-note { margin-top:4px; color:var(--text4); font-size:10px; }
 
 .scroll { overflow-x:auto; max-width:100%; }
 
@@ -535,6 +548,61 @@ svg.sparkline { overflow:visible;flex-shrink:0; }
 .scale-key { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--text3); display: inline-flex; align-items: center; flex-wrap: wrap; }
 .sk-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 4px; }
 .scale-note { font-family: 'Lora', serif; font-size: 11.5px; color: var(--text3); margin: 0 0 12px; line-height: 1.5; }
+
+/* ── Line or bars ───────────────────────────────────────────────────────────
+   One control for the whole history view. The thumb slides between the two
+   options; everything else about the switch is the chart redrawing under it. */
+
+.history-controls { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 6px; scroll-margin-top: 72px; }
+@media (max-width: 768px) { .history-controls { scroll-margin-top: 116px; } }
+
+.seg {
+  position: relative; display: inline-grid; grid-auto-flow: column; grid-auto-columns: 1fr;
+  padding: 3px; border-radius: 8px; isolation: isolate;
+  background: var(--tracker-bg); border: 1px solid var(--border2);
+}
+.seg-thumb {
+  position: absolute; top: 3px; bottom: 3px; left: 3px; width: calc(50% - 3px); z-index: -1;
+  border-radius: 6px; background: #3b82f6; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  transition: transform 200ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+.seg[data-mode="bars"] .seg-thumb { transform: translateX(100%); }
+
+.seg-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+  padding: 5px 11px; border: 0; border-radius: 6px; background: transparent; cursor: pointer;
+  font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.04em; color: var(--text3);
+  transition: color 160ms ease, transform 160ms cubic-bezier(0.23, 1, 0.32, 1);
+  -webkit-tap-highlight-color: transparent;
+}
+.seg-btn[aria-pressed="true"] { color: #ffffff; font-weight: 600; }
+.seg-btn:active { transform: scale(0.96); }
+.seg-btn:focus-visible { outline: 2px solid #60a5fa; outline-offset: 1px; }
+.seg-icon { flex: none; }
+@media (hover: hover) and (pointer: fine) {
+  .seg-btn[aria-pressed="false"]:hover { color: var(--text); }
+}
+/* Switched from the keyboard: no slide, the change is simply made. */
+.seg.is-instant .seg-thumb, .seg.is-instant .seg-btn { transition: none; }
+
+.bar-key { display: inline-flex; align-items: center; gap: 5px; margin-right: 12px; }
+.bar-key i { display: inline-block; width: 8px; height: 8px; border-radius: 2px; }
+
+/* The hovered column stays; the rest step back. Instant, because a pointer
+   sweeping across twenty-five columns is not something to animate. */
+.trend-svg.is-hovering .trend-bar:not(.is-active) { opacity: 0.4; }
+.trend-svg:focus { outline: none; }
+.trend-svg:focus-visible { outline: 2px solid #60a5fa; outline-offset: 4px; border-radius: 4px; }
+
+/* Only when the reader switches views with a pointer: the new view settles in,
+   and the columns rise the last few pixels from their baseline. */
+.history-chart.is-swapping { animation: history-swap 220ms cubic-bezier(0.23, 1, 0.32, 1); }
+.history-chart.is-swapping .bars {
+  transform-box: fill-box; transform-origin: 50% 100%;
+  animation: bars-rise 260ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+@keyframes history-swap { from { opacity: 0; transform: translateY(4px); } }
+@keyframes bars-rise { from { transform: scaleY(0.9); } }
 
 /* ── evidence panel ─────────────────────────────────────────────────────────
    What the reader sees after clicking a point on the trend: the posts the
