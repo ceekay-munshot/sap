@@ -695,7 +695,7 @@ function quoteCard(quote) {
     <div class="quote-attribution-block">
       <div class="quote-person-row">
         <div class="quote-avatar" style="background:${color}22;color:${color}">${esc(initials)}</div>
-        <div>
+        <div class="quote-who">
           ${name ? `<div class="quote-name">${esc(name)}</div>` : ''}
           ${quote.title ? `<div class="quote-role">${esc(quote.title)}</div>` : ''}
         </div>
@@ -754,7 +754,7 @@ function scorecard(report) {
     </div>` : '';
 
   return `<div class="scorecard">
-    <div class="scorecard-title">📊 HOW SCORES ARE COMPUTED — ${frame.currentYear} TEMPORAL WEIGHTING<span style="font-size:8px;color:var(--text3);font-family:'Lora',serif;font-style:italic;font-weight:400"> · Hover cells for definitions · Scale 1.0–5.0</span></div>
+    <div class="scorecard-title">📊 HOW SCORES ARE COMPUTED — ${frame.currentYear} TEMPORAL WEIGHTING<span class="scorecard-hint"> · Hover cells for definitions · Scale 1.0–5.0</span></div>
     <div class="scorecard-grid">${cells}</div>
     <div class="scorecard-legend">${legend}</div>
     ${sdkFootnote}
@@ -791,11 +791,10 @@ function reportView(topic) {
     <div class="card-header">
       <span class="tlc-icon" style="flex:0 0 auto">${topic.icon}</span>
       <div style="flex:1 1 auto;min-width:0">
-        <div class="card-title" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(topic.label)}</div>
-        <div class="card-meta" style="white-space:nowrap">${esc(CAT_LABEL[topic.category] || '')} · COLLECTED ${esc(fmtDate(report.ranAt))}</div>
+        <div class="card-title report-title">${esc(topic.label)}</div>
+        <div class="card-meta report-meta"><span>${esc(CAT_LABEL[topic.category] || '')} ·</span> <span>COLLECTED ${esc(fmtDate(report.ranAt))}</span></div>
       </div>
-      <button class="tlc-view-btn" data-open="" type="button"
-        style="width:auto;flex:0 0 auto;white-space:nowrap;padding:6px 12px">← ALL TOPICS</button>
+      <button class="tlc-view-btn report-back" data-open="" type="button">← ALL TOPICS</button>
     </div>
     <div class="card-body">
       ${gauge(report)}
@@ -1463,8 +1462,8 @@ function coveragePanel() {
       <span class="tlc-icon">📡</span>
       <div style="flex:1;min-width:0">
         <div class="card-title">Where this comes from</div>
-        <div class="card-meta">${(c.sources || []).length} SOURCES · ${c.feedCount || 0} FEEDS ·
-          ${fmtNum(c.corpusSize || 0)} ITEMS · ${fmtNum(c.itemsWithView || 0)} WITH A CLEAR VIEW</div>
+        <div class="card-meta">${(c.sources || []).length} SOURCES&nbsp;· ${c.feedCount || 0} FEEDS&nbsp;·
+          ${fmtNum(c.corpusSize || 0)} ITEMS&nbsp;· ${fmtNum(c.itemsWithView || 0)} WITH A CLEAR VIEW</div>
       </div>
     </div>
     <div class="card-body">
@@ -1497,7 +1496,7 @@ function historyHead() {
   return `<span class="tlc-icon">📈</span>
       <div style="flex:1;min-width:0">
         <div class="card-title">Sentiment over time — ${esc(topicName(state.historyTopic))}</div>
-        <div class="card-meta">AUTOMATED SOURCE TRACKER (PUBLIC FEEDS) · ${days.length} WEEKLY POINT${days.length === 1 ? '' : 'S'}</div>
+        <div class="card-meta">AUTOMATED SOURCE TRACKER (PUBLIC FEEDS)&nbsp;· ${days.length} WEEKLY POINT${days.length === 1 ? '' : 'S'}</div>
       </div>
       ${deltaHTML}`;
 }
@@ -2244,7 +2243,7 @@ function sdkAdoptionView() {
       <span class="tlc-icon">⚡</span>
       <div style="flex:1;min-width:0">
         <div class="card-title">SAP AI Developer Adoption (@sap-ai-sdk)</div>
-        <div class="card-meta">REAL WEEKLY DOWNLOADS FROM NPM · OVER 10M TOTAL INSTALLS · UPDATED DAILY</div>
+        <div class="card-meta">REAL WEEKLY DOWNLOADS FROM NPM&nbsp;· OVER 10M TOTAL INSTALLS&nbsp;· UPDATED DAILY</div>
       </div>
       <span class="change-badge" style="color:#22c55e">● LIVE METRIC</span>
     </div>
@@ -2444,6 +2443,9 @@ async function loadJson(url, fallback, retries = 2) {
 
 async function boot() {
   wireTheme();
+  // iOS Safari only applies :active while a touch listener is registered, and
+  // the buttons' press feedback is their :active state. Passive: never delays a scroll.
+  document.addEventListener('touchstart', () => {}, { passive: true });
 
   // Redraw the history or SDK chart when the width it is shown at changes — a
   // resized window, a scrollbar arriving with the content — once it settles,
