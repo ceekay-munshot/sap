@@ -101,10 +101,51 @@ body { background: var(--bg); color: var(--text); font-family: 'Syne', sans-seri
   background:var(--tracker-bg);border:1px solid var(--border2);
   border-radius:20px;padding:4px 10px;cursor:pointer;
   font-size:10px;font-family:'DM Mono',monospace;color:var(--text3);
-  transition:all 0.2s;
+  touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+  transition:background-color 0.2s,border-color 0.2s,color 0.2s,transform 160ms cubic-bezier(0.23,1,0.32,1);
 }
-.theme-toggle:hover { border-color:var(--border3);color:var(--text); }
+.theme-toggle:active { transform:scale(0.97); }
+@media (hover:hover) and (pointer:fine) {
+  .theme-toggle:hover { border-color:var(--border3);color:var(--text); }
+}
 .theme-toggle-icon { font-size:13px; }
+
+/* NAV on phones and small tablets: one line that never runs past the screen.
+   The subtitle drops out first, then the title truncates; the theme toggle
+   keeps a full 44px tap target. */
+@media (max-width:768px) {
+  .nav { padding:0 12px;gap:10px; }
+  .nav-title, .nav > .nav-sub { min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+  .nav-right { flex-shrink:0;gap:8px; }
+
+  /* The button is the 44×44 target; the icon draws the 32px circle inside it,
+     and the negative margin lines that circle up with the 12px gutter. */
+  .theme-toggle {
+    position:relative;justify-content:center;
+    width:44px;height:44px;padding:0;margin-right:-6px;
+    background:none;border:0;border-radius:0;
+  }
+  .theme-toggle-icon {
+    display:grid;place-items:center;width:32px;height:32px;
+    background:var(--tracker-bg);border:1px solid var(--border2);border-radius:50%;
+    font-size:14px;line-height:1;
+    transition:background-color 0.2s,border-color 0.2s;
+  }
+  /* Hidden from sight, not from screen readers. */
+  .theme-toggle-label { position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap; }
+  .theme-toggle:focus-visible { outline:none; }
+  .theme-toggle:focus-visible .theme-toggle-icon { outline:2px solid var(--text4);outline-offset:2px; }
+}
+@media (max-width:768px) and (hover:hover) and (pointer:fine) {
+  .theme-toggle:hover .theme-toggle-icon { border-color:var(--border3); }
+}
+@media (max-width:640px) {
+  .nav-divider, .nav > .nav-sub { display:none; }
+}
+/* 11px keeps the whole title on 360–375px phones; only 320px truncates it. */
+@media (max-width:380px) {
+  .nav-title { font-size:11px; }
+}
 
 /* LAYOUT */
 .layout { max-width:1280px;margin:0 auto;padding:24px 18px;display:grid;grid-template-columns:220px 1fr;gap:24px; }
