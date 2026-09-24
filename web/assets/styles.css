@@ -149,7 +149,9 @@ body { background: var(--bg); color: var(--text); font-family: 'Syne', sans-seri
 
 /* LAYOUT */
 .layout { max-width:1280px;margin:0 auto;padding:24px 18px;display:grid;grid-template-columns:220px 1fr;gap:24px; }
-@media(max-width:768px){.layout{grid-template-columns:1fr;}.sidebar{display:none;}}  
+/* minmax(0,…), not 1fr: a 1fr track grows to its content's widest line, so one
+   wide table or unbreakable line made the whole page wider than the phone. */
+@media(max-width:768px){.layout{grid-template-columns:minmax(0,1fr);}.sidebar{display:none;}}
 
 /* SIDEBAR */
 .sidebar { position:sticky;top:66px;height:fit-content;max-height:calc(100vh - 80px);overflow-y:auto; }
@@ -213,7 +215,7 @@ body { background: var(--bg); color: var(--text); font-family: 'Syne', sans-seri
 .retry-btn:disabled { opacity:0.5;cursor:not-allowed; }
 
 /* TOPIC GRID (individual run buttons in main area) */
-.topic-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-bottom:18px;animation:fadeIn 0.35s ease; }
+.topic-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(min(260px,100%),1fr));gap:12px;margin-bottom:18px;animation:fadeIn 0.35s ease; }
 .topic-launch-card { background:var(--card-bg);border:1px solid var(--border2);border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;gap:10px;transition:border-color .15s,box-shadow .15s; }
 .topic-launch-card:hover { border-color:var(--border3);box-shadow:0 4px 16px rgba(59,130,246,0.07); }
 .topic-launch-card.is-loading { border-color:#3b82f644;background:rgba(59,130,246,0.03); }
@@ -236,11 +238,16 @@ body { background: var(--bg); color: var(--text); font-family: 'Syne', sans-seri
 .tlc-run-btn.loading { background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);color:#93c5fd; }
 .tlc-run-btn.errored { background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#f87171; }
 .tlc-error-msg { font-family:'DM Mono',monospace;font-size:9px;color:#f87171;line-height:1.4; }
-.tlc-view-btn { display:flex;align-items:center;justify-content:center;gap:5px;width:100%;padding:8px 14px;border-radius:7px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.35);cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;font-size:11px;letter-spacing:.04em;color:#4ade80;transition:all .15s; }
-.tlc-view-btn:hover { background:rgba(34,197,94,0.18);border-color:rgba(34,197,94,0.55);color:#86efac; }
+.tlc-view-btn { display:flex;align-items:center;justify-content:center;gap:5px;width:100%;padding:8px 14px;border-radius:7px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.35);cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;font-size:11px;letter-spacing:.04em;color:#4ade80;touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:background-color .15s,border-color .15s,color .15s,transform 160ms cubic-bezier(0.23,1,0.32,1); }
+.tlc-view-btn:active { transform:scale(0.97); }
+/* A report's way back to the topics: a compact pill at the end of its header. */
+.tlc-view-btn.report-back { width:auto;flex:0 0 auto;white-space:nowrap;padding:6px 12px; }
+@media (hover:hover) and (pointer:fine) {
+  .tlc-view-btn:hover { background:rgba(34,197,94,0.18);border-color:rgba(34,197,94,0.55);color:#86efac; }
+  [data-theme="light"] .tlc-view-btn:hover { background:rgba(22,163,74,0.15);border-color:rgba(22,163,74,0.4);color:#166534; }
+}
 [data-theme="light"] .tlc-run-btn.rerun { background:rgba(22,163,74,0.08);border-color:rgba(22,163,74,0.25);color:#15803d; }
 [data-theme="light"] .tlc-view-btn { background:rgba(22,163,74,0.08);border-color:rgba(22,163,74,0.25);color:#15803d; }
-[data-theme="light"] .tlc-view-btn:hover { background:rgba(22,163,74,0.15);border-color:rgba(22,163,74,0.4);color:#166534; }
 
 .tlc-telemetry-pill {
   display: inline-flex; align-items: center; gap: 6px;
@@ -275,6 +282,12 @@ body { background: var(--bg); color: var(--text); font-family: 'Syne', sans-seri
   animation: fadeIn 0.4s ease;
 }
 .scorecard-title { font-size:9px;font-weight:600;color:var(--text4);font-family:'DM Mono',monospace;letter-spacing:0.12em;margin-bottom:14px;display:flex;align-items:center;gap:7px; }
+.scorecard-hint { font-size:8px;color:var(--text3);font-family:'Lora',serif;font-style:italic;font-weight:400; }
+/* On a phone the hint takes its own line, rather than a second narrow column. */
+@media(max-width:540px){
+  .scorecard-title { flex-wrap:wrap;row-gap:4px; }
+  .scorecard-hint { flex-basis:100%; }
+}
 .scorecard-grid { display:grid;grid-template-columns:repeat(5,1fr);gap:10px; }
 @media(max-width:700px){ .scorecard-grid { grid-template-columns:repeat(3,1fr); } }
 @media(max-width:450px){ .scorecard-grid { grid-template-columns:repeat(2,1fr); } }
@@ -350,13 +363,40 @@ body { background: var(--bg); color: var(--text); font-family: 'Syne', sans-seri
   transition: width 0.8s cubic-bezier(.4,0,.2,1);
 }
 .sub-score-val { font-size: 9px; font-family: 'DM Mono', monospace; font-weight: 700; }
+/* Where the four sub-scores can't sit beside the ring at their natural width
+   (the narrowest phones), they drop below it rather than run past the block. */
+@media (max-width: 540px) {
+  .score-gauge { flex-wrap: wrap; justify-content: center; }
+  .sub-scores { flex: 1 1 auto; }
+}
 
 /* RESULT CARD */
 .result-card { border-radius: 12px; overflow: hidden; margin-bottom: 14px; animation: fadeIn 0.3s ease; }
 .card-header { display:flex;align-items:center;gap:10px;padding:13px 18px;cursor:pointer;background:var(--tracker-bg);user-select:none; }
-.card-header:hover { background:var(--scorecard-bg); }
+@media (hover:hover) and (pointer:fine) {
+  .card-header:hover { background:var(--scorecard-bg); }
+}
 .card-title { font-family:'Syne',sans-serif;font-weight:700;font-size:14px;color:var(--text); }
 .card-meta { font-size:10px;color:var(--text4);font-family:'DM Mono',monospace;margin-top:1px; }
+/* A report's title keeps to one line beside its way back. Its meta line, if
+   it must break, breaks after the category, and never runs under the button. */
+.report-title { white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.report-meta > span { white-space:nowrap; }
+/* Phones: whatever ends the header — a report's way back, a status badge —
+   gets a row of its own instead of squeezing the title into a narrow column
+   or running over it. The way back goes first, where a phone keeps it; a badge
+   follows the text it qualifies. */
+@media(max-width:540px){
+  .card-header { display:grid;grid-template-columns:auto minmax(0,1fr);align-items:start;gap:6px 10px; }
+  .card-header > .report-back { grid-row:1;grid-column:1 / -1;justify-self:start;margin-bottom:6px; }
+  .card-header > .change-badge { grid-column:2;justify-self:start;padding:0; }
+  .card-header .card-title { text-wrap:balance; }
+  .card-header .card-meta { text-wrap:pretty; }
+  .report-title { white-space:normal;overflow:visible; }
+  /* The pill stays compact; its tap target is a full 44px tall. */
+  .tlc-view-btn.report-back { position:relative; }
+  .tlc-view-btn.report-back::after { content:'';position:absolute;inset:-8px -4px;min-height:44px; }
+}
 .score-pill { padding:3px 10px;border-radius:20px;font-size:11px;font-family:'DM Mono',monospace;font-weight:800;letter-spacing:0.05em;flex-shrink:0; }
 .card-toggle { color:var(--text4);font-size:10px;margin-left:4px;flex-shrink:0; }
 .card-body { padding:0 18px 18px; }
@@ -390,6 +430,13 @@ body { background: var(--bg); color: var(--text); font-family: 'Syne', sans-seri
 .recency-label { color:#818cf8;letter-spacing:0.08em;flex-shrink:0; }
 .recency-value { color:var(--text2);flex:1; }
 .recency-warn  { color:#f59e0b;font-size:8px;flex-shrink:0; }
+/* On a phone the reading gets the full width under its label; a warning stays
+   on the label's line, at the far end. */
+@media(max-width:540px){
+  .recency-bar { flex-wrap:wrap;row-gap:3px; }
+  .recency-value { order:1;flex-basis:100%; }
+  .recency-warn { margin-left:auto; }
+}
 
 /* QUOTE CARDS */
 .quotes-section { margin-bottom: 14px; }
@@ -420,6 +467,14 @@ body { background: var(--bg); color: var(--text); font-family: 'Syne', sans-seri
 .quote-role { font-size:10px;font-family:'Lora',serif;color:var(--text3);font-style:italic; }
 .quote-chips-row { display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:2px; }
 .quote-chip { font-size:9px;font-family:'DM Mono',monospace;padding:2px 8px;border-radius:10px;border:1px solid;white-space:nowrap; }
+/* Company and platform names run long; one wider than the card wraps inside
+   its chip instead of being cut off at the card's edge. */
+.quote-chips-row .quote-chip { white-space:normal;overflow-wrap:anywhere; }
+/* On a phone the name and role wrap beside the avatar, so neither the avatar
+   nor the weight chip is left on a line of its own. */
+@media(max-width:540px){
+  .quote-who { flex:1 1 0;min-width:0;overflow-wrap:anywhere; }
+}
 .quote-chip-platform { background:rgba(59,130,246,0.1);border-color:rgba(59,130,246,0.3);color:#60a5fa; }
 .quote-chip-date     { background:rgba(34,197,94,0.1);border-color:rgba(34,197,94,0.3);color:#4ade80; }
 .quote-chip-legacy   { background:rgba(245,158,11,0.1);border-color:rgba(245,158,11,0.3);color:#fbbf24; }
@@ -436,7 +491,7 @@ body { background: var(--bg); color: var(--text); font-family: 'Syne', sans-seri
 .sources-label { font-family:'DM Mono',monospace;font-size:10px;font-weight:700;color:#60a5fa;letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:8px; }
 .sources-count { font-size:9px;background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.25);border-radius:10px;padding:1px 7px;color:#93c5fd;font-weight:400; }
 .sources-notice { font-size:10.5px;color:var(--text3);font-family:'Lora',serif;font-style:italic;margin-bottom:8px;line-height:1.4; }
-.sources-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px; }
+.sources-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(min(220px,100%),1fr));gap:8px; }
 .src-card { display:block;text-decoration:none;background:rgba(59,130,246,0.05);border:1px solid rgba(59,130,246,0.2);border-radius:8px;padding:10px 12px;transition:border-color .15s,transform .15s,box-shadow .15s;cursor:pointer; }
 .src-card:hover { border-color:#3b82f6;transform:translateY(-2px);box-shadow:0 6px 18px rgba(59,130,246,0.2); }
 .src-header { display:flex;align-items:center;gap:5px;margin-bottom:5px; }
@@ -817,7 +872,7 @@ svg.sparkline { overflow:visible;flex-shrink:0; }
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     position: sticky;
-    top: 51px;
+    top: 50px;   /* flush under the nav, whose 50px includes its bottom border */
     z-index: 40;
   }
   .mobile-nav-scroll {

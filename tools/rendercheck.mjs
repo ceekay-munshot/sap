@@ -5,9 +5,10 @@
  * Twice now a single undefined function has emptied a whole view, and both
  * times it reached the published site, because nothing here ever rendered the
  * page against the real data. This does: every topic report, the trend chart
- * for every topic, both themes, and the front page at phone widths. Any page
- * error, failed request, view that comes back empty or page wider than a
- * phone screen fails the run.
+ * for every topic, both themes, the front page at phone widths and every view
+ * on a 320px phone. Any page error, failed request, view that comes back
+ * empty, page wider than a phone screen or content cut off by its card fails
+ * the run.
  *
  *   node tools/rendercheck.mjs [url]     default http://127.0.0.1:8099
  */
@@ -301,6 +302,103 @@ else {
   const narrow = await page.evaluate(() => [document.documentElement.scrollWidth, document.documentElement.clientWidth]);
   console.log(`  sdk adoption at 320px: page ${narrow[0]}px wide`);
   if (narrow[0] > narrow[1]) note(`the SDK view is ${narrow[0]}px wide on a ${narrow[1]}px screen`);
+}
+
+// Every view on the narrowest phone, not only the front page. Every topic
+// report once ran 86–110px past a 320px screen, because the column #main sits
+// in grew to the widest line inside it and a report header's meta line would
+// not wrap. The report card also clips whatever runs past it, so content can
+// be cut off while the page still fits: nothing may reach past the card that
+// clips it, or past the screen, unless it sits in something that scrolls
+// sideways on purpose. A header's text must not run under its button or
+// badge, and a report's way back must be a full 44px tap target.
+const phoneLayout = () => page.evaluate(() => {
+  window.scrollTo({ top: 0, behavior: 'instant' });
+  const found = [];
+  const de = document.documentElement;
+  if (de.scrollWidth > de.clientWidth) found.push(`the page is ${de.scrollWidth}px wide`);
+
+  // How far an element's content may reach: the box of the nearest ancestor
+  // that clips, else the screen; nowhere to check inside a sideways scroller.
+  const limit = (el) => {
+    for (let a = el.parentElement; a; a = a.parentElement) {
+      const ox = getComputedStyle(a).overflowX;
+      if (ox === 'auto' || ox === 'scroll') return null;
+      if (ox !== 'visible') return a.getBoundingClientRect();
+    }
+    return { left: 0, right: de.clientWidth };
+  };
+  // Text as laid out, since a line that will not wrap runs out of its own box.
+  const range = document.createRange();
+  const textRects = (el) => [...el.childNodes]
+    .filter((n) => n.nodeType === 3 && n.textContent.trim())
+    .map((n) => { range.selectNodeContents(n); return range.getBoundingClientRect(); });
+  const name = (el) => `${el.getAttribute('class') || el.localName} "${el.textContent.trim().replace(/\s+/g, ' ').slice(0, 40)}"`;
+
+  const main = document.getElementById('main');
+  const cut = new Set();
+  for (const el of main.querySelectorAll('*')) {
+    if (cut.has(el.parentElement)) { cut.add(el); continue; }   // report the outermost only
+    if (el.closest('svg') && el.localName !== 'svg') continue;
+    const cs = getComputedStyle(el);
+    const lim = limit(el);
+    if (!lim || cs.position === 'fixed') continue;
+    const rects = [el.getBoundingClientRect(), ...(cs.overflowX === 'visible' ? textRects(el) : [])];
+    if (rects.some((r) => r.width && (r.right > lim.right + 1 || r.left < lim.left - 1))) {
+      cut.add(el);
+      found.push(`cut off or off screen: ${name(el)}`);
+    }
+  }
+
+  for (const head of main.querySelectorAll('.card-header')) {
+    const controls = [...head.querySelectorAll('button, .change-badge')].map((c) => c.getBoundingClientRect());
+    for (const text of head.querySelectorAll('.card-title, .card-meta')) {
+      range.selectNodeContents(text);
+      const t = getComputedStyle(text).overflowX === 'visible' ? range.getBoundingClientRect() : text.getBoundingClientRect();
+      if (controls.some((c) => Math.min(t.right, c.right) - Math.max(t.left, c.left) > 1
+        && Math.min(t.bottom, c.bottom) - Math.max(t.top, c.top) > 1)) {
+        found.push(`header text runs under its button or badge: ${name(text)}`);
+      }
+    }
+  }
+
+  const back = main.querySelector('.report-back');
+  if (back) {
+    const b = back.getBoundingClientRect();
+    const hits = (dy) => back.contains(document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2 + dy));
+    if (!hits(-21) || !hits(21)) found.push(`the way back is ${Math.round(b.height)}px tall with no 44px tap target`);
+  }
+  return { sw: de.scrollWidth, found };
+});
+
+console.log('');
+await page.setViewportSize({ width: 320, height: 800 });
+await page.goto(BASE, { waitUntil: 'networkidle' });
+const reportIds = await page.locator('main [data-open]').evaluateAll((els) => els.map((e) => e.dataset.open).filter(Boolean));
+const history = (mode) => async () => {
+  await page.locator('.mobile-nav [data-cat="history"]').click();
+  await page.waitForTimeout(300);
+  await page.locator(`[data-chart-mode="${mode}"]`).first().click();
+};
+const phoneViews = [
+  ...['all', 'product', 'ecosystem', 'competitive', 'adoption']
+    .map((cat) => [cat, () => page.locator(`.mobile-nav [data-cat="${cat}"]`).click()]),
+  ['history, line', history('line')],
+  ['history, bars', history('bars')],
+  ...reportIds.map((id) => [`report ${id}`, () => page.locator(`main [data-open="${id}"]`).click()]),
+];
+for (const theme of ['dark', 'light']) {
+  await page.evaluate((t) => localStorage.setItem('sap-ai-theme', t), theme);
+  for (const [view, open] of phoneViews) {
+    await page.goto(BASE, { waitUntil: 'networkidle' });
+    await page.waitForTimeout(300);
+    await open();
+    await page.waitForTimeout(400);
+    const m = await phoneLayout();
+    const label = `320px ${theme} ${view}`;
+    console.log(`  phone ${label.padEnd(36)} page ${m.sw}px wide${m.found.length ? `, ${m.found.length} problem(s)` : ''}`);
+    for (const f of m.found.slice(0, 5)) note(`${label}: ${f}`);
+  }
 }
 
 await browser.close();
