@@ -176,6 +176,74 @@ for (const theme of ['dark', 'light']) {
   }
 }
 
+// The SDK chart is drawn at the width it is shown at and redrawn when that
+// changes. Drawn at a fixed width and scaled instead, its labels shrank to 3px
+// on a phone and, on a wide screen, the pointer landed weeks away from the
+// point under it. So at a phone, a laptop and a wide desktop width: the plot
+// fills its box at 1:1, its dates do not collide, and the last dot names the
+// last week.
+await page.goto(BASE, { waitUntil: 'networkidle' });
+await page.waitForTimeout(500);
+const adoption = page.locator('[data-cat="adoption"]:visible').first();
+if (!(await adoption.count())) note('no SDK ADOPTION filter');
+else {
+  await adoption.click();
+  await page.waitForTimeout(600);
+  await check('sdk adoption', 800);
+  for (const width of [1440, 1000, 375]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.waitForTimeout(600);   // the redraw waits for the resize to settle
+    const fit = await page.evaluate(() => {
+      const svg = document.querySelector('.sdk-trend-svg');
+      if (!svg) return null;
+      svg.scrollIntoView({ block: 'center', behavior: 'instant' });   // the page scrolls smoothly otherwise
+      const box = svg.getBoundingClientRect();
+      const ctm = svg.getScreenCTM();
+      const bottom = svg.viewBox.baseVal.height - 8;
+      const dates = [...svg.querySelectorAll('text')]
+        .filter((t) => Number(t.getAttribute('y')) === bottom)
+        .map((t) => t.getBoundingClientRect());
+      const collide = dates.some((d, i) => i > 0 && d.left < dates[i - 1].right);
+      const dots = svg.querySelectorAll('circle[r="2.5"]');   // one per week
+      const last = dots[dots.length - 1]?.getBoundingClientRect();
+      return {
+        drawn: svg.viewBox.baseVal.width,
+        shown: box.width,
+        scale: ctm.a,
+        bands: Math.abs(ctm.e - box.left) + Math.abs(ctm.f - box.top),
+        collide,
+        dates: dates.length,
+        lastCx: dots[dots.length - 1]?.getAttribute('cx'),
+        lastAt: last && { x: last.x + last.width / 2, y: last.y + last.height / 2 },
+      };
+    });
+    if (!fit) { note(`sdk chart missing at ${width}px`); continue; }
+
+    await page.mouse.move(fit.lastAt.x, fit.lastAt.y);
+    await page.waitForTimeout(150);
+    const hover = await page.evaluate(async () => {
+      const weeks = (await fetch('./data/sdk-downloads.json').then((r) => r.json())).weeklySeries;
+      const want = new Date(weeks[weeks.length - 1].weekEnding)
+        .toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }).toUpperCase();
+      return {
+        want,
+        title: document.querySelector('#tooltip .t-title')?.textContent || '',
+        crossX: document.querySelector('.sdk-crosshair')?.getAttribute('x1'),
+      };
+    });
+    await page.mouse.move(0, 0);
+
+    console.log(`  sdk @${String(width).padStart(4)}px  drawn ${fit.drawn} / shown ${fit.shown.toFixed(1)}, `
+      + `scale ${fit.scale.toFixed(3)}, ${fit.dates} dates, last dot → ${hover.title || 'nothing'}`);
+    if (Math.abs(fit.scale - 1) > 0.01) note(`sdk chart scaled ${fit.scale.toFixed(3)}× at ${width}px instead of drawn at its width`);
+    if (fit.bands > 1) note(`sdk chart letterboxed by ${fit.bands.toFixed(1)}px at ${width}px`);
+    if (fit.collide) note(`sdk chart date labels collide at ${width}px`);
+    if (!hover.title.includes(hover.want) || hover.crossX !== fit.lastCx) {
+      note(`hovering the last sdk week at ${width}px showed "${hover.title}", not ${hover.want}`);
+    }
+  }
+}
+
 await browser.close();
 
 if (problems.length) {

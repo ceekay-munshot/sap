@@ -1573,16 +1573,21 @@ function barTopicCard(topic) {
 }
 
 /**
- * The history chart is drawn at the width it is shown at. Drawn at a fixed 860
- * and scaled, its 9px labels shrank to 3px on a phone, and on a wide screen the
- * plot sat letterboxed between two empty bands.
+ * The history and SDK charts are drawn at the width they are shown at. Drawn at
+ * a fixed 860 and scaled, their 9px labels shrank to 3px on a phone, and on a
+ * wide screen the plot sat letterboxed between two empty bands.
  */
-let drawnChartWidth = 0;
-function historyChartWidth() {
-  const block = $('historyChart');
+function shownChartWidth(block) {
   const main = $('main');
+  // Before the chart is on the page, the card's inner width: #main less the
+  // card body's 18px padding either side.
   const shown = block?.clientWidth || (main ? main.clientWidth - 36 : 0);
   return Math.round(Math.max(300, Math.min(1400, shown || 860)));
+}
+
+let drawnChartWidth = 0;
+function historyChartWidth() {
+  return shownChartWidth($('historyChart'));
 }
 
 /** Everything under the controls: caption, chart, provenance, topic cards, table. */
@@ -1815,11 +1820,8 @@ function sdkSeries(pkgId, rangeDays = '365') {
   });
 }
 
-function sdkChart(points, pkgId, { width = 860, height = 270 } = {}) {
-  if (!points.length) {
-    return `<div class="no-history"><div class="no-history-icon">◌</div>
-      <div class="no-history-title">No SDK telemetry loaded</div></div>`;
-  }
+/** Where the SDK chart puts each week — shared by the drawing and the pointer. */
+function sdkGeometry(points, width, height) {
   const m = { t: 18, r: 64, b: 30, l: 56 };
   const plotW = width - m.l - m.r;
   const plotH = height - m.t - m.b;
@@ -1829,6 +1831,15 @@ function sdkChart(points, pkgId, { width = 860, height = 270 } = {}) {
   const dom = sdkDomainFor(points);
   const xOf = (t) => (tMax === tMin ? m.l + plotW / 2 : m.l + ((t - tMin) / (tMax - tMin)) * plotW);
   const yOf = (v) => m.t + plotH - ((Math.max(dom.lo, Math.min(dom.hi, v)) - dom.lo) / (dom.hi - dom.lo)) * plotH;
+  return { m, plotW, plotH, dom, yOf, x: (i) => xOf(times[i]), y: (i) => yOf(points[i].value) };
+}
+
+function sdkChart(points, pkgId, { width = 860, height = 270 } = {}) {
+  if (!points.length) {
+    return `<div class="no-history"><div class="no-history-icon">◌</div>
+      <div class="no-history-title">No SDK telemetry loaded</div></div>`;
+  }
+  const { m, plotW, plotH, dom, yOf, x: xAt } = sdkGeometry(points, width, height);
 
   const grid = dom.ticks.map((tick) => {
     const y = yOf(tick);
@@ -1837,35 +1848,49 @@ function sdkChart(points, pkgId, { width = 860, height = 270 } = {}) {
         font-size="9" font-family="'DM Mono',monospace">${fmtK(tick)}</text>`;
   }).join('');
 
+  /*
+   * Dates are spaced by the middle of each label, not by its point. The first
+   * and last labels hang inward from their points, and on a phone-width chart
+   * spacing by the points ran them into their neighbours.
+   */
+  const labelOf = (i) => new Date(points[i].date)
+    .toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: '2-digit' });
+  const lastI = points.length - 1;
+  const halfWidth = (i) => labelOf(i).length * 2.7;   // DM Mono is 5.4px a character at 9px
+  const firstMid = xAt(0) + halfWidth(0);
+  const lastMid = xAt(lastI) - halfWidth(lastI);
+  const mid = (i) => (i === 0 ? firstMid : i === lastI ? lastMid : xAt(i));
   const MIN_TICK_PX = 74;
   const keep = [];
   points.forEach((p, i) => {
-    const x = xOf(times[i]);
-    if (i === points.length - 1) {
-      while (keep.length && xOf(times[keep[keep.length - 1]]) > x - MIN_TICK_PX) keep.pop();
+    const x = mid(i);
+    if (i === lastI) {
+      while (keep.length && mid(keep[keep.length - 1]) > x - MIN_TICK_PX) keep.pop();
       keep.push(i);
-    } else if (!keep.length || x - xOf(times[keep[keep.length - 1]]) >= MIN_TICK_PX) {
+    } else if (!keep.length || x - mid(keep[keep.length - 1]) >= MIN_TICK_PX) {
       keep.push(i);
     }
   });
 
   const dateLabels = keep.map((i) => {
-    const anchor = i === 0 ? 'start' : i === points.length - 1 ? 'end' : 'middle';
-    const d = new Date(points[i].date);
-    const label = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: '2-digit' });
-    return `<text x="${xOf(times[i])}" y="${height - 8}" text-anchor="${anchor}"
-      fill="var(--text4)" font-size="9" font-family="'DM Mono',monospace">${esc(label)}</text>`;
+    const anchor = i === 0 ? 'start' : i === lastI ? 'end' : 'middle';
+    return `<text x="${xAt(i)}" y="${height - 8}" text-anchor="${anchor}"
+      fill="var(--text4)" font-size="9" font-family="'DM Mono',monospace">${esc(labelOf(i))}</text>`;
   }).join('');
 
-  const line = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${xOf(times[i])},${yOf(p.value)}`).join(' ');
+  const line = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${xAt(i)},${yOf(p.value)}`).join(' ');
 
   const dots = points.map((p, i) =>
-    `<circle cx="${xOf(times[i])}" cy="${yOf(p.value)}" r="2.5" fill="#3b82f6"/>`
+    `<circle cx="${xAt(i)}" cy="${yOf(p.value)}" r="2.5" fill="#3b82f6"/>`
   ).join('');
 
   const last = points[points.length - 1];
-  const lastX = xOf(times[points.length - 1]);
+  const lastX = xAt(lastI);
   const lastY = yOf(last.value);
+
+  // The hover area runs a little past the plot. The first and last weeks sit on
+  // its edges, and without the margin only the inner half of their dots answered.
+  const hitPad = 8;
 
   return `<svg class="trend-svg sdk-trend-svg" viewBox="0 0 ${width} ${height}" width="100%" height="${height}"
       role="img" aria-label="SDK Downloads over time">
@@ -1876,7 +1901,7 @@ function sdkChart(points, pkgId, { width = 860, height = 270 } = {}) {
       </linearGradient>
     </defs>
     ${grid}
-    ${points.length > 1 ? `<path d="${line} L${xOf(times[points.length - 1])},${m.t + plotH} L${xOf(times[0])},${m.t + plotH} Z" fill="url(#sdkGrad)"/>` : ''}
+    ${points.length > 1 ? `<path d="${line} L${lastX},${m.t + plotH} L${xAt(0)},${m.t + plotH} Z" fill="url(#sdkGrad)"/>` : ''}
     ${points.length > 1 ? `<path d="${line}" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>` : ''}
     ${dots}
     <circle cx="${lastX}" cy="${lastY}" r="5" fill="#3b82f6" stroke="var(--bg)" stroke-width="2"/>
@@ -1889,7 +1914,7 @@ function sdkChart(points, pkgId, { width = 860, height = 270 } = {}) {
       <rect class="sdk-badge-bg" rx="4" ry="4" fill="var(--bg3)" stroke="#3b82f6" stroke-width="1"/>
       <text class="sdk-badge-txt" fill="#60a5fa" font-size="11" font-family="'DM Mono',monospace" font-weight="700" text-anchor="middle"></text>
     </g>
-    <rect class="sdk-hit" x="${m.l}" y="${m.t}" width="${plotW}" height="${plotH}" fill="transparent" style="cursor:crosshair"/>
+    <rect class="sdk-hit" x="${m.l - hitPad}" y="${m.t}" width="${plotW + hitPad * 2}" height="${plotH}" fill="transparent" style="cursor:crosshair"/>
   </svg>`;
 }
 
@@ -1906,28 +1931,23 @@ function wireSdkCrosshair(root, points) {
   const tip = $('tooltip');
 
   const box = svg.viewBox.baseVal;
-  const m = { t: 18, r: 64, b: 30, l: 56 };
-  const plotW = box.width - m.l - m.r;
-  const plotH = box.height - m.t - m.b;
-  const times = points.map((p) => new Date(p.date).getTime());
-  const tMin = Math.min(...times);
-  const tMax = Math.max(...times);
-  const dom = sdkDomainFor(points);
-  const xOf = (t) => (tMax === tMin ? m.l + plotW / 2 : m.l + ((t - tMin) / (tMax - tMin)) * plotW);
-  const yOf = (v) => m.t + plotH - ((Math.max(dom.lo, Math.min(dom.hi, v)) - dom.lo) / (dom.hi - dom.lo)) * plotH;
+  const geo = sdkGeometry(points, box.width, box.height);
+  const { m } = geo;
+
+  // Through the SVG's own transform, not as a fraction of its box. The fraction
+  // was wrong wherever the plot sat letterboxed inside the element, which it
+  // still can below the 300px floor, or for a moment after a resize.
+  const toChart = (x, y) => new DOMPoint(x, y).matrixTransform(svg.getScreenCTM().inverse());
 
   const move = (ev) => {
-    const rect = svg.getBoundingClientRect();
-    const px = ((ev.clientX - rect.left) / rect.width) * box.width;
+    const px = toChart(ev.clientX, ev.clientY).x;
     let nearest = 0;
-    let best = Infinity;
-    times.forEach((t, i) => {
-      const dist = Math.abs(xOf(t) - px);
-      if (dist < best) { best = dist; nearest = i; }
-    });
+    for (let i = 1; i < points.length; i += 1) {
+      if (Math.abs(geo.x(i) - px) < Math.abs(geo.x(nearest) - px)) nearest = i;
+    }
     const pt = points[nearest];
-    const x = xOf(times[nearest]);
-    const y = yOf(pt.value);
+    const x = geo.x(nearest);
+    const y = geo.y(nearest);
 
     // Crosshair line
     cross.setAttribute('x1', x);
@@ -2002,6 +2022,26 @@ function wireSdkCrosshair(root, points) {
   });
 }
 
+let drawnSdkWidth = 0;
+function sdkChartWidth() {
+  return shownChartWidth($('sdkChart'));
+}
+
+function sdkChartBlock() {
+  const width = sdkChartWidth();
+  drawnSdkWidth = width;
+  return sdkChart(sdkSeries(state.sdkPackage, state.sdkRange), state.sdkPackage, { width });
+}
+
+/** Redraw the chart alone, so a resize leaves the card, its pills and its table as they were. */
+function refreshSdkChart() {
+  const block = $('sdkChart');
+  if (!block) return;
+  $('tooltip').style.opacity = '0';
+  block.innerHTML = sdkChartBlock();
+  wireSdkCrosshair(block, sdkSeries(state.sdkPackage, state.sdkRange));
+}
+
 function sdkAdoptionView() {
   if (!state.sdk) {
     return `<div class="empty-state">
@@ -2011,7 +2051,6 @@ function sdkAdoptionView() {
   }
 
   const s = state.sdk.summary || {};
-  const points = sdkSeries(state.sdkPackage, state.sdkRange);
 
   const packagesList = [
     { id: 'all', label: 'All Packages (@sap-ai-sdk)' },
@@ -2119,7 +2158,7 @@ function sdkAdoptionView() {
         <div class="sdk-pill-group">${rangePills}</div>
       </div>
 
-      ${sdkChart(points, state.sdkPackage)}
+      <div id="sdkChart">${sdkChartBlock()}</div>
 
       <div class="findings-label" style="margin-top:24px">WHAT EACH SAP AI PACKAGE DOES & CURRENT ACTIVITY</div>
       <div class="sdk-pkg-grid">${pkgCards}</div>
@@ -2287,13 +2326,15 @@ async function loadJson(url, fallback, retries = 2) {
 async function boot() {
   wireTheme();
 
-  // Redraw the history chart when the width it is shown at changes — a resized
-  // window, a scrollbar arriving with the content — once it settles, not per frame.
+  // Redraw the history or SDK chart when the width it is shown at changes — a
+  // resized window, a scrollbar arriving with the content — once it settles,
+  // not per frame.
   let resizeTimer = null;
   new ResizeObserver(() => {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(() => {
       if ($('historyChart') && Math.abs(historyChartWidth() - drawnChartWidth) >= 8) refreshHistory();
+      if ($('sdkChart') && Math.abs(sdkChartWidth() - drawnSdkWidth) >= 8) refreshSdkChart();
     }, 120);
   }).observe($('main'));
   const [topics, data, trend, site, sdk] = await Promise.all([
