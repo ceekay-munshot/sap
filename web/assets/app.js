@@ -1806,39 +1806,49 @@ function setChartMode(mode, animate) {
 
 /* ─── sdk adoption telemetry ────────────────────────────────────────────────── */
 
-function sdkDomainFor(points) {
-  const values = points.map((p) => p.value);
-  let lo = Math.min(...values);
-  let hi = Math.max(...values);
-  if (lo === hi) { lo = 0; hi = hi || 100; }
-  lo = Math.max(0, Math.floor(lo * 0.85));
-  hi = Math.ceil(hi * 1.15);
-  const step = (hi - lo) / 4;
-  return { lo, hi, ticks: [0, 1, 2, 3, 4].map((i) => Math.round(lo + step * i)) };
-}
+/** The five packages, in the pills' order: one name each, for the pills, key and readout. */
+const SDK_PACKAGES = [
+  { id: 'orchestration', label: 'Orchestration' },
+  { id: 'core', label: 'Core Client' },
+  { id: 'ai-api', label: 'AI API' },
+  { id: 'foundation-models', label: 'Foundation Models' },
+  { id: 'langchain', label: 'LangChain Adapter' },
+];
+const SDK_ALL = { id: 'all', label: 'All Packages (@sap-ai-sdk)' };
+const sdkLabel = (id) => [SDK_ALL, ...SDK_PACKAGES].find((p) => p.id === id)?.label || id;
 
-function sdkSeries(pkgId, rangeDays = '365') {
+const SDK_RANGES = [
+  { id: '90', label: '90 Days', weeks: 13 },
+  { id: '365', label: '1 Year', weeks: 52 },
+  { id: 'all', label: 'All-Time (2 Years)', weeks: 0 },   // every week there is
+];
+
+// The package picked. The rest of the plot is the grey it stands out against.
+const SDK_BLUE = '#3b82f6';
+const EASE_OUT = 'cubic-bezier(0.23, 1, 0.32, 1)';
+
+function sdkSeries(pkgId, rangeId = '365') {
   if (!state.sdk) return [];
-  let series = state.sdk.weeklySeries || [];
-  if (rangeDays === '90') {
-    series = series.slice(-13);
-  } else if (rangeDays === '365') {
-    series = series.slice(-52);
-  }
-  return series.map((week) => {
-    const val = pkgId === 'all'
-      ? week.total
-      : (week.packages?.[pkgId] || 0);
-    return {
-      date: week.weekEnding,
-      value: val,
-      total: week.total,
-      packages: week.packages,
-    };
-  });
+  const weeks = SDK_RANGES.find((r) => r.id === rangeId)?.weeks ?? 52;
+  const all = state.sdk.weeklySeries || [];
+  return (weeks ? all.slice(-weeks) : all).map((week) => ({
+    date: week.weekEnding,
+    value: pkgId === 'all' ? week.total : (week.packages?.[pkgId] || 0),
+    total: week.total,
+    packages: week.packages || {},
+    days: week.daysInBucket || 7,
+  }));
 }
 
-/** Where the SDK chart puts each week — shared by the drawing and the pointer. */
+/**
+ * Where the SDK chart puts each week — shared by the drawing and the pointer.
+ *
+ * Every package is drawn on the total's scale, from zero. Scaled to fit itself
+ * instead, each package drew the same curve as the total, so picking one looked
+ * like nothing had happened: Orchestration and Foundation Models install Core and
+ * AI API with them, so those four rise and fall together and differ in size
+ * alone. On the total's scale a package stands at the share of it that it is.
+ */
 function sdkGeometry(points, width, height) {
   const m = { t: 18, r: 64, b: 30, l: 56 };
   const plotW = width - m.l - m.r;
@@ -1846,10 +1856,24 @@ function sdkGeometry(points, width, height) {
   const times = points.map((p) => new Date(p.date).getTime());
   const tMin = Math.min(...times);
   const tMax = Math.max(...times);
-  const dom = sdkDomainFor(points);
+  const dom = countDomain(Math.max(...points.map((p) => p.total)));
   const xOf = (t) => (tMax === tMin ? m.l + plotW / 2 : m.l + ((t - tMin) / (tMax - tMin)) * plotW);
-  const yOf = (v) => m.t + plotH - ((Math.max(dom.lo, Math.min(dom.hi, v)) - dom.lo) / (dom.hi - dom.lo)) * plotH;
-  return { m, plotW, plotH, dom, yOf, x: (i) => xOf(times[i]), y: (i) => yOf(points[i].value) };
+  const yOf = (v) => m.t + plotH - (Math.max(0, Math.min(dom.hi, v)) / dom.hi) * plotH;
+  return { m, plotW, plotH, dom, yOf, x: (i) => px2(xOf(times[i])), y: (i) => px2(yOf(points[i].value)) };
+}
+
+/** The axis in the scale's own round steps: 250k, 500k, 1M. */
+const fmtAxis = (n) => {
+  if (n >= 1000000) return `${Number((n / 1000000).toFixed(2))}M`;
+  if (n >= 1000) return `${Number((n / 1000).toFixed(1))}k`;
+  return String(n);
+};
+
+/** A package's part of every download in the weeks shown, as a whole percentage. */
+function sdkShare(points) {
+  const total = points.reduce((s, p) => s + p.total, 0);
+  const share = total ? (points.reduce((s, p) => s + p.value, 0) / total) * 100 : 0;
+  return share > 0 && share < 1 ? '<1' : String(Math.round(share));
 }
 
 function sdkChart(points, pkgId, { width = 860, height = 270 } = {}) {
@@ -1858,12 +1882,14 @@ function sdkChart(points, pkgId, { width = 860, height = 270 } = {}) {
       <div class="no-history-title">No SDK telemetry loaded</div></div>`;
   }
   const { m, plotW, plotH, dom, yOf, x: xAt } = sdkGeometry(points, width, height);
+  const all = pkgId === 'all';
+  const base = m.t + plotH;
 
   const grid = dom.ticks.map((tick) => {
-    const y = yOf(tick);
+    const y = px2(yOf(tick));
     return `<line x1="${m.l}" y1="${y}" x2="${m.l + plotW}" y2="${y}" stroke="var(--border2)" stroke-width="1"/>
       <text x="${m.l - 10}" y="${y + 3}" text-anchor="end" fill="var(--text4)"
-        font-size="9" font-family="'DM Mono',monospace">${fmtK(tick)}</text>`;
+        font-size="9" font-family="'DM Mono',monospace">${fmtAxis(tick)}</text>`;
   }).join('');
 
   /*
@@ -1896,44 +1922,112 @@ function sdkChart(points, pkgId, { width = 860, height = 270 } = {}) {
       fill="var(--text4)" font-size="9" font-family="'DM Mono',monospace">${esc(labelOf(i))}</text>`;
   }).join('');
 
-  const line = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${xAt(i)},${yOf(p.value)}`).join(' ');
+  const at = (i, v) => `${xAt(i)},${px2(yOf(v))}`;
+  const line = points.map((p, i) => `${i ? 'L' : 'M'}${at(i, p.value)}`).join('');
+  const area = `${line}L${xAt(lastI)},${base}L${xAt(0)},${base}Z`;
+  const many = points.length > 1;
 
-  const dots = points.map((p, i) =>
-    `<circle cx="${xAt(i)}" cy="${yOf(p.value)}" r="2.5" fill="#3b82f6"/>`
-  ).join('');
+  // What the other four add: the band from the package's line up to the total's,
+  // and the total's own line along its top.
+  let rest = '';
+  if (!all && many) {
+    const top = points.map((p, i) => `${i ? 'L' : 'M'}${at(i, p.total)}`).join('');
+    const back = points.map((p, i) => `L${at(i, p.value)}`).reverse().join('');
+    rest = `<path class="sdk-rest" d="${top}${back}Z" fill="var(--text4)" fill-opacity="0.13"/>
+    <path d="${top}" fill="none" stroke="var(--text4)" stroke-opacity="0.7" stroke-width="1.5"
+      stroke-linejoin="round" stroke-linecap="round"/>`;
+  }
 
-  const last = points[points.length - 1];
+  const last = points[lastI];
   const lastX = xAt(lastI);
-  const lastY = yOf(last.value);
+  const lastY = px2(yOf(last.value));
+  const totalY = px2(yOf(last.total));
+
+  // Everything that depends on the package. A new pick fades this group over the
+  // old; the grid, the dates and the scale stay where they are.
+  const plot = `<g class="sdk-plot" data-pkg="${esc(pkgId)}">
+    ${rest}
+    ${many ? `<path class="sdk-area" d="${area}" fill="url(#sdkGrad)"/>
+    <path class="sdk-line" d="${line}" fill="none" stroke="${SDK_BLUE}" stroke-width="2"
+      stroke-linejoin="round" stroke-linecap="round"/>` : ''}
+    ${points.map((p, i) => `<circle cx="${xAt(i)}" cy="${px2(yOf(p.value))}" r="2.5" fill="${SDK_BLUE}"/>`).join('')}
+    <circle cx="${lastX}" cy="${lastY}" r="5" fill="${SDK_BLUE}" stroke="var(--bg)" stroke-width="2"/>
+    <text x="${lastX + 9}" y="${lastY + 4}" fill="var(--text)" font-size="11"
+      font-family="'DM Mono',monospace" font-weight="700">${fmtK(last.value)}</text>
+    ${!all && totalY < lastY - 14 ? `<text x="${lastX + 9}" y="${totalY + 4}" fill="var(--text4)" font-size="10"
+      font-family="'DM Mono',monospace">${fmtK(last.total)}</text>` : ''}
+  </g>`;
 
   // The hover area runs a little past the plot. The first and last weeks sit on
   // its edges, and without the margin only the inner half of their dots answered.
   const hitPad = 8;
+  const label = all
+    ? 'Weekly downloads of all five @sap-ai-sdk packages'
+    : `Weekly downloads of ${sdkLabel(pkgId)}, on the same scale as all five @sap-ai-sdk packages`;
 
   return `<svg class="trend-svg sdk-trend-svg" viewBox="0 0 ${width} ${height}" width="100%" height="${height}"
-      role="img" aria-label="SDK Downloads over time">
+      role="img" aria-label="${esc(label)}">
     <defs>
       <linearGradient id="sdkGrad" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.25"/>
-        <stop offset="100%" stop-color="#3b82f6" stop-opacity="0.01"/>
+        <stop offset="0%" stop-color="${SDK_BLUE}" stop-opacity="0.3"/>
+        <stop offset="100%" stop-color="${SDK_BLUE}" stop-opacity="0.06"/>
       </linearGradient>
     </defs>
     ${grid}
-    ${points.length > 1 ? `<path d="${line} L${lastX},${m.t + plotH} L${xAt(0)},${m.t + plotH} Z" fill="url(#sdkGrad)"/>` : ''}
-    ${points.length > 1 ? `<path d="${line}" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>` : ''}
-    ${dots}
-    <circle cx="${lastX}" cy="${lastY}" r="5" fill="#3b82f6" stroke="var(--bg)" stroke-width="2"/>
-    <text x="${lastX + 9}" y="${lastY + 4}" fill="var(--text)" font-size="11"
-      font-family="'DM Mono',monospace" font-weight="700">${fmtK(last.value)}</text>
+    ${plot}
     ${dateLabels}
-    <line class="sdk-crosshair" y1="${m.t}" y2="${m.t + plotH}" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="3 3" opacity="0"/>
-    <circle class="sdk-hover-dot" r="6" fill="#3b82f6" stroke="var(--bg)" stroke-width="2.5" opacity="0"/>
+    <line class="sdk-crosshair" y1="${m.t}" y2="${m.t + plotH}" stroke="${SDK_BLUE}" stroke-width="1.5" stroke-dasharray="3 3" opacity="0"/>
+    <circle class="sdk-hover-dot" r="6" fill="${SDK_BLUE}" stroke="var(--bg)" stroke-width="2.5" opacity="0"/>
     <g class="sdk-hover-badge" opacity="0" pointer-events="none">
-      <rect class="sdk-badge-bg" rx="4" ry="4" fill="var(--bg3)" stroke="#3b82f6" stroke-width="1"/>
+      <rect class="sdk-badge-bg" rx="4" ry="4" fill="var(--bg3)" stroke="${SDK_BLUE}" stroke-width="1"/>
       <text class="sdk-badge-txt" fill="#60a5fa" font-size="11" font-family="'DM Mono',monospace" font-weight="700" text-anchor="middle"></text>
     </g>
     <rect class="sdk-hit" x="${m.l - hitPad}" y="${m.t}" width="${plotW + hitPad * 2}" height="${plotH}" fill="transparent" style="cursor:crosshair"/>
   </svg>`;
+}
+
+/**
+ * What is drawn in blue, what in grey, and how much of the whole the blue is.
+ * Two short rows for every pick, down to a 320px phone, so switching packages
+ * never moves the chart under the reader's finger.
+ */
+function sdkKey(points, pkgId) {
+  if (!points.length) return '';
+  const swatch = (name, style) => `<span class="bar-key"><i ${style}></i>${esc(name)}</span>`;
+  if (pkgId === 'all') {
+    return `<div class="sdk-key">
+      <div>${swatch('All five packages', `style="background:${SDK_BLUE}"`)}</div>
+      <div class="sdk-key-note">Pick a package to see its share</div>
+    </div>`;
+  }
+  return `<div class="sdk-key">
+    <div>${swatch(sdkLabel(pkgId), `style="background:${SDK_BLUE}"`)}${swatch('Other packages', 'class="sdk-key-rest"')}</div>
+    <div class="sdk-key-note">${sdkShare(points)}% of all downloads in this period</div>
+  </div>`;
+}
+
+const SDK_NOTE = `<div class="card-meta sdk-note">One scale for every package, so its height is its share
+  of the total. Orchestration and Foundation Models install Core and AI API with them, so those four rise
+  and fall together.</div>`;
+
+/** The week under the pointer, set out as the sum the chart draws. */
+function sdkTip(pt, pkgId) {
+  const row = (key, value, name, cls = '') => `<div class="t-row${cls}"><span class="t-key"${key ? ` style="background:${key}"` : ''}></span>`
+    + `<span class="t-val">${esc(fmtNum(value))}</span><span class="t-name">${esc(name)}</span></div>`;
+  const title = `<div class="t-title">WEEK ENDING ${esc(fmtDate(pt.date).toUpperCase())}</div>`;
+  const partial = pt.days < 7 ? `<div class="t-note">${pt.days} of 7 days so far</div>` : '';
+  if (pkgId === 'all') {
+    return title
+      + SDK_PACKAGES.map((p) => row('', pt.packages[p.id] || 0, p.label)).join('')
+      + row(SDK_BLUE, pt.total, 'all five packages', ' t-total')
+      + partial;
+  }
+  const share = pt.total ? Math.round((pt.value / pt.total) * 100) : 0;
+  return title
+    + row(SDK_BLUE, pt.value, `${sdkLabel(pkgId)} (${share}%)`)
+    + row('var(--text4)', pt.total - pt.value, 'the other four packages')
+    + row('', pt.total, 'all five packages', ' t-total')
+    + partial;
 }
 
 function wireSdkCrosshair(root, points) {
@@ -1947,6 +2041,7 @@ function wireSdkCrosshair(root, points) {
   const badgeBg = svg.querySelector('.sdk-badge-bg');
   const badgeTxt = svg.querySelector('.sdk-badge-txt');
   const tip = $('tooltip');
+  const pkgId = state.sdkPackage;
 
   const box = svg.viewBox.baseVal;
   const geo = sdkGeometry(points, box.width, box.height);
@@ -1967,19 +2062,17 @@ function wireSdkCrosshair(root, points) {
     const x = geo.x(nearest);
     const y = geo.y(nearest);
 
-    // Crosshair line
     cross.setAttribute('x1', x);
     cross.setAttribute('x2', x);
     cross.setAttribute('opacity', '1');
 
-    // On-chart dot directly on curve
     if (hoverDot) {
       hoverDot.setAttribute('cx', x);
       hoverDot.setAttribute('cy', y);
       hoverDot.setAttribute('opacity', '1');
     }
 
-    // On-chart exact number badge
+    // The exact number, on the line itself.
     if (badge && badgeTxt && badgeBg) {
       const numStr = pt.value.toLocaleString();
       badgeTxt.textContent = numStr;
@@ -1995,34 +2088,8 @@ function wireSdkCrosshair(root, points) {
       badge.setAttribute('opacity', '1');
     }
 
-    // Floating HTML tooltip
     if (tip) {
-      const friendlyPkg = {
-        orchestration: 'Orchestration (routes AI calls)',
-        core: 'Core (security & auth)',
-        'ai-api': 'AI API (AI Core deployment)',
-        'foundation-models': 'Foundation Models (model wrappers)',
-        langchain: 'LangChain Adapter (3rd-party)',
-      };
-      const activePkgLabel = state.sdkPackage === 'all'
-        ? 'All Packages (@sap-ai-sdk)'
-        : (friendlyPkg[state.sdkPackage] || state.sdkPackage);
-
-      const row = (val, name, colour, isLarge = false) =>
-        `<div class="t-row"><span class="t-val"${colour ? ` style="color:${colour}${isLarge ? ';font-size:13px;font-weight:700' : ''}"` : ''}>${esc(val)}</span>`
-        + `<span class="t-name">${esc(name)}</span></div>`;
-
-      tip.innerHTML = `<div class="t-title">WEEK ENDING ${esc(fmtDate(pt.date)).toUpperCase()}</div>`
-        + `<div style="padding-bottom:5px;margin-bottom:6px;border-bottom:1px solid var(--border2)">`
-        + row(pt.value.toLocaleString(), activePkgLabel, '#3b82f6', true)
-        + `</div>`
-        + (state.sdkPackage !== 'all' ? row(pt.total.toLocaleString(), 'Total All Packages') : '')
-        + (pt.packages?.orchestration ? row(pt.packages.orchestration.toLocaleString(), 'Orchestration') : '')
-        + (pt.packages?.core ? row(pt.packages.core.toLocaleString(), 'Core') : '')
-        + (pt.packages?.['ai-api'] ? row(pt.packages['ai-api'].toLocaleString(), 'AI API') : '')
-        + (pt.packages?.['foundation-models'] ? row(pt.packages['foundation-models'].toLocaleString(), 'Foundation Models') : '')
-        + (pt.packages?.langchain ? row(pt.packages.langchain.toLocaleString(), 'LangChain') : '');
-
+      tip.innerHTML = sdkTip(pt, pkgId);
       tip.style.opacity = '1';
       const tb = tip.getBoundingClientRect();
       tip.style.left = `${Math.min(Math.max(8, ev.clientX + 16), window.innerWidth - tb.width - 12)}px`;
@@ -2050,19 +2117,68 @@ function sdkChartWidth() {
   return shownChartWidth($('sdkChart'));
 }
 
+/** Everything the pills change: the key, the chart and the note under it. */
 function sdkChartBlock() {
   const width = sdkChartWidth();
   drawnSdkWidth = width;
-  return sdkChart(sdkSeries(state.sdkPackage, state.sdkRange), state.sdkPackage, { width });
+  const points = sdkSeries(state.sdkPackage, state.sdkRange);
+  return sdkKey(points, state.sdkPackage)
+    + sdkChart(points, state.sdkPackage, { width })
+    + (points.length ? SDK_NOTE : '');
 }
 
-/** Redraw the chart alone, so a resize leaves the card, its pills and its table as they were. */
-function refreshSdkChart() {
+/**
+ * Redraw the chart alone, so the card, its pills and its table stay as they
+ * were. A new package fades in over the old one on the same scale, so the eye
+ * follows what changed; a new range redraws the axis and settles in whole.
+ * Picked from the keyboard, the change is simply made.
+ */
+function refreshSdkChart({ transition = null } = {}) {
   const block = $('sdkChart');
   if (!block) return;
   $('tooltip').style.opacity = '0';
+  const leaving = transition === 'fade' ? block.querySelector('.sdk-plot') : null;
+  // Taken from where it is now, so a pick made mid-fade does not flash.
+  const from = leaving ? Number(getComputedStyle(leaving).opacity) : 1;
+  const ghost = leaving?.cloneNode(true);
+
   block.innerHTML = sdkChartBlock();
   wireSdkCrosshair(block, sdkSeries(state.sdkPackage, state.sdkRange));
+  if (!transition) return;
+
+  const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const plot = block.querySelector('.sdk-plot');
+  if (ghost && plot) {
+    ghost.setAttribute('class', 'sdk-plot-leaving');
+    ghost.setAttribute('aria-hidden', 'true');
+    plot.after(ghost);
+    plot.animate({ opacity: [0, 1] }, { duration: 200, easing: EASE_OUT });
+    ghost.animate({ opacity: [from, 0] }, { duration: 200, easing: EASE_OUT, fill: 'forwards' })
+      .finished.then(() => ghost.remove(), () => ghost.remove());
+  } else if (transition === 'swap') {
+    // Fading is kept for a reader who asked for less motion; only the lift goes.
+    block.animate({ opacity: [0, 1], transform: [still ? 'none' : 'translateY(4px)', 'none'] },
+      { duration: 220, easing: EASE_OUT });
+  }
+}
+
+/**
+ * The pills redraw the chart and nothing else, like the history view's
+ * controls. They used to re-render the whole view, which replayed the card's
+ * entrance over the change and took the focus off the pill just pressed.
+ */
+function setSdkView({ pkg = state.sdkPackage, range = state.sdkRange }, animate) {
+  if (pkg === state.sdkPackage && range === state.sdkRange) return;
+  const newRange = range !== state.sdkRange;
+  state.sdkPackage = pkg;
+  state.sdkRange = range;
+  const mark = (btn, on) => {
+    btn.classList.toggle('active', on);
+    btn.setAttribute('aria-pressed', String(on));
+  };
+  for (const btn of document.querySelectorAll('[data-sdk-pkg]')) mark(btn, btn.dataset.sdkPkg === pkg);
+  for (const btn of document.querySelectorAll('[data-sdk-range]')) mark(btn, btn.dataset.sdkRange === range);
+  refreshSdkChart({ transition: animate ? (newRange ? 'swap' : 'fade') : null });
 }
 
 function sdkAdoptionView() {
@@ -2075,28 +2191,12 @@ function sdkAdoptionView() {
 
   const s = state.sdk.summary || {};
 
-  const packagesList = [
-    { id: 'all', label: 'All Packages (@sap-ai-sdk)' },
-    { id: 'orchestration', label: 'Orchestration' },
-    { id: 'core', label: 'Core Client' },
-    { id: 'ai-api', label: 'AI API' },
-    { id: 'foundation-models', label: 'Foundation Models' },
-    { id: 'langchain', label: 'LangChain Adapter' },
-  ];
-
-  const pkgPills = packagesList.map((p) =>
-    `<button class="sdk-pill${state.sdkPackage === p.id ? ' active' : ''}" type="button" data-sdk-pkg="${esc(p.id)}">${esc(p.label)}</button>`
-  ).join('');
-
-  const rangeList = [
-    { id: '90', label: '90 Days' },
-    { id: '365', label: '1 Year' },
-    { id: 'all', label: 'All-Time (2 Years)' },
-  ];
-
-  const rangePills = rangeList.map((r) =>
-    `<button class="sdk-pill${state.sdkRange === r.id ? ' active' : ''}" type="button" data-sdk-range="${esc(r.id)}">${esc(r.label)}</button>`
-  ).join('');
+  const pill = (attr, id, label, on) =>
+    `<button class="sdk-pill${on ? ' active' : ''}" type="button" ${attr}="${esc(id)}" aria-pressed="${on}">${esc(label)}</button>`;
+  const pkgPills = [SDK_ALL, ...SDK_PACKAGES]
+    .map((p) => pill('data-sdk-pkg', p.id, p.label, state.sdkPackage === p.id)).join('');
+  const rangePills = SDK_RANGES
+    .map((r) => pill('data-sdk-range', r.id, r.label, state.sdkRange === r.id)).join('');
 
   const PLAIN_ENGLISH_DESC = {
     '@sap-ai-sdk/orchestration': 'Connects and routes AI requests to Joule, SAP RPT-1, and frontier LLMs. The central backbone for SAP enterprise AI applications.',
@@ -2177,8 +2277,8 @@ function sdkAdoptionView() {
       </p>
 
       <div class="sdk-controls">
-        <div class="sdk-pill-group">${pkgPills}</div>
-        <div class="sdk-pill-group">${rangePills}</div>
+        <div class="sdk-pill-group" role="group" aria-label="Package">${pkgPills}</div>
+        <div class="sdk-pill-group" role="group" aria-label="Time range">${rangePills}</div>
       </div>
 
       <div id="sdkChart">${sdkChartBlock()}</div>
@@ -2257,17 +2357,13 @@ function render() {
   }
   wireHistory(main);
 
+  // A keyboard press arrives as a click with no pointer detail, and switches
+  // without motion.
   for (const btn of main.querySelectorAll('[data-sdk-pkg]')) {
-    btn.addEventListener('click', () => {
-      state.sdkPackage = btn.dataset.sdkPkg;
-      render();
-    });
+    btn.addEventListener('click', (ev) => setSdkView({ pkg: btn.dataset.sdkPkg }, ev.detail > 0));
   }
   for (const btn of main.querySelectorAll('[data-sdk-range]')) {
-    btn.addEventListener('click', () => {
-      state.sdkRange = btn.dataset.sdkRange;
-      render();
-    });
+    btn.addEventListener('click', (ev) => setSdkView({ range: btn.dataset.sdkRange }, ev.detail > 0));
   }
   for (const btn of main.querySelectorAll('[data-nav-tab]')) {
     btn.addEventListener('click', () => {
