@@ -1,9 +1,9 @@
 {
-  "updatedAt": "2026-10-11T12:08:41.680Z",
-  "count": 3658,
+  "updatedAt": "2026-10-12T14:17:49.270Z",
+  "count": 3736,
   "meta": {
     "engine": "heuristic",
-    "lastTrack": "2026-10-11T12:08:41.677Z"
+    "lastTrack": "2026-10-12T14:17:49.266Z"
   },
   "items": [
     {
@@ -82496,7 +82496,7 @@
       "text": "**Testing only. Do not merge.** Merging to `main` runs `build-apk.yml`, which publishes the APK to the PROD CDN (`apk.v2retail.net/download`). This PR does not trigger CI (the workflow has no `pull_request` trigger).\n\n## What\nDC Outward gets a new button, \"Cluster Picking (4 HU)\". One picker fills up to 4 store HUs in a single bin walk:\n1. Scan the bin.\n2. Scan the EAN.\n3. Put the piece in the slot by scanning that slot's HU.\n\n\"Bin short\" marks the line in IT_BIN_EMPTY. Each slot saves in the background as soon as its last line is put.\n\n- `dc/cluster/ClusterPick.java`: walk model in plain Java (scan rules, IT_DATA, save payload).\n- `dc/ClusterPickingFragment.java` and `fragment_cluster_picking.xml`: the screen.\n- `OutWardFragment` and `fragment_outward.xml`: the menu button.\n\n## SAP calls\n- `Z_PICK_CLUSTER_GET` returns the cart and the walk. It is off unless TVARVC `ZWM_PICK_CLUSTER_ON` = X. Today the switch is set only in S4D (TR S4DK929051, imported to S4Q with no switch set).\n- Per slot, the live TVS paperless pair, unchanged: `ZWM_DELIVERY_GET_DETAILS_PLP2`, `ZWM_TVS_VAL_EXTERNAL_HU`, `ZWM_CREATE_HU_AND_ASSIGN_TVS`. IT_DATA has one row per EAN scan and no VBELN, which is the sa…",
       "url": "https://github.com/akash0631/v2-android-hht/pull/2",
       "date": "2026-10-05T06:30:00Z",
-      "engagement": 0,
+      "engagement": 1,
       "query": "abap ai in:title,body",
       "sentiment": 0,
       "stance": "neutral",
@@ -89374,7 +89374,7 @@
       "text": "First of all: This is not a bug report or feature request, but a question regarding SAP support and governance considerations around ABAP FS.\n\nHi Marcello,\n\nFirst of all, thank you for creating ABAP FS. I've been exploring the project and find the capabilities around SAP development and AI assistance very impressive.\n\nI have a question regarding SAP's stance towards the use of VS Code, ABAP FS and GitHub Copilot.\n\nSAP now offers its own ABAP Development Tools for VS Code and is investing heavily in Joule and AI-assisted development. However, I have not been able to find clear guidance regarding third-party solutions such as ABAP FS and for example GitHub Copilot, which I find to be a very powerfull tool for me in my daily work.\n\nFrom your experience:\n\n- Have you received any feedback from SAP regarding the use of ABAP FS?\n- Are you aware of any SAP policies, recommendations or support limitations related to using ABAP FS together with GitHub Copilot?\n- Do SAP customers generally regard ABAP FS as an accepted tool for ABAP development and troubleshooting, or do they see any concerns from a compliance or support perspective?\n\nI'm trying to understand whether SAP generally accepts the…",
       "url": "https://github.com/marcellourbani/vscode_abap_remote_fs/issues/597",
       "date": "2026-10-08T07:56:03Z",
-      "engagement": 1,
+      "engagement": 2,
       "query": "SAP Joule in:title,body",
       "sentiment": 0.65,
       "stance": "positive",
@@ -94503,7 +94503,7 @@
       "text": "## TLDR\n\nProblem this solves:\n\n- SAP requests with a screenshot in a tool result now return 500\n- Same for assistant thinking or refusal parts, and system string lists\n- Before #39122 those parts were dropped and the request went through\n\nHow it solves it:\n\n- Drop non-text parts from system, assistant and tool messages before validation\n- Keep every text part and its `cache_control`, so #39122's caching fix still works\n- User messages are untouched and keep their images\n\n## User Flow\n\nBefore: a Claude Code user on an SAP-hosted Claude model gets a 500 as soon as a tool returns a screenshot\n\n1. They point Claude Code at the proxy and ask it to take a screenshot\n2. Claude Code sends POST http://localhost:4000/v1/messages with a `tool_result` holding text plus an image\n3. The proxy answers 500 `4 validation errors for SAPToolChatMessage` and nothing reaches SAP\n\nAfter: the same request goes through with the text part of the tool result\n\n1. They point Claude Code at the proxy and ask it to take a screenshot\n2. Claude Code sends the same POST http://localhost:4000/v1/messages\n3. The proxy answers 200 and SAP receives the tool result text, without the image, as it did before #39122\n\n## A…",
       "url": "https://github.com/BerriAI/litellm/pull/45646",
       "date": "2026-10-09T18:49:57Z",
-      "engagement": 4,
+      "engagement": 5,
       "query": "sap ai-core in:title,body",
       "sentiment": 0,
       "stance": "neutral",
@@ -96110,7 +96110,7 @@
       "text": "### Server name\n\nAnalytics Legends — SAP AI & Analytics market intelligence\n\n### Project URL\n\nhttps://github.com/analyticslegends/analytics-legends-mcp\n\n### Best category\n\nSearch\n\n### What can an agent do with this server?\n\nSAP AI & Analytics market intelligence for agents: consulting and recruitment firms by country and kind, the live contract and permanent-role radar, public day-rate aggregates, a concept encyclopaedia (SAP Datasphere, Business Data Cloud, SAP Analytics Cloud, BW/4HANA, Databricks, SAP Business AI and Joule), studies and news. Every row carries a citation_url.\n\n### Install or connection instructions\n\nRemote server, nothing to install. Add it to your MCP client as a streamable-http server:\n\n```json\n{ \"mcpServers\": { \"analytics-legends\": { \"type\": \"http\", \"url\": \"https://analyticslegends.ai/mcp\" } } }\n```\n\nDocs: https://analyticslegends.ai/mcp-server/\n\n### Transport\n\nstreamable-http\n\n### Auth requirements\n\nno auth\n\nPublic tranche needs no authentication; the paid tranche takes an API key (Authorization: Bearer). License: MIT.",
       "url": "https://github.com/TensorBlock/awesome-mcp-servers/issues/3471",
       "date": "2026-10-10T20:47:30Z",
-      "engagement": 2,
+      "engagement": 4,
       "query": "SAP Joule in:title,body",
       "sentiment": 0,
       "stance": "neutral",
@@ -96143,7 +96143,7 @@
       "text": "## Summary\n- add `Analytics Legends — SAP AI & Analytics market intelligence` to `docs/search.md` from community issue #3471\n- add structured metadata sidecar `data/server-metadata/github-analyticslegends-analytics-legends-mcp-d53471be.json`\n- include submitted metadata below for maintainer verification\n\n## Generated entry\n\n```md\n- [Analytics Legends — SAP AI & Analytics market intelligence](https://github.com/analyticslegends/analytics-legends-mcp): SAP AI & Analytics market intelligence for agents: consulting and recruitment firms by country and kind, the live contract and permanent-role radar, public day-rate aggregates, a concept encyclopaedia (SAP Datasphere, Business Data Cloud, SAP Analytics Cloud, BW/4HANA, Databricks, SAP Business AI and Joule), studies and news. Every row carries a...\n```\n\n## Generated metadata sidecar\n\n`data/server-metadata/github-analyticslegends-analytics-legends-mcp-d53471be.json`\n\n```json\n{\n  \"$schema\": \"../../schemas/server-metadata.schema.json\",\n  \"id\": \"github-analyticslegends-analytics-legends-mcp-d53471be\",\n  \"source\": {\n    \"issue\": 3471,\n    \"projectUrl\": \"https://github.com/analyticslegends/analytics-legends-mcp\"\n  },\n  \"links\": {\n    \"endpoi…",
       "url": "https://github.com/TensorBlock/awesome-mcp-servers/pull/3472",
       "date": "2026-10-10T20:47:49Z",
-      "engagement": 0,
+      "engagement": 2,
       "query": "SAP Joule in:title,body",
       "sentiment": 0,
       "stance": "neutral",
@@ -96347,7 +96347,7 @@
       "text": "<!-- Rewritten by .github/workflows/live-nightly.yml after every run: edits here are lost. -->\nA read-only check of employers' career sites every night (scripts/live_smoke.py: a fake profile, submitting turned off). A comment is added here only when an employer's result changes; the tables are the latest run's.\n\nLast checked: 2026-10-10 16:04 UTC · [run](https://github.com/sebob2491/Jobs/actions/runs/38065429909)\n\n### Apply pipeline, semiconductor list (technician jobs): where it ended on one posting per employer\n\n| Employer | Result | Detail |\n|---|---|---|\n| Amkor Technology | `needs_you sign_in` | `Senior Safety Engineer (ATA) · I filled in SAP SuccessFactors's Create Account form with your details and saved password. Fill in anything …` |\n| Analog Devices | `needs_you sign_in` | `Associate Field Applications Engineer - Auto… · I filled in Workday's Create Account form with your details and saved password. Fill in any…` |\n| Applied Materials | `needs_you sign_in` | `Applied Early Career Program - Field Service… · I filled in Workday's Create Account form with your details and saved password. Fill in any…` |\n| ASM (ASM America) | `needs_you stuck` | `Engineer, Field Process (Cust…",
       "url": "https://github.com/sebob2491/Jobs/issues/54",
       "date": "2026-10-09T00:24:15Z",
-      "engagement": 2,
+      "engagement": 7,
       "query": "SAP Business Data Cloud in:title,body",
       "sentiment": 0.667,
       "stance": "positive",
@@ -96405,7 +96405,7 @@
       "text": "## Summary\n\nAdds `converters/sap-csn`: an offline, bidirectional converter between a SAP CSN document (Core Schema Notation, as written by `cds compile --to csn` and exchanged by SAP Datasphere) and an Ossie semantic model.\n\n- **CSN to Ossie:** entities become datasets and elements become fields. `key` and `@assert.unique` become keys. Associations and compositions become relationships. Calculated elements become SQL expressions. `@Aggregation.default` becomes a metric. Whatever Ossie has no home for is kept in an `SAP_CSN` custom extension, so a CSN to Ossie to CSN round trip is lossless.\n- **Ossie to CSN:** relationships become managed or `on`-condition associations. A metric that aggregates one dataset's columns, optionally reaching others through relationships, becomes a measure element. Metrics CSN cannot express go to `meta.ossie.metrics`. AI context and other vendors' extensions go to `@Ossie.*` annotations. Every such case is reported as a warning.\n- Expressions are translated between SQL and CXN for the constructs both express; anything else is refused and reported rather than guessed.\n\nLimitations (Datasphere analytic-model objects, views' queries, structured elements, `$…",
       "url": "https://github.com/apache/ossie/pull/560",
       "date": "2026-10-11T07:19:24Z",
-      "engagement": 0,
+      "engagement": 1,
       "query": "SAP Datasphere in:title,body",
       "sentiment": -1,
       "stance": "negative",
@@ -96942,6 +96942,2129 @@
         "downloads": 13136,
         "start": "2026-10-03",
         "end": "2026-10-09"
+      },
+      "sentiment": 0,
+      "stance": "neutral",
+      "voice": "practitioner",
+      "pillars": [
+        "joule"
+      ],
+      "tags": [],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.1,
+      "engine": "heuristic",
+      "topics": [
+        "joule_sentiment",
+        "btp_ai"
+      ]
+    },
+    {
+      "id": "rss:sap-news:https://news.sap.com/?p=247819",
+      "source": "rss",
+      "sourceLabel": "SAP News Center",
+      "kind": "article",
+      "author": null,
+      "title": "The Next Chapter in Spend Management: AI Innovations Across SAP Ariba, SAP Fieldglass, and SAP Concur",
+      "text": "Last week at SAP Connect, SAP introduced new capabilities and partner innovations across SAP Ariba, SAP Fieldglass, and SAP Concur that help organizations turn spend insights into faster, better-informed decisions.\n\n SAP Connect in 2026: Advancing the Autonomous Enterprise \n \n Read the innovation news guide \n \n \n\n Procurement leaders operate in a very different environment than they did just a few years ago. Beyond cost and compliance, they must now strengthen resilience, manage supplier risk, support workforce strategies, and help businesses respond faster to changing market conditions.\n\n Yet, many of the systems supporting these responsibilities remain disconnected. Supplier intelligence lives in one place, workforce information in another, and spend data often requires significant preparation before it can drive decisions.\n\n At SAP Connect, we announced a series of innovations across the SAP Ariba, SAP Fieldglass, and SAP Concur portfolios designed to help organizations address those challenges: new AI assistants for spend analysis and contingent workforce management, embedded supplier risk intelligence through a new partnership with Moody’s, a new solution extension with ORO La…",
+      "url": "https://news.sap.com/2026/10/next-chapter-spend-management-ai-innovations-sap-ariba-sap-fieldglass-sap-concur/",
+      "date": "2026-10-12T12:00:00.000Z",
+      "engagement": 0,
+      "stance": "mixed",
+      "sentiment": 0,
+      "voice": "vendor",
+      "pillars": [
+        "joule",
+        "agents"
+      ],
+      "tags": [
+        "licensing",
+        "partners",
+        "roadmap"
+      ],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.29000000000000004,
+      "engine": "heuristic",
+      "topics": [
+        "joule_sentiment",
+        "risks_gaps"
+      ]
+    },
+    {
+      "id": "rss:sap-news:https://news.sap.com/?p=247818",
+      "source": "rss",
+      "sourceLabel": "SAP News Center",
+      "kind": "article",
+      "author": null,
+      "title": "SAP Advances Finance Operations with Embedded Payments, New Consolidation Capabilities, and Expanded AI",
+      "text": "New innovations in payments, enterprise performance management, and AI automation help finance teams move quickly from insight to execution while maintaining governance and control.\n\n SAP Connect in 2026: Advancing the Autonomous Enterprise \n \n Read the innovation news guide \n \n \n\n Finance leaders today are expected to do far more than report results. They’re expected to shape business outcomes, guide decisions, and respond quickly to change. Yet many finance processes still operate in isolation rather than in concert. Invoice approval and payment execution happen in separate places.\n\n Planning, consolidation, and reporting often rely on separate systems and workflows. And governance often misses critical information by operating in a silo. The result is delays between identifying an issue, making a decision, and taking action.\n\n This year at SAP Connect, SAP announced new capabilities designed to help close those gaps. These include SAP Pay , a new payment service embedded in SAP Cloud ERP; SAP Enterprise Financial Consolidation, a new addition to SAP’s enterprise performance management portfolio; and an expanded set of Joule Assistants that bring AI-powered support to finance, go…",
+      "url": "https://news.sap.com/2026/10/sap-advances-finance-operations-embedded-payments-new-consolidation-capabilities-expanded-ai/",
+      "date": "2026-10-12T12:00:00.000Z",
+      "engagement": 0,
+      "stance": "negative",
+      "sentiment": -0.268,
+      "voice": "vendor",
+      "pillars": [
+        "joule",
+        "agents"
+      ],
+      "tags": [
+        "data-readiness",
+        "licensing",
+        "roadmap"
+      ],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.36,
+      "engine": "heuristic",
+      "topics": [
+        "joule_sentiment",
+        "customer_sat",
+        "risks_gaps"
+      ]
+    },
+    {
+      "id": "rss:sap-news:https://news.sap.com/?p=248372",
+      "source": "rss",
+      "sourceLabel": "SAP News Center",
+      "kind": "article",
+      "author": null,
+      "title": "SAP SuccessFactors 2H 2026 Release: Delivering the Future of Human Capital Management",
+      "text": "As workforce challenges continue to outpace traditional HR processes, the organizations that lead won’t be the ones with the most AI. They’ll be the ones that understand their people, their skills, and how work really gets done—and know where AI can move them beyond incremental improvement into lasting transformation.\n\n Turn HR into a strategic growth engine with AI  \n \n Discover Autonomous HCM \n \n \n\n With the SAP SuccessFactors 2H 2026 release and throughout the remainder of the year, we’re taking the next step toward Autonomous HCM , bringing together agentic AI, trusted workforce data, and HR applications to help deliver the outcomes that matter most to organizations. At its core are three pillars: automate the HR function to release capacity from administrative work, redesign how tasks, workflows, roles, and teams are structured across people and AI, and reinvent how organizations recruit, develop, move, and reward their people.\n\n This vision comes to life through Joule Assistants working together across SAP applications to help carry out end-to-end HR processes and help people make better decisions, faster, all within a single workspace: Joule Work . This is what it looks like…",
+      "url": "https://news.sap.com/2026/10/sap-successfactors-2h-2026-release/",
+      "date": "2026-10-12T11:15:00.000Z",
+      "engagement": 0,
+      "stance": "positive",
+      "sentiment": 1,
+      "voice": "vendor",
+      "pillars": [
+        "joule",
+        "agents"
+      ],
+      "tags": [
+        "licensing"
+      ],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.36,
+      "engine": "heuristic",
+      "topics": [
+        "joule_sentiment",
+        "btp_ai"
+      ]
+    },
+    {
+      "id": "rss:gnews-joule:CBMi8AFBVV95cUxPYkNlZzhoN1pwU1h5bHNHUkxhX3duMnVkY21JMlNXWHhNemlDdUlrYVZqUWJXNU1yRlJDMGdfdUliZDlDRTRtVHlhVjFxY1l5R1M4TXRjYlNGV2NfTk9yY1Vrd2hPTFBsYjRIQk11OXFBc0ZFSXhyZ0VtQmk3UUdzQUg1Y3dvMW84QmhPU2FEQnJBZllscWV5eUhkcktYeE1YSEZoY1VLcVl5OWRkQjVlRk5yOEVsRVd6dzRycDJrU1FiSnpiX21GbXNQQVU5ekE3N21PVmhoSlFpQmVPV0tBNmFfRk9KOUotYlVkTzNrd1Q",
+      "source": "rss",
+      "sourceLabel": "News: SAP Joule",
+      "kind": "article",
+      "author": null,
+      "title": "SAP's Joule Rollout Meets a Cloud Backlog Test as BMO and UBS Split on the Growth Story - ad-hoc-news.de",
+      "text": "<a href=\"https://news.google.com/rss/articles/CBMi8AFBVV95cUxPYkNlZzhoN1pwU1h5bHNHUkxhX3duMnVkY21JMlNXWHhNemlDdUlrYVZqUWJXNU1yRlJDMGdfdUliZDlDRTRtVHlhVjFxY1l5R1M4TXRjYlNGV2NfTk9yY1Vrd2hPTFBsYjRIQk11OXFBc0ZFSXhyZ0VtQmk3UUdzQUg1Y3dvMW84QmhPU2FEQnJBZllscWV5eUhkcktYeE1YSEZoY1VLcVl5OWRkQjVlRk5yOEVsRVd6dzRycDJrU1FiSnpiX21GbXNQQVU5ekE3N21PVmhoSlFpQmVPV0tBNmFfRk9KOUotYlVkTzNrd1Q?oc=5\" target=\"_blank\">SAP's Joule Rollout Meets a Cloud Backlog Test as BMO and UBS Split on the Growth Story</a>&nbsp;&nbsp;<font color=\"#6f6f6f\">ad-hoc-news.de</font>",
+      "url": "https://news.google.com/rss/articles/CBMi8AFBVV95cUxPYkNlZzhoN1pwU1h5bHNHUkxhX3duMnVkY21JMlNXWHhNemlDdUlrYVZqUWJXNU1yRlJDMGdfdUliZDlDRTRtVHlhVjFxY1l5R1M4TXRjYlNGV2NfTk9yY1Vrd2hPTFBsYjRIQk11OXFBc0ZFSXhyZ0VtQmk3UUdzQUg1Y3dvMW84QmhPU2FEQnJBZllscWV5eUhkcktYeE1YSEZoY1VLcVl5OWRkQjVlRk5yOEVsRVd6dzRycDJrU1FiSnpiX21GbXNQQVU5ekE3N21PVmhoSlFpQmVPV0tBNmFfRk9KOUotYlVkTzNrd1Q?oc=5",
+      "date": "2026-10-11T04:50:33.000Z",
+      "engagement": 0,
+      "stance": "neutral",
+      "sentiment": 0,
+      "voice": "press",
+      "pillars": [
+        "joule"
+      ],
+      "tags": [],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.1,
+      "engine": "heuristic",
+      "topics": [
+        "joule_sentiment"
+      ]
+    },
+    {
+      "id": "rss:gnews-bdc:CBMiiAFBVV95cUxOZmdfcXRHNmthUm1NLWlBbTVXTDBJQ21xdU5qbFRYRGZMMXYzbXJlanBpVUc1YWdVSzFweW16dVhQSFFoMWRDbjNnc3lrNTZVRV9wSWVQZ3liZHRaQXNQZFJCOU9XV2dVaVlkR0hSb0tjbXFobjA0MzdXekVaZUhXS0FMazE5eGVC",
+      "source": "rss",
+      "sourceLabel": "News: SAP Business Data Cloud",
+      "kind": "article",
+      "author": null,
+      "title": "SAP’s AI Partnership Sprint Shows What Its Autonomous Enterprise Still Has to Prove - ERP Today",
+      "text": "<a href=\"https://news.google.com/rss/articles/CBMiiAFBVV95cUxOZmdfcXRHNmthUm1NLWlBbTVXTDBJQ21xdU5qbFRYRGZMMXYzbXJlanBpVUc1YWdVSzFweW16dVhQSFFoMWRDbjNnc3lrNTZVRV9wSWVQZ3liZHRaQXNQZFJCOU9XV2dVaVlkR0hSb0tjbXFobjA0MzdXekVaZUhXS0FMazE5eGVC?oc=5\" target=\"_blank\">SAP’s AI Partnership Sprint Shows What Its Autonomous Enterprise Still Has to Prove</a>&nbsp;&nbsp;<font color=\"#6f6f6f\">ERP Today</font>",
+      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxOZmdfcXRHNmthUm1NLWlBbTVXTDBJQ21xdU5qbFRYRGZMMXYzbXJlanBpVUc1YWdVSzFweW16dVhQSFFoMWRDbjNnc3lrNTZVRV9wSWVQZ3liZHRaQXNQZFJCOU9XV2dVaVlkR0hSb0tjbXFobjA0MzdXekVaZUhXS0FMazE5eGVC?oc=5",
+      "date": "2026-06-25T07:00:00.000Z",
+      "engagement": 0,
+      "stance": "neutral",
+      "sentiment": 0,
+      "voice": "press",
+      "pillars": [
+        "agents"
+      ],
+      "tags": [],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.1,
+      "engine": "heuristic",
+      "topics": []
+    },
+    {
+      "id": "rss:gnews-agents:CBMiwwFBVV95cUxPbWVJNER1cWVlSHJuUkItdHktNFh0SjBrWXlFMVZ6RFZfLWwyTFVrQzBWSnpkWldSbjNwd3IwQlNZZzYzTDhkY3Z2Q0ZxcUVBX3R2TWRRVXZGWUdjSlBLS1ZhUEpKQXhqYlhzdEhwa1h2THBTTG05VFpkSlRuMnFMZzJZdWNxTjRXV2hCeUJwQ2hSY1puNkhMWjQwOU9ZdXFPRDhVeWpEcFNXakF4MGhlSzd5RWhQU2NHOVJOUTlCUFhZUU3SAcgBQVVfeXFMTmNkZ040MW1CRGw1cGJXQ0xhQ3JxOE1JVjdpUHlYT1N4aTdrdGlMaW5UM3ZFUnNlalNmdDB5TjN2XzJXTDVGQi0zWGc3eHl5RDZyQm5VcElKalNHWFhPaFhKX2xKakFubml0TUlXOGpnM1llYjVIcFlFSmVqY0J1cGlZV0NISUZYallmb2FxSnp3RFhVd0NlM3gyWjRtSXh2MnlnMFg5WS1NRHBYLVFoVllZYjJzVXVuVDd5U3Z5RW9DOFZhSHBOTlI",
+      "source": "rss",
+      "sourceLabel": "News: SAP AI agents",
+      "kind": "article",
+      "author": null,
+      "title": "Does Company Wide AI Rollout Change The Bull Case For SAP (XTRA:SAP)? - Simply Wall Street",
+      "text": "<a href=\"https://news.google.com/rss/articles/CBMiwwFBVV95cUxPbWVJNER1cWVlSHJuUkItdHktNFh0SjBrWXlFMVZ6RFZfLWwyTFVrQzBWSnpkWldSbjNwd3IwQlNZZzYzTDhkY3Z2Q0ZxcUVBX3R2TWRRVXZGWUdjSlBLS1ZhUEpKQXhqYlhzdEhwa1h2THBTTG05VFpkSlRuMnFMZzJZdWNxTjRXV2hCeUJwQ2hSY1puNkhMWjQwOU9ZdXFPRDhVeWpEcFNXakF4MGhlSzd5RWhQU2NHOVJOUTlCUFhZUU3SAcgBQVVfeXFMTmNkZ040MW1CRGw1cGJXQ0xhQ3JxOE1JVjdpUHlYT1N4aTdrdGlMaW5UM3ZFUnNlalNmdDB5TjN2XzJXTDVGQi0zWGc3eHl5RDZyQm5VcElKalNHWFhPaFhKX2xKakFubml0TUlXOGpnM1llYjVIcFlFSmVqY0J1cGlZV0NISUZYallmb2FxSnp3RFhVd0NlM3gyWjRtSXh2MnlnMFg5WS1NRHBYLVFoVllZYjJzVXVuVDd5U3Z5RW9DOFZhSHBOTlI?oc=5\" target=\"_blank\">Does Company Wide AI Rollout Change The Bull Case For SAP (XTRA:SAP)?</a>&nbsp;&nbsp;<font color=\"#6f6f6f\">Simply Wall Street</font>",
+      "url": "https://news.google.com/rss/articles/CBMiwwFBVV95cUxPbWVJNER1cWVlSHJuUkItdHktNFh0SjBrWXlFMVZ6RFZfLWwyTFVrQzBWSnpkWldSbjNwd3IwQlNZZzYzTDhkY3Z2Q0ZxcUVBX3R2TWRRVXZGWUdjSlBLS1ZhUEpKQXhqYlhzdEhwa1h2THBTTG05VFpkSlRuMnFMZzJZdWNxTjRXV2hCeUJwQ2hSY1puNkhMWjQwOU9ZdXFPRDhVeWpEcFNXakF4MGhlSzd5RWhQU2NHOVJOUTlCUFhZUU3SAcgBQVVfeXFMTmNkZ040MW1CRGw1cGJXQ0xhQ3JxOE1JVjdpUHlYT1N4aTdrdGlMaW5UM3ZFUnNlalNmdDB5TjN2XzJXTDVGQi0zWGc3eHl5RDZyQm5VcElKalNHWFhPaFhKX2xKakFubml0TUlXOGpnM1llYjVIcFlFSmVqY0J1cGlZV0NISUZYallmb2FxSnp3RFhVd0NlM3gyWjRtSXh2MnlnMFg5WS1NRHBYLVFoVllZYjJzVXVuVDd5U3Z5RW9DOFZhSHBOTlI?oc=5",
+      "date": "2026-10-10T17:52:18.000Z",
+      "engagement": 0,
+      "stance": "neutral",
+      "sentiment": 0,
+      "voice": "press",
+      "pillars": [],
+      "tags": [],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.1,
+      "engine": "heuristic",
+      "topics": []
+    },
+    {
+      "id": "rss:reddit-sap:t3_1x3t0ti",
+      "source": "rss",
+      "sourceLabel": "r/SAP",
+      "kind": "article",
+      "author": null,
+      "title": "Made a tool to automate SAP GUI testing — looking for feedback",
+      "text": "<table> <tr><td> <a href=\"https://www.reddit.com/r/SAP/comments/1x3t0ti/made_a_tool_to_automate_sap_gui_testing_looking/\"> <img src=\"https://external-preview.redd.it/mcybXX_f0hqObfz02TlBl6cUkEJUPD2i69TXwm4keU4.png?width=140&amp;height=73&amp;auto=webp&amp;s=b2d547302356349fee02d328fe98dc3a637c9391\" alt=\"Made a tool to automate SAP GUI testing — looking for feedback\" title=\"Made a tool to automate SAP GUI testing — looking for feedback\" /> </a> </td><td> <!-- SC_OFF --><div class=\"md\"><p><a href=\"https://preview.redd.it/r8ktqj7muyuh1.png?width=3456&amp;format=png&amp;auto=webp&amp;s=256b92161de648007b039cac7ad195f07c91244f\">test scenario</a></p> <p><a href=\"https://preview.redd.it/cna06gnmuyuh1.png?width=3456&amp;format=png&amp;auto=webp&amp;s=16848c0dc2378f3e9deb1e94147cd4c669fea9a7\">test result dashboard</a></p> <p>I'm developing an <strong>SAP GUI test automation tool</strong>.</p> <p>It records a transaction — every click and keystroke — then takes a dataset and runs the test against every row automatically.</p> <p>There's a free Community edition if you want to try it: <a href=\"https://perfectwin.ai/en/trial/perfectwin-erp-sapgui-community\">https://perfectwin.ai</a></p> <p>Curi…",
+      "url": "https://www.reddit.com/r/SAP/comments/1x3t0ti/made_a_tool_to_automate_sap_gui_testing_looking/",
+      "date": "2026-10-12T05:00:03.000Z",
+      "engagement": 0,
+      "stance": "positive",
+      "sentiment": 0.667,
+      "voice": "press",
+      "pillars": [],
+      "tags": [],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.22,
+      "engine": "heuristic",
+      "topics": []
+    },
+    {
+      "id": "rss:reddit-sap:t3_1x3hih3",
+      "source": "rss",
+      "sourceLabel": "r/SAP",
+      "kind": "article",
+      "author": null,
+      "title": "SAP Pay - Anyone tried it yet?",
+      "text": "<!-- SC_OFF --><div class=\"md\"><p>I was reading about SAP Pay and wanted to hear from people who have really used it......</p> <p>Being able to pay suppliers and reconcile invoices inside of SAP sounds wonderful and will sure be very useful. I mean, less jumping between SAP and bank portal for sure....lol</p> <p>They also mentioned USDC pymts. But honestly, i am more interested in how it handles everyday pymt issues</p> <p>A supplier changes their bank details. A payment gets rejected. Someone realizes the invoice was wrong after approving it. What happens then? That’s the demo I’d want to see.</p> <p>Also, the page says about Joule agents will \"Soon\" be able to trigger and execute pymts. I would be carefull abt assuming that part is already available.</p> <p>Has anyone here tested this with a customer yet?<br/> How much setup was involved? </p> </div><!-- SC_ON --> submitted by <a href=\"https://www.reddit.com/user/Think-Performer-6200\"> /u/Think-Performer-6200 </a> <br/> <span><a href=\"https://www.reddit.com/r/SAP/comments/1x3hih3/sap_pay_anyone_tried_it_yet/\">[link]</a></span> <span><a href=\"https://www.reddit.com/r/SAP/comments/1x3hih3/sap_pay_anyone_tried_it_yet/\">[comments]</a…",
+      "url": "https://www.reddit.com/r/SAP/comments/1x3hih3/sap_pay_anyone_tried_it_yet/",
+      "date": "2026-10-11T19:44:35.000Z",
+      "engagement": 0,
+      "stance": "positive",
+      "sentiment": 0.65,
+      "voice": "press",
+      "pillars": [
+        "joule",
+        "agents"
+      ],
+      "tags": [
+        "partners"
+      ],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.22,
+      "engine": "heuristic",
+      "topics": [
+        "joule_sentiment",
+        "btp_ai"
+      ]
+    },
+    {
+      "id": "rss:reddit-sap:t3_1x3h9s2",
+      "source": "rss",
+      "sourceLabel": "r/SAP",
+      "kind": "article",
+      "author": null,
+      "title": "Question Customer",
+      "text": "<!-- SC_OFF --><div class=\"md\"><p>Hello,</p> <p>I have a customer who want to GO-LIVE this year with another Country and next year with France.</p> <p>Now I had some meetings and the customer said some times that he wants to use ecc after go live. What the hell is this?!<br/> I can not understand why. When he invests Millions of money for s4, so why you want to use ecc and is it possible to work on ecc after go live.</p> <p>Can you please help a lost s4 finance consultant :D</p> </div><!-- SC_ON --> submitted by <a href=\"https://www.reddit.com/user/Curious_Mud_8482\"> /u/Curious_Mud_8482 </a> <br/> <span><a href=\"https://www.reddit.com/r/SAP/comments/1x3h9s2/question_customer/\">[link]</a></span> <span><a href=\"https://www.reddit.com/r/SAP/comments/1x3h9s2/question_customer/\">[comments]</a></span>",
+      "url": "https://www.reddit.com/r/SAP/comments/1x3h9s2/question_customer/",
+      "date": "2026-10-11T19:34:43.000Z",
+      "engagement": 0,
+      "stance": "neutral",
+      "sentiment": 0,
+      "voice": "press",
+      "pillars": [],
+      "tags": [
+        "partners"
+      ],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.1,
+      "engine": "heuristic",
+      "topics": [
+        "partner_views",
+        "s4hana_ai"
+      ]
+    },
+    {
+      "id": "rss:reddit-sap-search:t3_1x3t0ti",
+      "source": "rss",
+      "sourceLabel": "r/SAP: AI",
+      "kind": "article",
+      "author": null,
+      "title": "Made a tool to automate SAP GUI testing — looking for feedback",
+      "text": "<table> <tr><td> <a href=\"https://www.reddit.com/r/SAP/comments/1x3t0ti/made_a_tool_to_automate_sap_gui_testing_looking/\"> <img src=\"https://external-preview.redd.it/mcybXX_f0hqObfz02TlBl6cUkEJUPD2i69TXwm4keU4.png?width=140&amp;height=73&amp;auto=webp&amp;s=b2d547302356349fee02d328fe98dc3a637c9391\" alt=\"Made a tool to automate SAP GUI testing — looking for feedback\" title=\"Made a tool to automate SAP GUI testing — looking for feedback\" /> </a> </td><td> <!-- SC_OFF --><div class=\"md\"><p><a href=\"https://preview.redd.it/r8ktqj7muyuh1.png?width=3456&amp;format=png&amp;auto=webp&amp;s=256b92161de648007b039cac7ad195f07c91244f\">test scenario</a></p> <p><a href=\"https://preview.redd.it/cna06gnmuyuh1.png?width=3456&amp;format=png&amp;auto=webp&amp;s=16848c0dc2378f3e9deb1e94147cd4c669fea9a7\">test result dashboard</a></p> <p>I'm developing an <strong>SAP GUI test automation tool</strong>.</p> <p>It records a transaction — every click and keystroke — then takes a dataset and runs the test against every row automatically.</p> <p>There's a free Community edition if you want to try it: <a href=\"https://perfectwin.ai/en/trial/perfectwin-erp-sapgui-community\">https://perfectwin.ai</a></p> <p>Curi…",
+      "url": "https://www.reddit.com/r/SAP/comments/1x3t0ti/made_a_tool_to_automate_sap_gui_testing_looking/",
+      "date": "2026-10-12T05:00:03.000Z",
+      "engagement": 0,
+      "stance": "positive",
+      "sentiment": 0.667,
+      "voice": "press",
+      "pillars": [],
+      "tags": [],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.22,
+      "engine": "heuristic",
+      "topics": []
+    },
+    {
+      "id": "rss:reddit-sap-search:t3_1x3hih3",
+      "source": "rss",
+      "sourceLabel": "r/SAP: AI",
+      "kind": "article",
+      "author": null,
+      "title": "SAP Pay - Anyone tried it yet?",
+      "text": "<!-- SC_OFF --><div class=\"md\"><p>I was reading about SAP Pay and wanted to hear from people who have really used it......</p> <p>Being able to pay suppliers and reconcile invoices inside of SAP sounds wonderful and will sure be very useful. I mean, less jumping between SAP and bank portal for sure....lol</p> <p>They also mentioned USDC pymts. But honestly, i am more interested in how it handles everyday pymt issues</p> <p>A supplier changes their bank details. A payment gets rejected. Someone realizes the invoice was wrong after approving it. What happens then? That’s the demo I’d want to see.</p> <p>Also, the page says about Joule agents will \"Soon\" be able to trigger and execute pymts. I would be carefull abt assuming that part is already available.</p> <p>Has anyone here tested this with a customer yet?<br/> How much setup was involved? </p> </div><!-- SC_ON --> submitted by <a href=\"https://www.reddit.com/user/Think-Performer-6200\"> /u/Think-Performer-6200 </a> <br/> <span><a href=\"https://www.reddit.com/r/SAP/comments/1x3hih3/sap_pay_anyone_tried_it_yet/\">[link]</a></span> <span><a href=\"https://www.reddit.com/r/SAP/comments/1x3hih3/sap_pay_anyone_tried_it_yet/\">[comments]</a…",
+      "url": "https://www.reddit.com/r/SAP/comments/1x3hih3/sap_pay_anyone_tried_it_yet/",
+      "date": "2026-10-11T19:44:35.000Z",
+      "engagement": 0,
+      "stance": "positive",
+      "sentiment": 0.65,
+      "voice": "press",
+      "pillars": [
+        "joule",
+        "agents"
+      ],
+      "tags": [
+        "partners"
+      ],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.22,
+      "engine": "heuristic",
+      "topics": [
+        "joule_sentiment",
+        "btp_ai"
+      ]
+    },
+    {
+      "id": "rss:reddit-sap-comments:t1_pfg1q38",
+      "source": "rss",
+      "sourceLabel": "r/SAP: comments",
+      "kind": "article",
+      "author": null,
+      "title": "/u/AutoModerator on Can test automation survive an S/4 upgrade or do you rebuild it every time?",
+      "text": "<!-- SC_OFF --><div class=\"md\"><p>Your submission has been automatically removed because your account is less than 24 hours old. To help prevent spam, we require a short waiting period before posting. Please try again later.</p> <p><em>I am a bot, and this action was performed automatically. Please <a href=\"/message/compose/?to=/r/SAP\">contact the moderators of this subreddit</a> if you have any questions or concerns.</em></p> </div><!-- SC_ON -->",
+      "url": "https://www.reddit.com/r/SAP/comments/1wm7vqe/can_test_automation_survive_an_s4_upgrade_or_do/pfg1q38/",
+      "date": "2026-10-12T13:41:24.000Z",
+      "engagement": 0,
+      "stance": "negative",
+      "sentiment": -0.667,
+      "voice": "press",
+      "pillars": [],
+      "tags": [],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.22,
+      "engine": "heuristic",
+      "topics": [
+        "risks_gaps"
+      ]
+    },
+    {
+      "id": "rss:reddit-sap-comments:t1_pffjy9w",
+      "source": "rss",
+      "sourceLabel": "r/SAP: comments",
+      "kind": "article",
+      "author": null,
+      "title": "/u/AutoModerator on SAP Functional Consultant looking to grow in my career",
+      "text": "<!-- SC_OFF --><div class=\"md\"><p>Posts related to certifications, careers, exams, internships, or general SAP guidance should be submitted in the dedicated megathreads pinned at the top of the subreddit.</p> <p>This includes, but is not limited to: - Basic SAP questions - Certification or exam preparation - Recruiting and internship inquiries - Resume or document review - Networking or offer comparisons - Job onboarding or first-week advice</p> <p>Please repost in the appropriate megathread. Repeated posting outside of those threads may result in a temporary ban.</p> <p>For more information, visit our <a href=\"https://www.reddit.com/r/SAP/wiki/index\">wiki</a>.</p> <p><em>I am a bot, and this action was performed automatically. Please <a href=\"/message/compose/?to=/r/SAP\">contact the moderators of this subreddit</a> if you have any questions or concerns.</em></p> </div><!-- SC_ON -->",
+      "url": "https://www.reddit.com/r/SAP/comments/1x405lw/sap_functional_consultant_looking_to_grow_in_my/pffjy9w/",
+      "date": "2026-10-12T12:09:30.000Z",
+      "engagement": 0,
+      "stance": "mixed",
+      "sentiment": 0,
+      "voice": "press",
+      "pillars": [],
+      "tags": [
+        "partners"
+      ],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.29000000000000004,
+      "engine": "heuristic",
+      "topics": [
+        "partner_views",
+        "risks_gaps"
+      ]
+    },
+    {
+      "id": "rss:reddit-sap-comments:t1_pffds68",
+      "source": "rss",
+      "sourceLabel": "r/SAP: comments",
+      "kind": "article",
+      "author": null,
+      "title": "/u/Infinite-Side3160 on At work, they want to \"vibecode\" an entire SAP module",
+      "text": "<!-- SC_OFF --><div class=\"md\"><p>Since you said further down that it's IS-H being copied out of SAP with SD and MM staying in the core, I'd worry less about whether the AI can write the screens and more about the seams. Every place today's IS-H hands something to the core you're keeping (a billing document, a goods movement, whatever ends up in FI) turns into an interface somebody has to design. Right now that's free because it all sits in one system.</p> <p>So before any prompt gets written I'd have the 3 ABAP devs list those handovers one by one, with what gets posted and when. That list is most of the spec moshisimo is asking for, and it's the first thing I'd test with real cases. Rebuilding the patient-facing part is the easy bit. Getting it to post into SD and MM the way the old module did is where I'd expect it to hurt.</p> </div><!-- SC_ON -->",
+      "url": "https://www.reddit.com/r/SAP/comments/1x2syr8/at_work_they_want_to_vibecode_an_entire_sap_module/pffds68/",
+      "date": "2026-10-12T11:31:41.000Z",
+      "engagement": 0,
+      "stance": "neutral",
+      "sentiment": 0,
+      "voice": "press",
+      "pillars": [
+        "joule"
+      ],
+      "tags": [
+        "partners"
+      ],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.1,
+      "engine": "heuristic",
+      "topics": []
+    },
+    {
+      "id": "rss:reddit-sap-comments:t1_pfe6otm",
+      "source": "rss",
+      "sourceLabel": "r/SAP: comments",
+      "kind": "article",
+      "author": null,
+      "title": "/u/propagandhi83 on At work, they want to \"vibecode\" an entire SAP module",
+      "text": "<!-- SC_OFF --><div class=\"md\"><p>Anyone who thinks it’s not possible is crazy or just hasn’t spent enough time with mcp/ai coding tools. </p> <p>That being said I would prefer to build external apps that consume sap APIs or cds as needed rather than to try to build a sap module. This way as long as those APIs/CDS don’t change too much between sap upgrades there’s less risk your application or module will stop working, and you can get very creative in a custom frontend without being limited or tied to Fiori or any proprietary sap tech. </p> <p>I have personally done this with a custom third party logistics app that talks to s4/hana APIs as well as a Quality traceability tool that automates running backward and forward traces in the food manufacturing setting.</p> <p>On the security front this is also a better option as the API and CDS authentication reduces the risk of bugs in native code crashing the system, leaking data etc. </p> <p>Obviously you need to secure an external app too, but you can choose to host it internally only, protect with firewall or vpn, cloudflare, SSO and passkeys etc.</p> <p>We chose to protect our apps with VPN and just host on the internal network.</p> <p…",
+      "url": "https://www.reddit.com/r/SAP/comments/1x2syr8/at_work_they_want_to_vibecode_an_entire_sap_module/pfe6otm/",
+      "date": "2026-10-12T05:49:51.000Z",
+      "engagement": 0,
+      "stance": "negative",
+      "sentiment": -0.268,
+      "voice": "press",
+      "pillars": [],
+      "tags": [
+        "partners"
+      ],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.36,
+      "engine": "heuristic",
+      "topics": [
+        "risks_gaps"
+      ]
+    },
+    {
+      "id": "rss:reddit-sap-comments:t1_pfdobd3",
+      "source": "rss",
+      "sourceLabel": "r/SAP: comments",
+      "kind": "article",
+      "author": null,
+      "title": "/u/AutoModerator on SAP FICO AI",
+      "text": "<!-- SC_OFF --><div class=\"md\"><p>Posts related to certifications, careers, exams, internships, or general SAP guidance should be submitted in the dedicated megathreads pinned at the top of the subreddit.</p> <p>This includes, but is not limited to: - Basic SAP questions - Certification or exam preparation - Recruiting and internship inquiries - Resume or document review - Networking or offer comparisons - Job onboarding or first-week advice</p> <p>Please repost in the appropriate megathread. Repeated posting outside of those threads may result in a temporary ban.</p> <p>For more information, visit our <a href=\"https://www.reddit.com/r/SAP/wiki/index\">wiki</a>.</p> <p><em>I am a bot, and this action was performed automatically. Please <a href=\"/message/compose/?to=/r/SAP\">contact the moderators of this subreddit</a> if you have any questions or concerns.</em></p> </div><!-- SC_ON -->",
+      "url": "https://www.reddit.com/r/SAP/comments/1x3rlde/sap_fico_ai/pfdobd3/",
+      "date": "2026-10-12T03:40:36.000Z",
+      "engagement": 0,
+      "stance": "mixed",
+      "sentiment": 0,
+      "voice": "press",
+      "pillars": [],
+      "tags": [],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.29000000000000004,
+      "engine": "heuristic",
+      "topics": [
+        "risks_gaps"
+      ]
+    },
+    {
+      "id": "rss:medium-sap:https://medium.com/p/d061d6f20ce9",
+      "source": "rss",
+      "sourceLabel": "Medium: SAP",
+      "kind": "article",
+      "author": null,
+      "title": "What Are Validations in SAP RAP and When Are They Used?",
+      "text": "Introduction\n Continue reading on Medium »",
+      "url": "https://medium.com/@kalyanvisualpath/what-are-validations-in-sap-rap-and-when-are-they-used-d061d6f20ce9?source=rss------sap-5",
+      "date": "2026-10-12T09:30:58.000Z",
+      "engagement": 0,
+      "stance": "neutral",
+      "sentiment": 0,
+      "voice": "press",
+      "pillars": [],
+      "tags": [
+        "partners"
+      ],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.1,
+      "engine": "heuristic",
+      "topics": []
+    },
+    {
+      "id": "rss:medium-sap:https://medium.com/p/0afb3a428636",
+      "source": "rss",
+      "sourceLabel": "Medium: SAP",
+      "kind": "article",
+      "author": null,
+      "title": "Top 10 SAP Analytics Cloud Features Every SAP Service Team Should Use",
+      "text": "Introduction to SAP Analytics Cloud\n Continue reading on Medium »",
+      "url": "https://medium.com/@bestappsweb/top-10-sap-analytics-cloud-features-every-sap-service-team-should-use-0afb3a428636?source=rss------sap-5",
+      "date": "2026-10-12T08:37:58.000Z",
+      "engagement": 0,
+      "stance": "neutral",
+      "sentiment": 0,
+      "voice": "press",
+      "pillars": [
+        "bdc"
+      ],
+      "tags": [],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.1,
+      "engine": "heuristic",
+      "topics": [
+        "bdc_cloud"
+      ]
+    },
+    {
+      "id": "rss:medium-sap:https://medium.com/p/a2defb5b8301",
+      "source": "rss",
+      "sourceLabel": "Medium: SAP",
+      "kind": "article",
+      "author": null,
+      "title": "SAP for Hospitality in the Caribbean: ERP for Hotels, Resorts, and Travel Companies",
+      "text": "What is SAP for hospitality? SAP for hospitality means using SAP&#x2019;s ERP and cloud applications, mainly SAP S/4HANA, SAP Analytics Cloud&#x2026;\n Continue reading on Medium »",
+      "url": "https://medium.com/@aevitas.outreach/sap-for-hospitality-in-the-caribbean-erp-for-hotels-resorts-and-travel-companies-a2defb5b8301?source=rss------sap-5",
+      "date": "2026-10-12T06:55:07.000Z",
+      "engagement": 0,
+      "stance": "neutral",
+      "sentiment": 0,
+      "voice": "press",
+      "pillars": [
+        "s4hana",
+        "bdc"
+      ],
+      "tags": [],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.1,
+      "engine": "heuristic",
+      "topics": [
+        "bdc_cloud",
+        "s4hana_ai"
+      ]
+    },
+    {
+      "id": "rss:devto-sap:https://dev.to/ayraix/saps-autonomous-enterprise-and-claude-what-the-anthropic-partnership-actually-delivers-b3b",
+      "source": "rss",
+      "sourceLabel": "dev.to: SAP",
+      "kind": "article",
+      "author": null,
+      "title": "SAP's Autonomous Enterprise and Claude: What the Anthropic Partnership Actually Delivers",
+      "text": "<p><em>SAP bet big on Claude and MCP for Autonomous Enterprise. What shipped, what's roadmap, and how architects should evaluate without sitting through another keynote.</em></p>\n\n<h2>\n \n \n Autonomous Enterprise Stack: Beyond the Buzzword\n</h2>\n\n<p>Before diving into Claude's specific role, let's demystify SAP's Autonomous Enterprise architecture as it actually exists in mid-2026:</p>\n\n<h3>\n \n \n 🏗️ Foundation Layer\n</h3>\n\n<p>SAP Business AI (BAI) Platform — the central nervous system providing AI runtime, model management, orchestration, and common services. Think of it as \"AI kernel\" for SAP applications.</p>\n\n<h3>\n \n \n 🤖 Domain Agents Layer\n</h3>\n\n<p>Pre-built, configurable agents for specific business domains: Finance (AP/AR, travel expense), Procurement (requisition processing, supplier query), HR (leave requests, policy questions), Supply Chain (inventory checks, shipment tracking). Each is a mix of SAP-delivered and partner-extended capabilities.</p>\n\n<h3>\n \n \n 🔌 Engagement Layer\n</h3>\n\n<p>How users interact with agents: SAP Joule (copilot across applications), conversational interfaces in specific apps (like guided buying in Ariba), embedded chat interfaces, and voice-ena…",
+      "url": "https://dev.to/ayraix/saps-autonomous-enterprise-and-claude-what-the-anthropic-partnership-actually-delivers-b3b",
+      "date": "2026-10-12T01:00:00.000Z",
+      "engagement": 0,
+      "stance": "positive",
+      "sentiment": 1,
+      "voice": "press",
+      "pillars": [
+        "joule",
+        "agents"
+      ],
+      "tags": [
+        "competition",
+        "roadmap"
+      ],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.29000000000000004,
+      "engine": "heuristic",
+      "topics": [
+        "joule_sentiment"
+      ]
+    },
+    {
+      "id": "rss:devto-sap:https://dev.to/ayraix/sap-ai-units-in-2026-the-hidden-line-item-on-every-rise-contract-3jk0",
+      "source": "rss",
+      "sourceLabel": "dev.to: SAP",
+      "kind": "article",
+      "author": null,
+      "title": "SAP AI Units in 2026: The Hidden Line Item on Every RISE Contract",
+      "text": "<p><em>SAP AI Units went commercial in 2026. How to forecast Joule and ABAP AI consumption, control costs, and know when to use your own stack instead.</em></p>\n\n<h2>\n \n \n What an AI Unit Actually Buys: Breaking Down the Bundle\n</h2>\n\n<p>Before diving into cost control, understand what you're actually paying for when consuming an AI Unit:</p>\n\n<h3>\n \n \n 🤖 Joule Scenarios\n</h3>\n\n<p>Each execution of a pre-built or custom Joule scenario (e.g., \"create purchase requisition,\" \"display sales order,\" \"generate financial report\"). Natural language interactions with your SAP backend consume units based on complexity and response length.</p>\n\n<h3>\n \n \n 💻 ABAP AI Features\n</h3>\n\n<p>Code explanation, test generation, translation between languages (e.g., ABAP to SQL), and suggetions within ADT. Each interaction with the AI-powered features in your development environment consumes units.</p>\n\n<h3>\n \n \n 🤖 Agent Orchestration Calls\n</h3>\n\n<p>When external agents (Claude, Copilot, etc.) connect via the ABAP MCP Server or other SAP agent frameworks, each tool invocation counts toward your consumption. This includes read-table calls, RFC executions, and syntax checks.</p>\n\n<p><strong>Important nu…",
+      "url": "https://dev.to/ayraix/sap-ai-units-in-2026-the-hidden-line-item-on-every-rise-contract-3jk0",
+      "date": "2026-10-11T23:00:00.000Z",
+      "engagement": 0,
+      "stance": "positive",
+      "sentiment": 0.667,
+      "voice": "press",
+      "pillars": [
+        "joule",
+        "agents"
+      ],
+      "tags": [
+        "licensing",
+        "competition",
+        "roadmap"
+      ],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.22,
+      "engine": "heuristic",
+      "topics": [
+        "joule_sentiment"
+      ]
+    },
+    {
+      "id": "rss:gnews-s4hana:CBMirgFBVV95cUxPY1AtVUx3UWRBMFVVd0dRajU3VUM3QXY3NG04VXNFU0d0NGlMYUZtVTV6QkVkMTJSb0FKeDZ4MUFWUmhaN3BFMWpRRE55eHQ1a3VTSlJ6bTdMVXVGTG1ORXFrVklEMmJ1eFVsVUhQdExfNkFfb19OS0c0ZFlBYjNTb0szY1NpdklKb05IeDY0S1J6RGtSenBPWFlkQW5GdHFFZ1VvckZlX0VxRm9KV1E",
+      "source": "rss",
+      "sourceLabel": "News: S/4HANA AI",
+      "kind": "article",
+      "author": null,
+      "title": "SAP U-turn brings AI features to ECC and on-prem S/4HANA - The Register",
+      "text": "<a href=\"https://news.google.com/rss/articles/CBMirgFBVV95cUxPY1AtVUx3UWRBMFVVd0dRajU3VUM3QXY3NG04VXNFU0d0NGlMYUZtVTV6QkVkMTJSb0FKeDZ4MUFWUmhaN3BFMWpRRE55eHQ1a3VTSlJ6bTdMVXVGTG1ORXFrVklEMmJ1eFVsVUhQdExfNkFfb19OS0c0ZFlBYjNTb0szY1NpdklKb05IeDY0S1J6RGtSenBPWFlkQW5GdHFFZ1VvckZlX0VxRm9KV1E?oc=5\" target=\"_blank\">SAP U-turn brings AI features to ECC and on-prem S/4HANA</a>&nbsp;&nbsp;<font color=\"#6f6f6f\">The Register</font>",
+      "url": "https://news.google.com/rss/articles/CBMirgFBVV95cUxPY1AtVUx3UWRBMFVVd0dRajU3VUM3QXY3NG04VXNFU0d0NGlMYUZtVTV6QkVkMTJSb0FKeDZ4MUFWUmhaN3BFMWpRRE55eHQ1a3VTSlJ6bTdMVXVGTG1ORXFrVklEMmJ1eFVsVUhQdExfNkFfb19OS0c0ZFlBYjNTb0szY1NpdklKb05IeDY0S1J6RGtSenBPWFlkQW5GdHFFZ1VvckZlX0VxRm9KV1E?oc=5",
+      "date": "2026-05-13T07:00:00.000Z",
+      "engagement": 0,
+      "stance": "neutral",
+      "sentiment": 0,
+      "voice": "press",
+      "pillars": [
+        "s4hana"
+      ],
+      "tags": [],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.1,
+      "engine": "heuristic",
+      "topics": [
+        "s4hana_ai"
+      ]
+    },
+    {
+      "id": "rss:gnews-rivals:CBMif0FVX3lxTE5NNlBDeTN5WEc5d1V5TUxzSXZTZU9FMmFrdy0ycWQzZjh4UUR1Ymd1MldJeEhwMmkzTmlHWFhZOXkxc3ItWGRqRU5YdkdNaF9heC1ndFl6U3E4WmwybE41VXByTlBfR01hYXZnV3FwV0QyQWRmTzhXbXlBem9KZEE",
+      "source": "rss",
+      "sourceLabel": "News: SAP vs rivals",
+      "kind": "article",
+      "author": null,
+      "title": "Microsoft, SAP & IDC: Why Is Singapore Ahead on AI? - AI Magazine",
+      "text": "<a href=\"https://news.google.com/rss/articles/CBMif0FVX3lxTE5NNlBDeTN5WEc5d1V5TUxzSXZTZU9FMmFrdy0ycWQzZjh4UUR1Ymd1MldJeEhwMmkzTmlHWFhZOXkxc3ItWGRqRU5YdkdNaF9heC1ndFl6U3E4WmwybE41VXByTlBfR01hYXZnV3FwV0QyQWRmTzhXbXlBem9KZEE?oc=5\" target=\"_blank\">Microsoft, SAP & IDC: Why Is Singapore Ahead on AI?</a>&nbsp;&nbsp;<font color=\"#6f6f6f\">AI Magazine</font>",
+      "url": "https://news.google.com/rss/articles/CBMif0FVX3lxTE5NNlBDeTN5WEc5d1V5TUxzSXZTZU9FMmFrdy0ycWQzZjh4UUR1Ymd1MldJeEhwMmkzTmlHWFhZOXkxc3ItWGRqRU5YdkdNaF9heC1ndFl6U3E4WmwybE41VXByTlBfR01hYXZnV3FwV0QyQWRmTzhXbXlBem9KZEE?oc=5",
+      "date": "2026-10-12T10:05:12.000Z",
+      "engagement": 0,
+      "stance": "negative",
+      "sentiment": -0.667,
+      "voice": "press",
+      "pillars": [],
+      "tags": [
+        "competition"
+      ],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.22,
+      "engine": "heuristic",
+      "topics": [
+        "vs_competitors",
+        "risks_gaps"
+      ]
+    },
+    {
+      "id": "rss:gnews-rivals:CBMivwFBVV95cUxPZFdQTkxkbFJZOFZPdE5HZlphMURMSlB1dTk4R2k1M1JvQy1GWEZ3VVRwSTM4WmlfejBUaWhHUzhyODBZMktTdmQ3M0FRa3JBVkowTkFKUXY0Vjg3ckRieEZ3VW1kb1AxM0kxaDZ5aG1zSFlpaS1wUUVUM0tZOTNKSnFzd002Tnh3SkVHU0NhUkViME04Xzg4OGdFYzVXak9SaTVYTnl4VVdrVEZsbk1TOVdBd2xzNm9MWnc0UF90VQ",
+      "source": "rss",
+      "sourceLabel": "News: SAP vs rivals",
+      "kind": "article",
+      "author": null,
+      "title": "Governance-as-a-Service, SAP changes, and life after Oracle litigation - the word on Rimini Street about the road ahead - diginomica",
+      "text": "<a href=\"https://news.google.com/rss/articles/CBMivwFBVV95cUxPZFdQTkxkbFJZOFZPdE5HZlphMURMSlB1dTk4R2k1M1JvQy1GWEZ3VVRwSTM4WmlfejBUaWhHUzhyODBZMktTdmQ3M0FRa3JBVkowTkFKUXY0Vjg3ckRieEZ3VW1kb1AxM0kxaDZ5aG1zSFlpaS1wUUVUM0tZOTNKSnFzd002Tnh3SkVHU0NhUkViME04Xzg4OGdFYzVXak9SaTVYTnl4VVdrVEZsbk1TOVdBd2xzNm9MWnc0UF90VQ?oc=5\" target=\"_blank\">Governance-as-a-Service, SAP changes, and life after Oracle litigation - the word on Rimini Street about the road ahead</a>&nbsp;&nbsp;<font color=\"#6f6f6f\">diginomica</font>",
+      "url": "https://news.google.com/rss/articles/CBMivwFBVV95cUxPZFdQTkxkbFJZOFZPdE5HZlphMURMSlB1dTk4R2k1M1JvQy1GWEZ3VVRwSTM4WmlfejBUaWhHUzhyODBZMktTdmQ3M0FRa3JBVkowTkFKUXY0Vjg3ckRieEZ3VW1kb1AxM0kxaDZ5aG1zSFlpaS1wUUVUM0tZOTNKSnFzd002Tnh3SkVHU0NhUkViME04Xzg4OGdFYzVXak9SaTVYTnl4VVdrVEZsbk1TOVdBd2xzNm9MWnc0UF90VQ?oc=5",
+      "date": "2026-08-03T07:00:00.000Z",
+      "engagement": 0,
+      "stance": "neutral",
+      "sentiment": 0,
+      "voice": "press",
+      "pillars": [],
+      "tags": [
+        "data-readiness",
+        "competition"
+      ],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.1,
+      "engine": "heuristic",
+      "topics": [
+        "vs_competitors"
+      ]
+    },
+    {
+      "id": "rss:erp-news:https://erpnews.com/?p=18026",
+      "source": "rss",
+      "sourceLabel": "ERP News",
+      "kind": "article",
+      "author": null,
+      "title": "Rethinking The Enterprise Buying Experience: An Interview with Shaz Khan, CEO of Vroozi",
+      "text": "User Experience Drives Adoption \n\n Procurement transformation often fails when it is treated primarily as an IT project. A system may technically work, but if the buying experience remains complex, employees will continue using emails, spreadsheets, and manual workarounds.\n\n For Shaz Khan, successful modernisation begins with making enterprise purchasing intuitive, approachable, and easy to trust, while preserving the control and compliance procurement teams require.\n\n AI Automates Tasks, Not Judgment \n\n AI is already creating value by interpreting invoices, matching purchase orders, detecting spend anomalies, and executing structured tasks. But negotiation, supplier risk, contractual decisions, and exceptions still require human judgment.\n\n In this ERP News Q&A , Shaz Khan, Co-Founder and CEO of Vroozi , discusses SAP clean core, procurement adoption, consumer-grade user experiences, AI governance, and why ERP’s future role may be smaller—but more focused—as intelligent applications reshape enterprise purchasing.\n\n \n \n \n\n Why Procurement Transformation Still Falls Short \n\n Q: Procurement transformation has been on the enterprise agenda for years, yet many organizations still strug…",
+      "url": "https://erpnews.com/rethinking-the-enterprise-buying-experience-an-interview-with-shaz-khan-ceo-of-vroozi/",
+      "date": "2026-10-12T11:39:06.000Z",
+      "engagement": 0,
+      "stance": "positive",
+      "sentiment": 0.208,
+      "voice": "press",
+      "pillars": [
+        "s4hana"
+      ],
+      "tags": [
+        "data-readiness",
+        "licensing"
+      ],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.5,
+      "engine": "heuristic",
+      "topics": [
+        "s4hana_ai",
+        "risks_gaps"
+      ]
+    },
+    {
+      "id": "rss:undefined:https://community.sap.com/t5/technology-blog-posts-by-sap/planning-beyond-2030-what-customers-using-third-party-databases-need-to/ba-p/14501617",
+      "source": "rss",
+      "sourceLabel": "SAP Community blogs",
+      "kind": "article",
+      "author": null,
+      "title": "Planning Beyond 2030: What Customers Using Third-Party Databases Need to Know",
+      "text": "<DIV><STRONG>Are your SAP systems ready for 2031?</STRONG><SPAN>&nbsp;Customers running SAP Business Suite 7 or SAP NetWeaver on Oracle, Microsoft SQL Server, and IBM Db2 databases should take note of SAP's recently announced support strategy. From 2031 onward, support for systems on third-party databases will become significantly restricted, making early evaluation of migration options essential for long-term planning certainty.</SPAN></DIV>",
+      "url": "https://community.sap.com/t5/technology-blog-posts-by-sap/planning-beyond-2030-what-customers-using-third-party-databases-need-to/ba-p/14501617",
+      "date": "2026-10-12T13:58:30.000Z",
+      "engagement": 0,
+      "stance": "positive",
+      "sentiment": 0.667,
+      "voice": "vendor",
+      "pillars": [],
+      "tags": [
+        "competition",
+        "roadmap"
+      ],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.22,
+      "engine": "heuristic",
+      "topics": [
+        "vs_competitors",
+        "s4hana_ai"
+      ]
+    },
+    {
+      "id": "rss:undefined:https://community.sap.com/t5/enterprise-resource-planning-blog-posts-by-sap/39-ai-assisted-tasks-now-live-in-sap-activate-for-sap-cloud-erp/ba-p/14500771",
+      "source": "rss",
+      "sourceLabel": "SAP Community blogs",
+      "kind": "article",
+      "author": null,
+      "title": "39 AI-Assisted Tasks Now Live in SAP Activate for SAP Cloud ERP",
+      "text": "<P>Earlier this year, we shared the story of how <A href=\"https://community.sap.com/t5/enterprise-resource-planning-blog-posts-by-sap/from-9-to-55-ai-assisted-tasks-in-eight-weeks-scaling-ai-across-sap/ba-p/14479940\">AI-Assisted tasks in SAP Activate for SAP Cloud ERP Private scaled from 9 to 55 in just eight weeks</A>. The response confirmed what we already believed: implementation teams are ready for AI to help them work faster and with more consistency.</P><P>Today, we’re sharing details about AI-Assisted tasks in the SAP Activate for SAP Cloud ERP — the methodology roadmap that guides new implementations of SAP S/4HANA Cloud Public Edition. Over the past few content updates, our experts added 39 AI-Assisted tasks for teams implementing SAP S/4HANA Cloud Public Edition.</P>",
+      "url": "https://community.sap.com/t5/enterprise-resource-planning-blog-posts-by-sap/39-ai-assisted-tasks-now-live-in-sap-activate-for-sap-cloud-erp/ba-p/14500771",
+      "date": "2026-10-12T13:53:35.000Z",
+      "engagement": 0,
+      "stance": "positive",
+      "sentiment": 0.667,
+      "voice": "vendor",
+      "pillars": [
+        "s4hana",
+        "bdc"
+      ],
+      "tags": [
+        "roadmap"
+      ],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.22,
+      "engine": "heuristic",
+      "topics": [
+        "bdc_cloud",
+        "s4hana_ai"
+      ]
+    },
+    {
+      "id": "rss:undefined:https://community.sap.com/t5/financial-management-blog-posts-by-sap/official-document-numbers-odn-now-replicated-in-central-finance/ba-p/14501578",
+      "source": "rss",
+      "sourceLabel": "SAP Community blogs",
+      "kind": "article",
+      "author": null,
+      "title": "Official Document Numbers (ODN) now replicated in Central Finance",
+      "text": "<P><span class=\"lia-inline-image-display-wrapper lia-image-align-inline\" image-alt=\"odn-hero-banner.png\" style=\"width: 999px;\"><img src=\"https://community.sap.com/t5/image/serverpage/image-id/467560iD46E32C2EB84A461/image-size/large/is-moderation-mode/true?v=v2&amp;px=999\" role=\"button\" title=\"odn-hero-banner.png\" alt=\"odn-hero-banner.png\" /></span></P><HR /><BLOCKQUOTE><P>As tax authorities worldwide tighten their grip on digital reporting, the document number on an invoice is no longer just an internal reference — it is a legally binding identifier that must flow accurately through every system in your landscape. SAP S/4HANA 2025 FPS02 closes a critical gap for Central Finance customers by introducing <STRONG>Official Document Number (ODN) replication</STRONG>.</P></BLOCKQUOTE><H2>What Is an Official Document Number?</H2><P>An <STRONG>Official Document Number (ODN)</STRONG> is a unique identifier that companies are legally required to assign to specific business documents — invoices, credit notes, and similar records — in accordance with rules set by government authorities. The format, length, and structure of an ODN vary by country and are strictly defined by regulators.</P><P>U…",
+      "url": "https://community.sap.com/t5/financial-management-blog-posts-by-sap/official-document-numbers-odn-now-replicated-in-central-finance/ba-p/14501578",
+      "date": "2026-10-12T13:21:36.000Z",
+      "engagement": 0,
+      "stance": "mixed",
+      "sentiment": 0,
+      "voice": "vendor",
+      "pillars": [
+        "s4hana"
+      ],
+      "tags": [],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.29000000000000004,
+      "engine": "heuristic",
+      "topics": [
+        "s4hana_ai",
+        "risks_gaps"
+      ]
+    },
+    {
+      "id": "rss:undefined:https://community.sap.com/t5/technology-blog-posts-by-sap/teched2026-xp266-ship-your-own-sandboxed-ai-operations-agent-to-kyma-in-two/ba-p/14501247",
+      "source": "rss",
+      "sourceLabel": "SAP Community blogs",
+      "kind": "article",
+      "author": null,
+      "title": "Teched2026-XP266 -- Ship your own sandboxed AI operations agent to Kyma in two hours",
+      "text": "<H1 id=\"toc-hId-1715820129\">Bring your own agent to a contained SAP Kyma sandbox with OpenRouter</H1><P><EM>Plug OpenRouter - a public LLM aggregator - into a contained sandbox with three off-the-shelf coding agents&nbsp;powered by free NVIDIA Nemotron models</EM></P><DIV class=\"\"><H2 id=\"see-it-live--sap-teched-2026-xp266\"><SPAN><span class=\"lia-unicode-emoji\" title=\":graduation_cap:\">🎓</span>&nbsp;</SPAN>See it live — SAP TechEd 2026 (XP266)</H2></DIV><P><A href=\"https://www.sap.com/events/teched/berlin/flow/sap/te26/catalog/page/catalog/session/1786632069191001KIe2\" target=\"_blank\" rel=\"noopener\"><STRONG>XP266 | Ship your own sandboxed AI operations agent to Kyma in two hours.</STRONG></A></P><P><span class=\"lia-inline-image-display-wrapper lia-image-align-inline\" image-alt=\"nvidia+sap.png\" style=\"width: 999px;\"><img src=\"https://community.sap.com/t5/image/serverpage/image-id/467549i9C29928F39B9DED1/image-size/large/is-moderation-mode/true?v=v2&amp;px=999\" role=\"button\" title=\"nvidia+sap.png\" alt=\"nvidia+sap.png\" /></span></P><P>Deploy a reasoning agent into Kyma, connect it to SAP AI Core, give it full observability — and cause a failure yourself to watch it diagnose what brok…",
+      "url": "https://community.sap.com/t5/technology-blog-posts-by-sap/teched2026-xp266-ship-your-own-sandboxed-ai-operations-agent-to-kyma-in-two/ba-p/14501247",
+      "date": "2026-10-12T12:50:14.000Z",
+      "engagement": 0,
+      "stance": "mixed",
+      "sentiment": 0,
+      "voice": "vendor",
+      "pillars": [
+        "joule",
+        "agents"
+      ],
+      "tags": [
+        "roadmap"
+      ],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.29000000000000004,
+      "engine": "heuristic",
+      "topics": [
+        "btp_ai",
+        "risks_gaps"
+      ]
+    },
+    {
+      "id": "rss:undefined:https://community.sap.com/t5/sap-for-utilities-blog-posts/sap-s-4hana-utilities-2025-fps02-overview-of-innovations/ba-p/14494714",
+      "source": "rss",
+      "sourceLabel": "SAP Community blogs",
+      "kind": "article",
+      "author": null,
+      "title": "SAP S/4HANA Utilities 2025 FPS02 – Overview of Innovations",
+      "text": "<P>The latest Feature Pack Stack for SAP S/4HANA Utilities (2025 FPS02) delivers targeted improvements across data management, market process handling, and measurement concept management. Here is a concise overview of the key innovations.</P>",
+      "url": "https://community.sap.com/t5/sap-for-utilities-blog-posts/sap-s-4hana-utilities-2025-fps02-overview-of-innovations/ba-p/14494714",
+      "date": "2026-10-12T12:23:42.000Z",
+      "engagement": 0,
+      "stance": "positive",
+      "sentiment": 1,
+      "voice": "vendor",
+      "pillars": [
+        "s4hana"
+      ],
+      "tags": [
+        "partners"
+      ],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.29000000000000004,
+      "engine": "heuristic",
+      "topics": [
+        "s4hana_ai"
+      ]
+    },
+    {
+      "id": "rss:undefined:https://community.sap.com/t5/human-capital-management-blog-posts-by-sap/how-to-implement-form-i-9-task-delegation-in-sap-successfactors-onboarding/ba-p/14500784",
+      "source": "rss",
+      "sourceLabel": "SAP Community blogs",
+      "kind": "article",
+      "author": null,
+      "title": "How to Implement Form I-9 Task Delegation in SAP SuccessFactors Onboarding",
+      "text": "<P><SPAN>This </SPAN><SPAN>blog </SPAN><SPAN>provides </SPAN><SPAN>an </SPAN><SPAN>end-to-end </SPAN><SPAN>guide </SPAN><SPAN>to </SPAN><SPAN>implementing </SPAN><SPAN class=\"\"><SPAN>Delegate </SPAN><SPAN>My </SPAN><SPAN>Compliance </SPAN><SPAN>Tasks</SPAN></SPAN> <SPAN>in </SPAN><SPAN>SAP </SPAN><SPAN>SuccessFactors </SPAN><SPAN>Onboarding, </SPAN><SPAN>enabling </SPAN><SPAN>Hiring </SPAN><SPAN>Managers </SPAN><SPAN>to </SPAN><SPAN>securely </SPAN><SPAN>delegate </SPAN><SPAN>Form </SPAN><SPAN>I-9 </SPAN><SPAN>tasks </SPAN><SPAN>while </SPAN><SPAN>maintaining </SPAN><SPAN>compliance, </SPAN><SPAN>audit </SPAN><SPAN>traceability, </SPAN><SPAN>and </SPAN><SPAN>accountability.</SPAN></P>",
+      "url": "https://community.sap.com/t5/human-capital-management-blog-posts-by-sap/how-to-implement-form-i-9-task-delegation-in-sap-successfactors-onboarding/ba-p/14500784",
+      "date": "2026-10-12T09:58:47.000Z",
+      "engagement": 0,
+      "stance": "positive",
+      "sentiment": 0.667,
+      "voice": "vendor",
+      "pillars": [],
+      "tags": [
+        "licensing"
+      ],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.22,
+      "engine": "heuristic",
+      "topics": [
+        "risks_gaps"
+      ]
+    },
+    {
+      "id": "rss:undefined:https://community.sap.com/t5/technology-blog-posts-by-sap/calling-azure-from-abap-cloud-just-got-easier/ba-p/14501394",
+      "source": "rss",
+      "sourceLabel": "SAP Community blogs",
+      "kind": "article",
+      "author": null,
+      "title": "Calling Azure from ABAP Cloud Just Got Easier",
+      "text": "<H2><STRONG>The challenge every ABAP-on-Azure integration team faces</STRONG></H2><P>Developers who have called an Azure REST API from ABAP Cloud will find this familiar. Something simple, like archiving a document to Blob storage or querying the resource estate, means the same plumbing: hand built `<FONT face=\"courier new,courier\">if_web_http_client</FONT>` requests, hand joined URLs, manual OAuth tokens, inline parsing, and retry, logging, and error handling rewritten each time.</P><P>In <STRONG>classic ABAP</STRONG> environments, teams relied on the established <A href=\"https://github.com/microsoft/ABAP-SDK-for-Azure\" target=\"_blank\" rel=\"noopener\">ABAP SDK for Azure</A>. ABAP Cloud is different: a restricted, released API only model behind SAP Business AI Platform, ABAP environment and S/4HANA Cloud, where many classic patterns are gone, so teams fall back to hand rolled HTTP. That is repetitive, error prone, and hard to unit test, which is the gap this SDK closes.</P><H2>Introducing the ABAP Cloud SDK for Azure</H2><P>The ABAP Cloud SDK for Azure is a new open source client library for SAP Business AI Platform, ABAP environment and S/4HANA Cloud. In place of boilerplate, devel…",
+      "url": "https://community.sap.com/t5/technology-blog-posts-by-sap/calling-azure-from-abap-cloud-just-got-easier/ba-p/14501394",
+      "date": "2026-10-12T09:54:10.000Z",
+      "engagement": 0,
+      "stance": "negative",
+      "sentiment": -0.412,
+      "voice": "vendor",
+      "pillars": [
+        "s4hana",
+        "bdc"
+      ],
+      "tags": [
+        "competition"
+      ],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.36,
+      "engine": "heuristic",
+      "topics": [
+        "vs_competitors",
+        "bdc_cloud",
+        "s4hana_ai",
+        "risks_gaps"
+      ]
+    },
+    {
+      "id": "rss:undefined:https://community.sap.com/t5/technology-blog-posts-by-sap/good-to-know-compatibility-views-in-the-context-of-sap-hana-s-4hana/ba-p/14500325",
+      "source": "rss",
+      "sourceLabel": "SAP Community blogs",
+      "kind": "article",
+      "author": null,
+      "title": "Good to know: Compatibility views in the context of SAP HANA (S/4HANA)",
+      "text": "<P><LI-TOC indent=\"15\" liststyle=\"disc\" maxheadinglevel=\"4\"></LI-TOC></P><P><span class=\"lia-inline-image-display-wrapper lia-image-align-inline\" image-alt=\"SAP_Community_Blog_Banner_2026.png\" style=\"width: 999px;\"><img src=\"https://community.sap.com/t5/image/serverpage/image-id/466906i7CE1FCFD38CEC322/image-size/large/is-moderation-mode/true?v=v2&amp;px=999\" role=\"button\" title=\"SAP_Community_Blog_Banner_2026.png\" alt=\"SAP_Community_Blog_Banner_2026.png\" /></span></P><P class=\"lia-align-right\"><FONT color=\"#FF0000\">last updated: 2026-10-12</FONT></P><H1 id=\"toc-hId-1658532033\">Why was this blog post created?</H1><P>One of the cornerstone of the transition from ECC to S/4HANA is the change in the database structure.&nbsp;This change entails consequences, an understanding of which is essential for operations.</P><H1>Which documentation contains all the relevant details?</H1><P>The following documentation examines the given topic in detail.</P><P><span class=\"lia-unicode-emoji\" title=\":closed_book:\">📕</span>&nbsp;<A class=\"\" href=\"https://me.sap.com/notes/3523400\" target=\"_blank\" rel=\"noopener noreferrer nofollow\">3523400</A><SPAN> - Overview of the compatibility view topic in the c…",
+      "url": "https://community.sap.com/t5/technology-blog-posts-by-sap/good-to-know-compatibility-views-in-the-context-of-sap-hana-s-4hana/ba-p/14500325",
+      "date": "2026-10-12T09:15:09.000Z",
+      "engagement": 0,
+      "stance": "neutral",
+      "sentiment": 0,
+      "voice": "vendor",
+      "pillars": [
+        "s4hana"
+      ],
+      "tags": [],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.1,
+      "engine": "heuristic",
+      "topics": [
+        "s4hana_ai"
+      ]
+    },
+    {
+      "id": "rss:undefined:https://community.sap.com/t5/sap-for-utilities-blog-posts/driving-operational-excellence-in-waste-and-recycling-sap-s-4hana-2025/ba-p/14437877",
+      "source": "rss",
+      "sourceLabel": "SAP Community blogs",
+      "kind": "article",
+      "author": null,
+      "title": "Driving Operational Excellence in Waste and Recycling : SAP S/4HANA 2025 FPS02",
+      "text": "<P>SAP S/4HANA 2025 FPS2 introduces three targeted innovations designed to address critical operational challenges in the Waste &amp; Recycling industry. From AI-powered contract creation to modernized weighbridge operations, this feature pack stack focuses on accuracy, efficiency, and user experience.</P><P><A href=\"https://roadmaps.sap.com/innovations/000D3AAC9DD21FD0B5CC95CE040BFC86\" target=\"_self\"><U><STRONG>AI-Assisted Contract Creation in Waste and Recycling</STRONG></U></A></P><P>Errors in product configurations during contract creation can have a cascading impact on downstream processes such as planning, collections, and billing. This innovation brings artificial intelligence directly into the contract creation process to help waste and recycling customers avoid such errors.</P><P><STRONG>What it does:</STRONG></P><P>The solution leverages machine learning and intelligent scenario lifecycle management for SAP S/4HANA to recommend the most suitable waste materials based on historical waste contracts. By analyzing patterns in existing contract data, the system suggests material configurations that are consistent with proven combinations, helping to ensure accuracy from the ou…",
+      "url": "https://community.sap.com/t5/sap-for-utilities-blog-posts/driving-operational-excellence-in-waste-and-recycling-sap-s-4hana-2025/ba-p/14437877",
+      "date": "2026-10-12T09:06:30.000Z",
+      "engagement": 0,
+      "stance": "mixed",
+      "sentiment": 0,
+      "voice": "vendor",
+      "pillars": [
+        "s4hana"
+      ],
+      "tags": [
+        "licensing",
+        "roadmap"
+      ],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.43000000000000005,
+      "engine": "heuristic",
+      "topics": [
+        "s4hana_ai",
+        "risks_gaps"
+      ]
+    },
+    {
+      "id": "rss:undefined:https://community.sap.com/t5/technology-blog-posts-by-members/clearing-se16n-buffer-after-table-structure-changes/ba-p/14500139",
+      "source": "rss",
+      "sourceLabel": "SAP Community blogs",
+      "kind": "article",
+      "author": null,
+      "title": "Clearing SE16N Buffer After Table Structure Changes",
+      "text": "<H2>Introduction</H2><P>While working on custom developments, we often modify database tables after they have already been used in transactions such as SE16N. In one of my recent developments, I increased the length of a field in a custom table. Although the table was activated successfully and the database adjustment was completed, SE16N continued to display the old field length.</P><P>This blog explains why this behavior occurs and how it can be resolved using a standard SAP program.</P><P>&nbsp;</P><P><SPAN>I created a custom database table </SPAN><STRONG>ZPOOJ_DB_BLOG_TB</STRONG><SPAN> in SE11 with three fields. The Email field was initially defined with a length of </SPAN><STRONG>5</STRONG><SPAN>.</SPAN></P><DIV><H3>Initial Table Definition</H3><P><STRONG>&nbsp;Custom table with Email field length 5</STRONG></P><span class=\"lia-inline-image-display-wrapper lia-image-align-inline\" image-alt=\"Pooja_HM_0-1791526396873.png\" style=\"width: 848px;\"><img src=\"https://community.sap.com/t5/image/serverpage/image-id/466811i4D0109E761C3219E/image-dimensions/848x115/is-moderation-mode/true?v=v2\" width=\"848\" height=\"115\" role=\"button\" title=\"Pooja_HM_0-1791526396873.png\" alt=\"Pooja_HM_0-179…",
+      "url": "https://community.sap.com/t5/technology-blog-posts-by-members/clearing-se16n-buffer-after-table-structure-changes/ba-p/14500139",
+      "date": "2026-10-12T08:48:44.000Z",
+      "engagement": 0,
+      "stance": "positive",
+      "sentiment": 0.65,
+      "voice": "vendor",
+      "pillars": [],
+      "tags": [
+        "partners"
+      ],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.36,
+      "engine": "heuristic",
+      "topics": []
+    },
+    {
+      "id": "rss:undefined:https://community.sap.com/t5/spend-management-blog-posts-by-sap/explore-what-s-new-in-the-sap-fieldglass-november-2026-release/ba-p/14501390",
+      "source": "rss",
+      "sourceLabel": "SAP Community blogs",
+      "kind": "article",
+      "author": null,
+      "title": "Explore What's New in the SAP Fieldglass November 2026 Release",
+      "text": "<P>The <SPAN><A href=\"https://help.sap.com/whats-new/0c2fc99f5fd34e8e8662fbdff4cbbb0d\" target=\"_blank\">What's New Viewer</A></SPAN> on the SAP Help Portal offers an interactive and customizable experience to discover all new features and enhancements included in the upcoming release. The Viewer allows you to browse content at your own pace, filter information relevant to your role, and quickly move from high-level summaries to detailed feature documentation. These enhancements are highlighted through some visual examples and supporting information designed to help you understand their potential impact on your business.</P><P>Using the <SPAN><A href=\"https://help.sap.com/whats-new/0c2fc99f5fd34e8e8662fbdff4cbbb0d\" target=\"_blank\">What's New Viewer</A></SPAN>, you can:</P><UL><LI>Identify the updates most relevant to your organization</LI><LI>Understand new capabilities before they become available</LI><LI>Access detailed documentation</LI><LI>Plan adoption activities and stakeholder communications more effectively</LI></UL><P>Taking time to review the upcoming changes can help ensure a smooth transition and enable your teams to maximize the value of the November 2026 Release.</P><P>…",
+      "url": "https://community.sap.com/t5/spend-management-blog-posts-by-sap/explore-what-s-new-in-the-sap-fieldglass-november-2026-release/ba-p/14501390",
+      "date": "2026-10-12T08:14:38.000Z",
+      "engagement": 0,
+      "stance": "positive",
+      "sentiment": 0.667,
+      "voice": "vendor",
+      "pillars": [],
+      "tags": [
+        "partners"
+      ],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.22,
+      "engine": "heuristic",
+      "topics": []
+    },
+    {
+      "id": "rss:undefined:https://community.sap.com/t5/supply-chain-management-learning-group-blog-posts/automated-contract-expiry-notification-framework-in-sap-srm/ba-p/14500919",
+      "source": "rss",
+      "sourceLabel": "SAP Community blogs",
+      "kind": "article",
+      "author": null,
+      "title": "Automated Contract Expiry Notification Framework in SAP SRM",
+      "text": "<DIV><H2>Introduction</H2><P>One common challenge in SAP SRM is that users receive email notifications for RFx, Contracts, Shopping Carts, or Purchase Orders but must manually search for the document in SRM. This increases effort and delays business actions.</P><H2>Solution: Deep-Link Navigation</H2><P>Enhance notification emails by embedding a direct link to the relevant SRM document.</P><P>Instead of:</P><P><span class=\"lia-unicode-emoji\" title=\":e_mail:\">📧</span> \"RFx RFX10001 has been published.\"</P><P>Use:</P><P><span class=\"lia-unicode-emoji\" title=\":e_mail:\">📧</span> \"RFx RFX10001 has been published. Click here to open the document.\"</P><P>A single click takes the user directly to the document screen.</P></DIV>",
+      "url": "https://community.sap.com/t5/supply-chain-management-learning-group-blog-posts/automated-contract-expiry-notification-framework-in-sap-srm/ba-p/14500919",
+      "date": "2026-10-12T06:56:22.000Z",
+      "engagement": 0,
+      "stance": "negative",
+      "sentiment": -0.433,
+      "voice": "vendor",
+      "pillars": [],
+      "tags": [
+        "licensing"
+      ],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.22,
+      "engine": "heuristic",
+      "topics": []
+    },
+    {
+      "id": "rss:undefined:t3_1x2syr8",
+      "source": "rss",
+      "sourceLabel": "r/SAP: top this month",
+      "kind": "article",
+      "author": null,
+      "title": "At work, they want to \"vibecode\" an entire SAP module",
+      "text": "<!-- SC_OFF --><div class=\"md\"><p>We only have 3 ABAP developers and 4 \"web\" developers; I’d like to know what this great community thinks and if anyone has gone through this situation.</p> </div><!-- SC_ON --> submitted by <a href=\"https://www.reddit.com/user/Choice_Tip_5626\"> /u/Choice_Tip_5626 </a> <br/> <span><a href=\"https://www.reddit.com/r/SAP/comments/1x2syr8/at_work_they_want_to_vibecode_an_entire_sap_module/\">[link]</a></span> <span><a href=\"https://www.reddit.com/r/SAP/comments/1x2syr8/at_work_they_want_to_vibecode_an_entire_sap_module/\">[comments]</a></span>",
+      "url": "https://www.reddit.com/r/SAP/comments/1x2syr8/at_work_they_want_to_vibecode_an_entire_sap_module/",
+      "date": "2026-10-10T23:19:47.000Z",
+      "engagement": 0,
+      "stance": "positive",
+      "sentiment": 0.667,
+      "voice": "press",
+      "pillars": [],
+      "tags": [
+        "partners"
+      ],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.22,
+      "engine": "heuristic",
+      "topics": []
+    },
+    {
+      "id": "rss:undefined:t3_1x3t0ti",
+      "source": "rss",
+      "sourceLabel": "r/SAP: RISE & licensing",
+      "kind": "article",
+      "author": null,
+      "title": "Made a tool to automate SAP GUI testing — looking for feedback",
+      "text": "<table> <tr><td> <a href=\"https://www.reddit.com/r/SAP/comments/1x3t0ti/made_a_tool_to_automate_sap_gui_testing_looking/\"> <img src=\"https://external-preview.redd.it/mcybXX_f0hqObfz02TlBl6cUkEJUPD2i69TXwm4keU4.png?width=140&amp;height=73&amp;auto=webp&amp;s=b2d547302356349fee02d328fe98dc3a637c9391\" alt=\"Made a tool to automate SAP GUI testing — looking for feedback\" title=\"Made a tool to automate SAP GUI testing — looking for feedback\" /> </a> </td><td> <!-- SC_OFF --><div class=\"md\"><p><a href=\"https://preview.redd.it/r8ktqj7muyuh1.png?width=3456&amp;format=png&amp;auto=webp&amp;s=256b92161de648007b039cac7ad195f07c91244f\">test scenario</a></p> <p><a href=\"https://preview.redd.it/cna06gnmuyuh1.png?width=3456&amp;format=png&amp;auto=webp&amp;s=16848c0dc2378f3e9deb1e94147cd4c669fea9a7\">test result dashboard</a></p> <p>I'm developing an <strong>SAP GUI test automation tool</strong>.</p> <p>It records a transaction — every click and keystroke — then takes a dataset and runs the test against every row automatically.</p> <p>There's a free Community edition if you want to try it: <a href=\"https://perfectwin.ai/en/trial/perfectwin-erp-sapgui-community\">https://perfectwin.ai</a></p> <p>Curi…",
+      "url": "https://www.reddit.com/r/SAP/comments/1x3t0ti/made_a_tool_to_automate_sap_gui_testing_looking/",
+      "date": "2026-10-12T05:00:03.000Z",
+      "engagement": 0,
+      "stance": "positive",
+      "sentiment": 0.667,
+      "voice": "press",
+      "pillars": [],
+      "tags": [],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.22,
+      "engine": "heuristic",
+      "topics": []
+    },
+    {
+      "id": "rss:undefined:CBMi5gFBVV95cUxOMFBQMzhpN2dIRUxZU1RkeUNXSk85anQ1Tkk4ZjNmeVg3TDdhRFFCZGhnLUNjT2tjT2FlVDZ1NTBEVEhNdUd6SGNQSDROYm9LbVl4Y19QcFBBbEs5X25TS1FiMzI0czlJLWpWNFhEOEROV3BCT2Y1Yk55YkdYdzhSVnV4T21BZjhtemNQNi1DZS1CTEd5UVB0dHZmOGxsUkVhQTdQeVRZV2ZOcW51QjRXd3VJRVQwTUs2QzlJNDhDckpnNHdwOXFGSHlMMEFHc1RkdFNpU3pUOExjX2lUeVFUc2p6V2ZUZw",
+      "source": "rss",
+      "sourceLabel": "SAP Community via news",
+      "kind": "article",
+      "author": null,
+      "title": "Configuring SAP EarlyWatch Alert for SAP S/4HANA On-Premise with SAP for Me - SAP Community",
+      "text": "<a href=\"https://news.google.com/rss/articles/CBMi5gFBVV95cUxOMFBQMzhpN2dIRUxZU1RkeUNXSk85anQ1Tkk4ZjNmeVg3TDdhRFFCZGhnLUNjT2tjT2FlVDZ1NTBEVEhNdUd6SGNQSDROYm9LbVl4Y19QcFBBbEs5X25TS1FiMzI0czlJLWpWNFhEOEROV3BCT2Y1Yk55YkdYdzhSVnV4T21BZjhtemNQNi1DZS1CTEd5UVB0dHZmOGxsUkVhQTdQeVRZV2ZOcW51QjRXd3VJRVQwTUs2QzlJNDhDckpnNHdwOXFGSHlMMEFHc1RkdFNpU3pUOExjX2lUeVFUc2p6V2ZUZw?oc=5\" target=\"_blank\">Configuring SAP EarlyWatch Alert for SAP S/4HANA On-Premise with SAP for Me</a>&nbsp;&nbsp;<font color=\"#6f6f6f\">SAP Community</font>",
+      "url": "https://news.google.com/rss/articles/CBMi5gFBVV95cUxOMFBQMzhpN2dIRUxZU1RkeUNXSk85anQ1Tkk4ZjNmeVg3TDdhRFFCZGhnLUNjT2tjT2FlVDZ1NTBEVEhNdUd6SGNQSDROYm9LbVl4Y19QcFBBbEs5X25TS1FiMzI0czlJLWpWNFhEOEROV3BCT2Y1Yk55YkdYdzhSVnV4T21BZjhtemNQNi1DZS1CTEd5UVB0dHZmOGxsUkVhQTdQeVRZV2ZOcW51QjRXd3VJRVQwTUs2QzlJNDhDckpnNHdwOXFGSHlMMEFHc1RkdFNpU3pUOExjX2lUeVFUc2p6V2ZUZw?oc=5",
+      "date": "2026-10-09T15:58:04.000Z",
+      "engagement": 0,
+      "stance": "neutral",
+      "sentiment": 0,
+      "voice": "press",
+      "pillars": [
+        "s4hana"
+      ],
+      "tags": [],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.1,
+      "engine": "heuristic",
+      "topics": [
+        "s4hana_ai"
+      ]
+    },
+    {
+      "id": "rss:undefined:CBMitAFBVV95cUxPRWFVVWJhMG9GSVdMX1lIVWJxeTBIU09OckdBUEVRSlNudEVpb2hGUEY5WDczVDd5WjBhSE9FRHgtV0x4T0tZT015TVY1aDNFQjlva3lPUjBCWnF4X0I0cWNITWx3VDBVTzRtNUNuWG9pMm5CUl9Ua2tpeDY3QXdTNlg3MTQtTXpGT19jT1Ntd1d2aXltOHJ2aXBfaUN3Nmo0ZF9MM01ZR1pLQ0lpMXVaTnJYUTc",
+      "source": "rss",
+      "sourceLabel": "SAP Community via news",
+      "kind": "article",
+      "author": null,
+      "title": "Joule Learning Journal: October 2026 - SAP Community",
+      "text": "<a href=\"https://news.google.com/rss/articles/CBMitAFBVV95cUxPRWFVVWJhMG9GSVdMX1lIVWJxeTBIU09OckdBUEVRSlNudEVpb2hGUEY5WDczVDd5WjBhSE9FRHgtV0x4T0tZT015TVY1aDNFQjlva3lPUjBCWnF4X0I0cWNITWx3VDBVTzRtNUNuWG9pMm5CUl9Ua2tpeDY3QXdTNlg3MTQtTXpGT19jT1Ntd1d2aXltOHJ2aXBfaUN3Nmo0ZF9MM01ZR1pLQ0lpMXVaTnJYUTc?oc=5\" target=\"_blank\">Joule Learning Journal: October 2026</a>&nbsp;&nbsp;<font color=\"#6f6f6f\">SAP Community</font>",
+      "url": "https://news.google.com/rss/articles/CBMitAFBVV95cUxPRWFVVWJhMG9GSVdMX1lIVWJxeTBIU09OckdBUEVRSlNudEVpb2hGUEY5WDczVDd5WjBhSE9FRHgtV0x4T0tZT015TVY1aDNFQjlva3lPUjBCWnF4X0I0cWNITWx3VDBVTzRtNUNuWG9pMm5CUl9Ua2tpeDY3QXdTNlg3MTQtTXpGT19jT1Ntd1d2aXltOHJ2aXBfaUN3Nmo0ZF9MM01ZR1pLQ0lpMXVaTnJYUTc?oc=5",
+      "date": "2026-10-12T06:47:29.000Z",
+      "engagement": 0,
+      "stance": "neutral",
+      "sentiment": 0,
+      "voice": "press",
+      "pillars": [
+        "joule"
+      ],
+      "tags": [],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.1,
+      "engine": "heuristic",
+      "topics": [
+        "joule_sentiment"
+      ]
+    },
+    {
+      "id": "rss:undefined:CBMiwwFBVV95cUxNOEFvWVgwNmhqSUJpQlNaR0xTS21EbVJnRThxSWlwUWpvT241M3BYUlNjU09BQ1BKWTA3TGNTMjNPNDJuNlk2cFBRMHZVZHB0VDU4Zk1jY21VUEFXS0JhQjNmYXZna3JXRlhCUl9xOEVhNGM4cnRyZU9kcVJ0SC1HWTY0NjB3dm9qYU1WNFRCM0MxMm0zVHlKQ2RheHNTTldfNVJZYllyUHNicXdvdFhfZEtQUzNXZFhQLXVtMF91cmFvelk",
+      "source": "rss",
+      "sourceLabel": "SAP Community via news",
+      "kind": "article",
+      "author": null,
+      "title": "Business AI in ABAP Cloud – A Strategic Overview (Part 1) - SAP Community",
+      "text": "<a href=\"https://news.google.com/rss/articles/CBMiwwFBVV95cUxNOEFvWVgwNmhqSUJpQlNaR0xTS21EbVJnRThxSWlwUWpvT241M3BYUlNjU09BQ1BKWTA3TGNTMjNPNDJuNlk2cFBRMHZVZHB0VDU4Zk1jY21VUEFXS0JhQjNmYXZna3JXRlhCUl9xOEVhNGM4cnRyZU9kcVJ0SC1HWTY0NjB3dm9qYU1WNFRCM0MxMm0zVHlKQ2RheHNTTldfNVJZYllyUHNicXdvdFhfZEtQUzNXZFhQLXVtMF91cmFvelk?oc=5\" target=\"_blank\">Business AI in ABAP Cloud – A Strategic Overview (Part 1)</a>&nbsp;&nbsp;<font color=\"#6f6f6f\">SAP Community</font>",
+      "url": "https://news.google.com/rss/articles/CBMiwwFBVV95cUxNOEFvWVgwNmhqSUJpQlNaR0xTS21EbVJnRThxSWlwUWpvT241M3BYUlNjU09BQ1BKWTA3TGNTMjNPNDJuNlk2cFBRMHZVZHB0VDU4Zk1jY21VUEFXS0JhQjNmYXZna3JXRlhCUl9xOEVhNGM4cnRyZU9kcVJ0SC1HWTY0NjB3dm9qYU1WNFRCM0MxMm0zVHlKQ2RheHNTTldfNVJZYllyUHNicXdvdFhfZEtQUzNXZFhQLXVtMF91cmFvelk?oc=5",
+      "date": "2026-10-12T03:10:22.000Z",
+      "engagement": 0,
+      "stance": "neutral",
+      "sentiment": 0,
+      "voice": "press",
+      "pillars": [],
+      "tags": [],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.1,
+      "engine": "heuristic",
+      "topics": []
+    },
+    {
+      "id": "rss:undefined:t3_1x3hih3",
+      "source": "rss",
+      "sourceLabel": "r/SAP: Joule",
+      "kind": "article",
+      "author": null,
+      "title": "SAP Pay - Anyone tried it yet?",
+      "text": "<!-- SC_OFF --><div class=\"md\"><p>I was reading about SAP Pay and wanted to hear from people who have really used it......</p> <p>Being able to pay suppliers and reconcile invoices inside of SAP sounds wonderful and will sure be very useful. I mean, less jumping between SAP and bank portal for sure....lol</p> <p>They also mentioned USDC pymts. But honestly, i am more interested in how it handles everyday pymt issues</p> <p>A supplier changes their bank details. A payment gets rejected. Someone realizes the invoice was wrong after approving it. What happens then? That’s the demo I’d want to see.</p> <p>Also, the page says about Joule agents will \"Soon\" be able to trigger and execute pymts. I would be carefull abt assuming that part is already available.</p> <p>Has anyone here tested this with a customer yet?<br/> How much setup was involved? </p> </div><!-- SC_ON --> submitted by <a href=\"https://www.reddit.com/user/Think-Performer-6200\"> /u/Think-Performer-6200 </a> <br/> <span><a href=\"https://www.reddit.com/r/SAP/comments/1x3hih3/sap_pay_anyone_tried_it_yet/\">[link]</a></span> <span><a href=\"https://www.reddit.com/r/SAP/comments/1x3hih3/sap_pay_anyone_tried_it_yet/\">[comments]</a…",
+      "url": "https://www.reddit.com/r/SAP/comments/1x3hih3/sap_pay_anyone_tried_it_yet/",
+      "date": "2026-10-11T19:44:35.000Z",
+      "engagement": 0,
+      "stance": "positive",
+      "sentiment": 0.65,
+      "voice": "press",
+      "pillars": [
+        "joule",
+        "agents"
+      ],
+      "tags": [
+        "partners"
+      ],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.22,
+      "engine": "heuristic",
+      "topics": [
+        "joule_sentiment",
+        "btp_ai"
+      ]
+    },
+    {
+      "id": "rss:undefined:CBMi2gFBVV95cUxQMXRGNFl1V25rZ3U2bDFoVXpDUG9NRzJMMW5CUHcxN2UwaHZkdUFmMTFJY3hqM0R6STF3STZHRmlmdEtsUWhHenR4NElOUmFLZVdLOGJnRVRNOG1ubnduQkluVjVsNzRVZmpfZGR5Z1M3MF9abGlTaGt4cm83NkRSQ00tOUxqN0RCWEtKUERpU2tkdWJsbG9neTdmX3pTR2dFVko5V1NNT0pNeURxR2xrMnFzZVBfc2N2NTZaRXV1LWZOb2JIMjVhRjdiQmFFTXJiSmtzWTd0eG5yQQ",
+      "source": "rss",
+      "sourceLabel": "SAP Community: Joule",
+      "kind": "article",
+      "author": null,
+      "title": "Inventory Optimization Demo: Joule + Dremio + SAP AI Core in Action - SAP Community",
+      "text": "<a href=\"https://news.google.com/rss/articles/CBMi2gFBVV95cUxQMXRGNFl1V25rZ3U2bDFoVXpDUG9NRzJMMW5CUHcxN2UwaHZkdUFmMTFJY3hqM0R6STF3STZHRmlmdEtsUWhHenR4NElOUmFLZVdLOGJnRVRNOG1ubnduQkluVjVsNzRVZmpfZGR5Z1M3MF9abGlTaGt4cm83NkRSQ00tOUxqN0RCWEtKUERpU2tkdWJsbG9neTdmX3pTR2dFVko5V1NNT0pNeURxR2xrMnFzZVBfc2N2NTZaRXV1LWZOb2JIMjVhRjdiQmFFTXJiSmtzWTd0eG5yQQ?oc=5\" target=\"_blank\">Inventory Optimization Demo: Joule + Dremio + SAP AI Core in Action</a>&nbsp;&nbsp;<font color=\"#6f6f6f\">SAP Community</font>",
+      "url": "https://news.google.com/rss/articles/CBMi2gFBVV95cUxQMXRGNFl1V25rZ3U2bDFoVXpDUG9NRzJMMW5CUHcxN2UwaHZkdUFmMTFJY3hqM0R6STF3STZHRmlmdEtsUWhHenR4NElOUmFLZVdLOGJnRVRNOG1ubnduQkluVjVsNzRVZmpfZGR5Z1M3MF9abGlTaGt4cm83NkRSQ00tOUxqN0RCWEtKUERpU2tkdWJsbG9neTdmX3pTR2dFVko5V1NNT0pNeURxR2xrMnFzZVBfc2N2NTZaRXV1LWZOb2JIMjVhRjdiQmFFTXJiSmtzWTd0eG5yQQ?oc=5",
+      "date": "2026-08-06T07:00:00.000Z",
+      "engagement": 0,
+      "stance": "neutral",
+      "sentiment": 0,
+      "voice": "press",
+      "pillars": [
+        "joule"
+      ],
+      "tags": [],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.1,
+      "engine": "heuristic",
+      "topics": [
+        "joule_sentiment",
+        "btp_ai"
+      ]
+    },
+    {
+      "id": "rss:undefined:CBMitgFBVV95cUxNMmZQY3o0bUIxU0pJZEFCZ3NXcTZWZ0hjdkNJN3pIVFc3OVhkMWo4YWVmUGZ4NHJDSFpDbHVZVVluOWk4dWt3SUxnOW9aSXdTckNtdmdCdEFfaFhRcm0yeGprLXBpdEtNQjFQOUF0ZkJoM3ZwMi1IRjhFTUhndGxPVm90dnB6aWk5dlJJTFJyTmNQLXd0OGY1ZV9NQUhneVQtRzdJRDN6WEtzQkRLS3pVYnVpeUtOdw",
+      "source": "rss",
+      "sourceLabel": "SAP Community: BDC",
+      "kind": "article",
+      "author": null,
+      "title": "JOIN US: Meet SAP HANA Cloud @ SAP TechEd 2026 - SAP Community",
+      "text": "<a href=\"https://news.google.com/rss/articles/CBMitgFBVV95cUxNMmZQY3o0bUIxU0pJZEFCZ3NXcTZWZ0hjdkNJN3pIVFc3OVhkMWo4YWVmUGZ4NHJDSFpDbHVZVVluOWk4dWt3SUxnOW9aSXdTckNtdmdCdEFfaFhRcm0yeGprLXBpdEtNQjFQOUF0ZkJoM3ZwMi1IRjhFTUhndGxPVm90dnB6aWk5dlJJTFJyTmNQLXd0OGY1ZV9NQUhneVQtRzdJRDN6WEtzQkRLS3pVYnVpeUtOdw?oc=5\" target=\"_blank\">JOIN US: Meet SAP HANA Cloud @ SAP TechEd 2026</a>&nbsp;&nbsp;<font color=\"#6f6f6f\">SAP Community</font>",
+      "url": "https://news.google.com/rss/articles/CBMitgFBVV95cUxNMmZQY3o0bUIxU0pJZEFCZ3NXcTZWZ0hjdkNJN3pIVFc3OVhkMWo4YWVmUGZ4NHJDSFpDbHVZVVluOWk4dWt3SUxnOW9aSXdTckNtdmdCdEFfaFhRcm0yeGprLXBpdEtNQjFQOUF0ZkJoM3ZwMi1IRjhFTUhndGxPVm90dnB6aWk5dlJJTFJyTmNQLXd0OGY1ZV9NQUhneVQtRzdJRDN6WEtzQkRLS3pVYnVpeUtOdw?oc=5",
+      "date": "2026-10-12T03:06:19.000Z",
+      "engagement": 0,
+      "stance": "neutral",
+      "sentiment": 0,
+      "voice": "press",
+      "pillars": [
+        "bdc"
+      ],
+      "tags": [
+        "roadmap"
+      ],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.1,
+      "engine": "heuristic",
+      "topics": [
+        "bdc_cloud"
+      ]
+    },
+    {
+      "id": "rss:undefined:CBMi6AFBVV95cUxPdXN1YnM2eTBhdV90ellMUVlNRkU1YW1XNVVrRXFzN0R1NGtqakFHSEFUcGNSempOM1I3RzhNbEJ0cWhRWUNsZV92Q05vSVJjM2dlZzcyY2JxaEE4c2d1dDlnTnJRcnIyV1otMWFoZktudWhaRS1SeTdORk5MaU1JTWZwNW9vZHNzeXdCVDhMOWNobVNIblpZa0d6RnR4TmF0bnBseUdpZWxhU0ZNSFhiUTNSTXFjam5SdTQtX2haaGJvYk9qNVVtSlVKamtNLTJJTmtFRUxBTmhTeHJrTzdxTnpxVVpqZEly",
+      "source": "rss",
+      "sourceLabel": "SAP Community: RPT-1",
+      "kind": "article",
+      "author": null,
+      "title": "System-1 decision models and tabular foundation models: who decides what in a business process - SAP Community",
+      "text": "<a href=\"https://news.google.com/rss/articles/CBMi6AFBVV95cUxPdXN1YnM2eTBhdV90ellMUVlNRkU1YW1XNVVrRXFzN0R1NGtqakFHSEFUcGNSempOM1I3RzhNbEJ0cWhRWUNsZV92Q05vSVJjM2dlZzcyY2JxaEE4c2d1dDlnTnJRcnIyV1otMWFoZktudWhaRS1SeTdORk5MaU1JTWZwNW9vZHNzeXdCVDhMOWNobVNIblpZa0d6RnR4TmF0bnBseUdpZWxhU0ZNSFhiUTNSTXFjam5SdTQtX2haaGJvYk9qNVVtSlVKamtNLTJJTmtFRUxBTmhTeHJrTzdxTnpxVVpqZEly?oc=5\" target=\"_blank\">System-1 decision models and tabular foundation models: who decides what in a business process</a>&nbsp;&nbsp;<font color=\"#6f6f6f\">SAP Community</font>",
+      "url": "https://news.google.com/rss/articles/CBMi6AFBVV95cUxPdXN1YnM2eTBhdV90ellMUVlNRkU1YW1XNVVrRXFzN0R1NGtqakFHSEFUcGNSempOM1I3RzhNbEJ0cWhRWUNsZV92Q05vSVJjM2dlZzcyY2JxaEE4c2d1dDlnTnJRcnIyV1otMWFoZktudWhaRS1SeTdORk5MaU1JTWZwNW9vZHNzeXdCVDhMOWNobVNIblpZa0d6RnR4TmF0bnBseUdpZWxhU0ZNSFhiUTNSTXFjam5SdTQtX2haaGJvYk9qNVVtSlVKamtNLTJJTmtFRUxBTmhTeHJrTzdxTnpxVVpqZEly?oc=5",
+      "date": "2026-10-12T07:30:19.000Z",
+      "engagement": 0,
+      "stance": "neutral",
+      "sentiment": 0,
+      "voice": "press",
+      "pillars": [],
+      "tags": [],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.1,
+      "engine": "heuristic",
+      "topics": [
+        "rpt1"
+      ]
+    },
+    {
+      "id": "gh:5809808917",
+      "source": "github",
+      "sourceLabel": "GitHub",
+      "kind": "pull request",
+      "author": "novalinkstudios",
+      "title": "Daily Drop: Monday, October 12",
+      "text": "## Today's Drop · Monday, October 12, 2026\n\n**Intro:** Monday briefing — the AI skills bar has already moved past basic prompting, SAP acquires a company that maps what your workforce actually does, and the largest industrial AI deal in history signals where investment is heading next.\n\n### Trends\n1. **The AI skills bar moved faster than most organizations expected**\n2. **SAP acquires the company that maps what your workforce actually does**\n3. **The largest industrial AI deal in history signals where investment is heading**\n\n### Homework\n*Monday evening, fresh week. Let AI build you a reading list that actually matches how you feel right now.*\n\n---\n\n### Sources cited\n- [Workday Global Workforce Report, October 5, 2026](`https://newsroom.workday.com/2026-10-05-Workday-Global-Workforce-Report-AI-Is-Rewriting-Jobs-More-Than-Its-Cutting-Them`) — AI skills demand shift: basic prompting skills fell 25%, hands-on AI skills rose 51%; 40% of leaders expect AI to augment existing staff\n- [SAP to Acquire TechWolf, October 6, 2026](https://news.sap.com/2026/10/sap-to-acquire-techwolf-ai-powered-work-intelligence/) — Context graph for work bringing evidence-based skills mapping to SuccessFacto…",
+      "url": "https://github.com/novalinkstudios/Industry-trends/pull/134",
+      "date": "2026-10-12T07:12:36Z",
+      "engagement": 1,
+      "query": "SAP Joule in:title,body",
+      "sentiment": 1,
+      "stance": "positive",
+      "voice": "practitioner",
+      "pillars": [
+        "joule"
+      ],
+      "tags": [
+        "competition"
+      ],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.29000000000000004,
+      "engine": "heuristic",
+      "topics": [
+        "vs_competitors"
+      ]
+    },
+    {
+      "id": "gh:5811982519",
+      "source": "github",
+      "sourceLabel": "GitHub",
+      "kind": "pull request",
+      "author": "DomicianoRossi",
+      "title": "Radar: 2 notas de 2026-10-12",
+      "text": "## Notas\n- Bain: empresas realizam 38% do valor esperado com IA, e só cerca de 7% operam agentes totalmente autônomos em produção · PESQUISA · Bain & Company (artigo de 8 out 2026, n=951)\n- SAP lança no SAP Connect o Joule Work e novos assistentes para finanças, compras e cadeia de suprimentos · LANÇAMENTOS · SAP SE (comunicado de 6 out 2026; disponibilidade segundo CIO.com)\n\n## Atenção do editor\n- **SAP: números só do fornecedor** (20% de produtividade em 110.000 funcionários da própria SAP; até 50% de redução de esforço em implantações iniciais sem cliente nomeado). Ficha com \"Confirmação: não confirmada pelo cliente\". As fontes não informam disponibilidade/idioma no Brasil, e a nota diz isso.\n- Bain: pesquisa de consultoria, sem recorte por país; a nota diz isso.\n- \"Disponibilidade geral neste mês\" vem da CIO.com, não do comunicado da SAP.\n\n## Pautas descartadas\n- FGV/Jornal Nacional (uso de IA em 3 mil empresas, 45% em 2026): sobre IA em geral, não agentes; só a matéria do g1 como fonte, sem o estudo da FGV.\n- Meta Business Agent (US$ 2 por milhão de tokens): já coberto na nota meta-whatsapp-cobranca-mensagens-servico.\n- SpyCloud via HackerNoon (95% acham que monitoram, 36% mon…",
+      "url": "https://github.com/agentic-way/site/pull/33",
+      "date": "2026-10-12T10:10:52Z",
+      "engagement": 1,
+      "query": "SAP Joule in:title,body",
+      "sentiment": 0,
+      "stance": "neutral",
+      "voice": "practitioner",
+      "pillars": [
+        "joule",
+        "agents"
+      ],
+      "tags": [],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.1,
+      "engine": "heuristic",
+      "topics": [
+        "joule_sentiment"
+      ]
+    },
+    {
+      "id": "gh:5804216160",
+      "source": "github",
+      "sourceLabel": "GitHub",
+      "kind": "pull request",
+      "author": "fr0ster",
+      "title": "docs(architecture): client-agnostic deployment concept (planned)",
+      "text": "Adds the client-agnostic deployment diagram (draw.io source + PNG) under `docs/architecture/concepts/`,\nmarked as **planned, not implemented**, with a short table comparing it to the implemented\nBTP Cloud Foundry architecture:\n\n- runtime: Cloud Foundry / MTA → Docker containers (Kyma / Azure / AWS / GCP);\n- entry point: approuter → Nginx;\n- identity: XSUAA + trusted IdPs → Keycloak (OIDC/SAML, SCIM);\n- ABAP connectivity: Cloud Connector + destinations → VPN gateway / SSH tunnel, service discovery;\n- vector store: in-memory / Qdrant → vector DB container;\n- LLM: SAP AI Core / OpenAI-compatible → client AI provider, Ollama, external API.\n\nLinked from `docs/architecture/README.md`.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_016xrK22XfpqQgny3GFmy1vS",
+      "url": "https://github.com/fr0ster/cloud-llm-hub/pull/12",
+      "date": "2026-10-11T19:07:13Z",
+      "engagement": 1,
+      "query": "SAP BTP AI in:title,body",
+      "sentiment": 0,
+      "stance": "neutral",
+      "voice": "practitioner",
+      "pillars": [
+        "joule"
+      ],
+      "tags": [
+        "competition"
+      ],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.1,
+      "engine": "heuristic",
+      "topics": [
+        "btp_ai"
+      ]
+    },
+    {
+      "id": "gh:5815181715",
+      "source": "github",
+      "sourceLabel": "GitHub",
+      "kind": "issue",
+      "author": "CrimExChange",
+      "title": "[Feedback]: Using foundational models on SAP AI Core",
+      "text": "### What area is this about?\n\nA specific tutorial\n\n### AI-generated content — what's wrong?\n\n_No response_\n\n### Page URL\n\nhttps://developers.sap.com/tutorials/ai-core-consumption-llm?from=generative-ai-with-sap-ai-core-foundation-model\n\n### What happened?\n\nFailed to load resource: the server responded with a status of 404 ()",
+      "url": "https://github.com/sap-tutorials/tutorials-ims/issues/2715",
+      "date": "2026-10-12T14:10:51Z",
+      "engagement": 0,
+      "query": "sap ai-core in:title,body",
+      "sentiment": -0.667,
+      "stance": "negative",
+      "voice": "practitioner",
+      "pillars": [
+        "joule"
+      ],
+      "tags": [],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.22,
+      "engine": "heuristic",
+      "topics": [
+        "btp_ai",
+        "risks_gaps"
+      ]
+    },
+    {
+      "id": "gh:5812684586",
+      "source": "github",
+      "sourceLabel": "GitHub",
+      "kind": "pull request",
+      "author": "InjunPark-sap",
+      "title": "chore: add ADR for async polling helpers",
+      "text": "## Context\n\nCloses SAP/ai-sdk-js-backlog#659.\n\n## What this PR does and why it is needed\n\nAdds ADR 012 for async polling helpers (ticket AC #1: investigate and decide on approach).\n\nThe ADR records the investigation and proposes an approach — a `pollAsyncResource` engine in `@sap-ai-sdk/core` plus per-service convenience wrappers — and leaves scope, backoff, ergonomics, and terminal-model coverage open for team alignment. Status is `proposed`; no implementation is included.\n\n<!-- Please provide a description summarizing your changes and their rationale -->\n\n<!-- Before raising this PR, please review the Definition of Done below and confirm that all applicable items are completed.\n## Definition of Done\n\n- [ ] Code is tested (Unit, E2E)\n- [ ] Error handling created / updated & covered by the tests above\n- [ ] Documentation updated\n  - Only Public APIs are allowed to be used in documentation/tutorials/sample code\n- [ ] (Optional) Aligned changes with the Java SDK\n- [ ] (Optional) Release notes updated -->",
+      "url": "https://github.com/SAP/ai-sdk-js/pull/2429",
+      "date": "2026-10-12T11:08:31Z",
+      "engagement": 1,
+      "query": "sap ai-core in:title,body",
+      "sentiment": 0,
+      "stance": "neutral",
+      "voice": "practitioner",
+      "pillars": [],
+      "tags": [],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.1,
+      "engine": "heuristic",
+      "topics": []
+    },
+    {
+      "id": "gh:5812506884",
+      "source": "github",
+      "sourceLabel": "GitHub",
+      "kind": "issue",
+      "author": "ton618to",
+      "title": "bug(v2): SAP AI Core initialization fails ",
+      "text": "### Description\n\nSAP AI Core works in my installed V1 client, but a V2 source-run server fails while importing the provider, before making a model request:\n\n```text\nCannot initialize sap-ai-core/anthropic--claude-4.8-opus:\nFirst argument must be an Error object\n```\n\nReproduced through both session generation (HTTP 503) and an isolated V2 server's `/api/experimental/generate` endpoint (HTTP 400), using an in-memory database, temporary configuration, and no user plugins. Supplying `AICORE_SERVICE_KEY` does not prevent the initialization failure.\n\n### Steps to reproduce\n\n1. Run the V2 CLI/server from source under Bun 1.4.2 using the normal `packages/cli` configuration, which preloads `@opentui/solid/preload`.\n2. Configure SAP AI Core and send a short prompt to a SAP model after the model catalog is ready.\n3. Provider initialization fails with the error above.\n\nThe isolated server was started from `packages/cli` with `bun run src/index.ts serve --hostname 127.0.0.1 --port <port>`, `OPENCODE_DB=:memory:`, a temporary `OPENCODE_CONFIG_DIR`, project configuration disabled, and `AICORE_SERVICE_KEY` supplied. The first stateless generation call can return `Model unavailable` while the catal…",
+      "url": "https://github.com/anomalyco/opencode/issues/54791",
+      "date": "2026-10-12T10:54:02Z",
+      "engagement": 1,
+      "query": "sap ai-core in:title,body",
+      "sentiment": -0.623,
+      "stance": "negative",
+      "voice": "practitioner",
+      "pillars": [
+        "joule"
+      ],
+      "tags": [
+        "competition"
+      ],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.5,
+      "engine": "heuristic",
+      "topics": [
+        "btp_ai",
+        "risks_gaps"
+      ]
+    },
+    {
+      "id": "gh:5810314239",
+      "source": "github",
+      "sourceLabel": "GitHub",
+      "kind": "pull request",
+      "author": "davidkna-sap",
+      "title": "chore(sap-ai-core): sync model list",
+      "text": "This is based on the `/v2/lm/scenarios/foundation-models/models` of a production landscape, which requires authentication.\nThe new models are not yet reflected in the [public changelog](https://help.sap.com/docs/sap-ai-core/sap-ai-core-service-guide/what-s-new-for-sap-ai-core?locale=en-US), but [have been requested in the sap/ai-sdk-js repo](https://www.github.com/SAP/ai-sdk-js/issues/2424).",
+      "url": "https://github.com/anomalyco/models.dev/pull/9446",
+      "date": "2026-10-12T07:56:58Z",
+      "engagement": 1,
+      "query": "sap ai-core in:title,body",
+      "sentiment": 0,
+      "stance": "neutral",
+      "voice": "practitioner",
+      "pillars": [],
+      "tags": [],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.1,
+      "engine": "heuristic",
+      "topics": []
+    },
+    {
+      "id": "gh:5810314982",
+      "source": "github",
+      "sourceLabel": "GitHub",
+      "kind": "pull request",
+      "author": "VrushaliAPoojary",
+      "title": "docs(procurement-p02): finalize supplier delivery research, evidence calibration, and benchmark specification",
+      "text": "# Research Contribution: P02 Supplier Delivery Confirmation & Delay Escalation\n\n## Executive Summary\nThis pull request delivers the research package and workflow documentation for **`P02-SUPPLIER-DELIVERY` (Supplier Delivery Confirmation & Delay Escalation)**, owned by Vrushali Poojary (`VrushaliAPoojary`). The deliverable establishes:\n1. **Operational Investigation:** Post-award purchase order acknowledgment, promised delivery date (PDD) and quantity reconciliation, and tiered delay escalation.\n2. **ERP Capability Audit:** Evaluation of incumbent systems (SAP S/4HANA MM, Oracle Cloud SCM, Coupa BSM) and operational automation deficits driving manual expediting.\n3. **Proposed Buyer Use Case & Tool Boundaries:** Detailed buyer interaction flow specifying read-only lookup of ERP purchase order and supplier state, staging draft follow-ups (`auto_send: false`), human review for delivery slippage or split shipments, and explicit input limitations (no unstructured email or PDF parsing).\n4. **Synthetic Benchmark Specification (`DELIVERY-001`):** Six deterministic test scenarios (`TC-DEL-001` through `TC-DEL-006`) with reconciled business-day interval arithmetic, clearly designated as *spe…",
+      "url": "https://github.com/ART-Automation-Lab/art-investigation-lab/pull/19",
+      "date": "2026-10-12T07:57:01Z",
+      "engagement": 0,
+      "query": "SAP Business Data Cloud in:title,body",
+      "sentiment": -0.412,
+      "stance": "negative",
+      "voice": "practitioner",
+      "pillars": [
+        "s4hana"
+      ],
+      "tags": [
+        "licensing",
+        "competition",
+        "roadmap"
+      ],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.36,
+      "engine": "heuristic",
+      "topics": [
+        "vs_competitors",
+        "s4hana_ai",
+        "risks_gaps"
+      ]
+    },
+    {
+      "id": "gh:5804084744",
+      "source": "github",
+      "sourceLabel": "GitHub",
+      "kind": "pull request",
+      "author": "iyousti-yl",
+      "title": "Give the web app its own identity (side rail, line diagram) and simpler CRUD flows",
+      "text": "Before: the app was a plain list of cards. Every action sat on the page at once as a row of buttons, Edit and Delete next to each other, and there was no sign of which scenario last passed or failed. Deleting anything went through a separate page.\n\nAfter: the app is laid out like SAP's cloud apps, with a side navigation as in Datasphere and SAP Analytics Cloud, object headers with key figures, one main action per screen, and status shown as a shape or icon plus a word. Its identity is its own, and commits colour at page scale: a deep **petrol rail**, a flat white work area with petrol actions, Libre Franklin type (self-hosted, OFL), its own icons, and the **line diagram**. Each suite is drawn as a line, with one stop per scenario lit by its latest result: a dot for passed, a diamond for failed, a square for error and a ring for not run yet. The logo is the same line. Nothing of SAP is copied (no \"72\" font, icons or exact theme values). A first version with white cards on grey and an indigo accent read as generic AI SaaS and was replaced in this PR.\n\nScreens and flows:\n- **Rail:** Workspaces, then the open workspace's sections (Scenarios, Test runs, Connections, Settings for owners)…",
+      "url": "https://github.com/iyousti-yl/testbench/pull/9",
+      "date": "2026-10-11T18:50:47Z",
+      "engagement": 0,
+      "query": "SAP Business Data Cloud in:title,body",
+      "sentiment": -0.667,
+      "stance": "negative",
+      "voice": "practitioner",
+      "pillars": [
+        "bdc"
+      ],
+      "tags": [
+        "partners"
+      ],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.22,
+      "engine": "heuristic",
+      "topics": [
+        "bdc_cloud",
+        "risks_gaps"
+      ]
+    },
+    {
+      "id": "gh:5803258246",
+      "source": "github",
+      "sourceLabel": "GitHub",
+      "kind": "pull request",
+      "author": "iyousti-yl",
+      "title": "Manage workspaces and connections in the app; add the SuccessFactors connector",
+      "text": "Before: the app started with two hardcoded demo workspaces full of generated HR data. Workspaces and connection secrets could only be created on the command line, and the only real connector was SAP Datasphere.\n\nAfter: the app starts empty. A signed-in user creates, renames and deletes their own workspaces. Inside a workspace, they add one or more connections from a fixed list: SAP Datasphere and SAP SuccessFactors. Each connection card shows where it points (Datasphere: tenant URL, space ID and database user; SuccessFactors: API server, company ID and user) and the result of the last connection test.\n\nStacked on #5. Merge order: #1, #2, #3, #4, #5, then this one.\n\n## What changed\n\n- **Demo removed.** The generated HR data, the example project, `seed-demo`, the demo routes and buttons and the `demo` command are gone. `testbench init` now writes an empty project with commented templates for both connectors. Tests build their own small synthetic project in `tests/conftest.py`.\n- **Workspaces.** Create, rename and delete in the app. Deleting asks you to type the workspace id. The creator is the owner. Members can open a workspace, run suites and test connections; only owners change th…",
+      "url": "https://github.com/iyousti-yl/testbench/pull/6",
+      "date": "2026-10-11T17:07:24Z",
+      "engagement": 0,
+      "query": "SAP Datasphere in:title,body",
+      "sentiment": 0.667,
+      "stance": "positive",
+      "voice": "practitioner",
+      "pillars": [
+        "bdc"
+      ],
+      "tags": [
+        "partners"
+      ],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.22,
+      "engine": "heuristic",
+      "topics": [
+        "bdc_cloud"
+      ]
+    },
+    {
+      "id": "gh:5802877724",
+      "source": "github",
+      "sourceLabel": "GitHub",
+      "kind": "pull request",
+      "author": "iyousti-yl",
+      "title": "SAP Datasphere connector",
+      "text": "<!-- claude-projects-attribution: {\"github_login\":\"iyousti-yl\"} -->\n_Requested by **Issam** · [project thread](https://claude.ai/code/project/chan_01KHaaVEKG7vi52PFyL81Sd3?thread=cmsg_01KHaaVEKG7vi52PFyL81Sd31YvWAv5GFyV2Sb1sUz5F9Y)_\n\nStacked on #3. It retargets automatically as the earlier PRs merge.\n\nBefore: Testbench could only test SQLite databases.\n\nAfter: a `datasphere` connection in `testbench.yaml` (host, database user, password, space id) lets every scenario run against a Datasphere space's exposed views. `testbench objects <connection> --columns` lists those views with their columns, which is also what the `write-scenario` skill uses to find real column names.\n\nHow: `hdbcli` (optional extra `testbench[datasphere]`) connects with TLS and certificate validation, and the space id becomes the current schema. Metadata comes from `SYS.VIEWS`, `SYS.TABLES` and their column views. The runner now refuses any statement that is not a single `SELECT`/`WITH` before it reaches a connector. The password never appears in `repr()` and can be stored encrypted in the web app.\n\nNot yet verified on a real tenant. Tests use a simulated driver, and a connection attempt with the real `hdbcli` dri…",
+      "url": "https://github.com/iyousti-yl/testbench/pull/4",
+      "date": "2026-10-11T16:20:41Z",
+      "engagement": 0,
+      "query": "SAP Datasphere in:title,body",
+      "sentiment": 0,
+      "stance": "neutral",
+      "voice": "practitioner",
+      "pillars": [
+        "bdc"
+      ],
+      "tags": [
+        "competition"
+      ],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.1,
+      "engine": "heuristic",
+      "topics": [
+        "bdc_cloud"
+      ]
+    },
+    {
+      "id": "gh:5781486033",
+      "source": "github",
+      "sourceLabel": "GitHub",
+      "kind": "pull request",
+      "author": "flthibau",
+      "title": "SAP PR 2: private Datasphere storage and native Fabric foundation",
+      "text": "## Summary\n- Version the deployed private ADLS Gen2 Datasphere foundation and scoped Entra access.\n- Document the dedicated SAP landing, connections, native BPS source and BPS-created mirror in MSFlix.\n\n## Boundaries\n- Already deployed: no redeployment or merge is part of this publication.\n- No changes to existing networking, other source systems, cockpit or Planning.\n- Generated data, credentials and local execution evidence stay out of Git.\n- Frederic retains ownership of merges.",
+      "url": "https://github.com/fredgis/FabricHubDemo/pull/2",
+      "date": "2026-10-09T16:38:33Z",
+      "engagement": 0,
+      "query": "SAP Datasphere in:title,body",
+      "sentiment": 0,
+      "stance": "neutral",
+      "voice": "practitioner",
+      "pillars": [
+        "bdc"
+      ],
+      "tags": [],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.1,
+      "engine": "heuristic",
+      "topics": [
+        "bdc_cloud"
+      ]
+    },
+    {
+      "id": "gh:5763840516",
+      "source": "github",
+      "sourceLabel": "GitHub",
+      "kind": "pull request",
+      "author": "flthibau",
+      "title": "SAP PR 1: local MSFlix data contract and scenario",
+      "text": "## Scope\n- Add a local-only, deterministic SAP scenario for subscriptions, billing, content contracts and finance.\n- Preserve the sampled MSFlix CRM/catalog keys and explicitly identify fictional suppliers and commercial terms.\n- Generate 20 source objects, six initial/delta checkpoints and ten balanced FI documents in local Datasphere-format Parquet packages.\n- Document source mappings, replay behavior and the native BPS integration boundaries.\n\n## Boundaries\n- No Azure/Fabric deployment or changes to Salesforce, Oracle, RTI, MSFlixGold, the cockpit, ontology or Planning.\n- Generated files remain outside Git. The committed reference fixture contains three fictional CRM contacts and their Salesforce record IDs.\n- native_bps_ready=false: complete native template alignment and custom-object registration are deferred to the integration PRs.\n- Draft for review only; no automatic merge or deployment.",
+      "url": "https://github.com/fredgis/FabricHubDemo/pull/1",
+      "date": "2026-10-08T14:45:20Z",
+      "engagement": 0,
+      "query": "SAP Datasphere in:title,body",
+      "sentiment": 0,
+      "stance": "neutral",
+      "voice": "practitioner",
+      "pillars": [
+        "bdc"
+      ],
+      "tags": [
+        "licensing",
+        "competition"
+      ],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.1,
+      "engine": "heuristic",
+      "topics": [
+        "vs_competitors",
+        "bdc_cloud"
+      ]
+    },
+    {
+      "id": "gh:5815237349",
+      "source": "github",
+      "sourceLabel": "GitHub",
+      "kind": "pull request",
+      "author": "fr0ster",
+      "title": "interfaces-adt-connection 2.1.0: a request's signal and ADT_REQUEST_ERROR",
+      "text": "## What\n\n`@mcp-abap-adt/interfaces-adt-connection` 2.1.0 (a minor; only this package moves):\n\n- `IAbapRequestOptions.signal?: AbortSignal | undefined` — the caller no longer needs this request: once it aborts, nothing more of it is sent (not the request, not a resend such as a CSRF retry or a reconnect). A request already on the wire is not recalled.\n- `ADT_REQUEST_ERROR = { ABORTED: 'ADT_REQUEST_ABORTED' } as const` and `AdtRequestErrorCode` — what such a request fails with, as the thrown error's `code`.\n\nTypes and constants only. Optional and additive: every 2.0.0 request and connection compiles unchanged.\n\n## Why\n\nStep B2 of the mcp-abap-adt auth-chain plan (fr0ster/mcp-abap-adt#287): the server's per-request cancellation needs the contract first; interfaces-adt (`IAdtClientOptions.signal`, `IAdtError.refusal`), connection and adt-clients follow on `^2.1.0`.\n\n## Checks\n\n- `src/__typechecks__/requestSignal.ts` imports through the index; dropping the export, or widening the field to `unknown`, turns it red (both breaks run and reverted).\n- `npm run check` and `npm run lint:check` green; the package lockfile has no links.\n- README (root and package), CHANGELOG 2.1.0, `docs/architec…",
+      "url": "https://github.com/fr0ster/mcp-abap-adt-interfaces/pull/139",
+      "date": "2026-10-12T14:14:47Z",
+      "engagement": 0,
+      "query": "abap ai in:title,body",
+      "sentiment": -0.667,
+      "stance": "negative",
+      "voice": "practitioner",
+      "pillars": [],
+      "tags": [
+        "licensing"
+      ],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.22,
+      "engine": "heuristic",
+      "topics": []
+    },
+    {
+      "id": "gh:5815236538",
+      "source": "github",
+      "sourceLabel": "GitHub",
+      "kind": "pull request",
+      "author": "oblomov-dev",
+      "title": "backlog: 34 abaplint rule ideas ported from abapOpenChecks and code-pal-for-abap",
+      "text": "# Description\n\nI mapped every check of larshp/abapOpenChecks (105) and SAP/code-pal-for-abap (57) against abaplint main after v2.120.75. Most checks already exist in abaplint. This PR adds 34 `backlog/items/abaplint-*.md` items for the ones that do not, and regenerates `ABAPLINT.md`.\n\n**How the checks were sorted:**\n- **Already in abaplint:** about 62 abapOpenChecks checks and about 35 code-pal checks.\n- **Already in this backlog:** 7 abapOpenChecks checks and 3 code-pal checks. The code-pal ones are `sub-assign-read-table`, and `db-access-in-ut` / `external-call-in-ut`.\n- **Left out because they need a system:** SLIN, Smartforms/IDoc syntax, the editor lock, RFC destinations, S/4 simplification data and test coverage.\n- **Left out because a probe showed them covered:**\n  - `unused_variables` covers aoc 021 and 025.\n  - `exit_or_check` covers code-pal `check-statement-position`.\n  - `method_length` covers `empty-procedure`.\n  - The `empty_structure` option `catch` covers `empty-catch`.\n\n**New items from abapOpenChecks (19):**\n- S:\n  - icon literal `'@00@'`\n  - SORT without an explicit order\n  - TODO/FIXME markers\n  - MESSAGE through the sy-msg fields\n  - a superfluous `\"#EC CI_SUBR…",
+      "url": "https://github.com/abap2UI5/abap2UI5/pull/2903",
+      "date": "2026-10-12T14:14:44Z",
+      "engagement": 0,
+      "query": "abap ai in:title,body",
+      "sentiment": 0,
+      "stance": "neutral",
+      "voice": "practitioner",
+      "pillars": [],
+      "tags": [
+        "partners"
+      ],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.1,
+      "engine": "heuristic",
+      "topics": []
+    },
+    {
+      "id": "gh:5815023601",
+      "source": "github",
+      "sourceLabel": "GitHub",
+      "kind": "issue",
+      "author": "CrimExChange",
+      "title": "[Feedback]: Tutorial not found error on completeStep for abap-environment-sbpa-workflow-extend-rap-app",
+      "text": "### What area is this about?\n\nA specific tutorial\n\n### AI-generated content — what's wrong?\n\n_No response_\n\n### Page URL\n\nhttps://developers.sap.com/tutorials/abap-environment-sbpa-workflow-extend-rap-app.html\n\n### What happened?\n\n### Description\nWhen clicking the \"Done\" button on any step in this tutorial, the API call to `/api/completeStep` fails with HTTP 404:\n\n```json\n{\n  \"error\": {\n    \"message\": \"Tutorial not found: abap-environment-sbpa-workflow-extend-rap-app\",\n    \"code\": \"404\",\n    \"@Common.numericSeverity\": 4\n  }\n}",
+      "url": "https://github.com/sap-tutorials/tutorials-ims/issues/2714",
+      "date": "2026-10-12T14:00:11Z",
+      "engagement": 0,
+      "query": "abap ai in:title,body",
+      "sentiment": -0.667,
+      "stance": "negative",
+      "voice": "practitioner",
+      "pillars": [],
+      "tags": [],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.22,
+      "engine": "heuristic",
+      "topics": []
+    },
+    {
+      "id": "gh:5802334739",
+      "source": "github",
+      "sourceLabel": "GitHub",
+      "kind": "pull request",
+      "author": "fr0ster",
+      "title": "feat(debugger): adt-clients 28 — another user, terminal mode, detach, settings; breakpoints armed as one set",
+      "text": "Consumer side of fr0ster/mcp-abap-adt-clients#217 (adt-clients 28.0.0, interfaces-adt 14.0.0, adt-strategies 0.9.0). One PR, carrying the spec, the plan, the code, the tests and the docs.\n\n## Status\n- [x] Spec: `docs/superpowers/specs/2026-10-11-debugger-adt-clients-28-design.md`. It is under review.\n- [ ] Plan\n- [ ] Code and unit tests\n- [ ] Integration on premise\n- [ ] Docs and release metadata\n- [ ] Final review\n\n## Scope\n- **Another user.** `DebugStartListener` and `DebugTakeOverListener` gain `request_user`. Debugging another user's runs needs `S_DEVELOP` DEBUG ACTVT 90, and SAP's `403` reaches the model as it is.\n- **Terminal mode.** `debugging_mode: terminal` uses the terminal id the host configures. It is refused when none is configured.\n- **Settings.** A `settings` parameter at the start, applied after each attach, and a new `DebugSetSettings` tool.\n- **New steps.** `DebugStep` gains `detach` and `release_debugger`; `release_debugger`'s plain `500` is read with `analyseDebuggerFreed`.\n- **Compact.** It gets the same parameters and actions, and keeps its four tools.\n- **Fix.** The session arms its full breakpoint list in one request. In 17.2.x a second `DebugSetBreakpoints`…",
+      "url": "https://github.com/fr0ster/mcp-abap-adt/pull/293",
+      "date": "2026-10-11T15:15:04Z",
+      "engagement": 0,
+      "query": "abap ai in:title,body",
+      "sentiment": -0.667,
+      "stance": "negative",
+      "voice": "practitioner",
+      "pillars": [],
+      "tags": [],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.22,
+      "engine": "heuristic",
+      "topics": []
+    },
+    {
+      "id": "gh:5814359830",
+      "source": "github",
+      "sourceLabel": "GitHub",
+      "kind": "pull request",
+      "author": "5throck",
+      "title": "chore: register country profiles in variant.json country_config",
+      "text": "## Why\nThe Variant Readiness Gate (`country-config-supported`) requires `variant.json` `country_config.supported` to list the country profiles a variant ships. The project now ships `docs/countries/{KR,US,JP}.md` (PR #205), but `supported` was still empty — the same condition that blocked the template-side landing (ai-workspace-standards PR #1525) until it was fixed there. This keeps the project and template convergent and prevents the VRG error at the next reconciliation or promotion.\n\n## What Changed\n- `variant.json`: `country_config.supported` `[]` -> `[\"KR\", \"US\", \"JP\"]`; `default` stays `null` per ADR-0091 R2 (the active market is project state, recorded in `docs/countries/ACTIVE.md`)\n- CHANGELOG entry added\n\n## Test Plan\n- [x] `bun scripts/validate-variant-readiness.ts --variant co-abap` at the workspace root: READY (warnings only)\n- [x] `bun scripts/audit.ts` passes\n- [ ] CI\n\n## Security Checklist\n- [x] No secrets, credentials, or API keys committed\n- [x] No `.env` files staged\n- [x] Dependencies unchanged or reviewed for new CVEs\n\n## Notes\nNone.\n\n---",
+      "url": "https://github.com/5throck/co-abap/pull/206",
+      "date": "2026-10-12T13:14:14Z",
+      "engagement": 0,
+      "query": "abap ai in:title,body",
+      "sentiment": -0.433,
+      "stance": "negative",
+      "voice": "practitioner",
+      "pillars": [],
+      "tags": [
+        "licensing"
+      ],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.22,
+      "engine": "heuristic",
+      "topics": [
+        "risks_gaps"
+      ]
+    },
+    {
+      "id": "gh:5813862099",
+      "source": "github",
+      "sourceLabel": "GitHub",
+      "kind": "pull request",
+      "author": "5throck",
+      "title": "feat: add SAP globalization runtime checklist, pipeline wiring, and country profiles",
+      "text": "## Why\nCode that works in a single-timezone, single-language, A4-only test system breaks in a global SAP landscape (DST transitions, server vs user time, currency decimals, A4 vs Letter, unit codes, calendar variants). The workspace i18n assets covered workspace documents only; ABAP development standards had zero global-runtime guidance, and delivered requirements shipped unmaintained texts (REQ-001 recorded the deferral, REQ-002 did not).\n\n## What Changed\n- New standard `docs/standards/sap-globalization-checklist.md`: 7 pass/fail rule families (time zones/DST, number/date/currency formatting, units of measure, calendars, texts, output/paper/forms, addresses) with blocker/should severities and owners\n- Wired into the delivery pipeline: `agents/code-writer.md` behavior rules 12-13 + Globalization Check report line (1.1.1 -> 1.1.2); `skills/abap-dev/SKILL.md` new `sap:globalization` section + execution step (1.2.2 -> 1.3.0, 6 platform mirrors in lockstep); `deliverables/templates/04_qa_report.md` Quality Gate row + release checklist item\n- Country profiles instantiated per `docs/country-profiles.md`: `docs/countries/KR.md`, `US.md`, `JP.md` (JP adds era dates, full-width characters, …",
+      "url": "https://github.com/5throck/co-abap/pull/205",
+      "date": "2026-10-12T12:38:28Z",
+      "engagement": 0,
+      "query": "abap ai in:title,body",
+      "sentiment": 0,
+      "stance": "mixed",
+      "voice": "practitioner",
+      "pillars": [
+        "agents"
+      ],
+      "tags": [],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.29000000000000004,
+      "engine": "heuristic",
+      "topics": [
+        "vs_competitors"
+      ]
+    },
+    {
+      "id": "gh:5699188230",
+      "source": "github",
+      "sourceLabel": "GitHub",
+      "kind": "issue",
+      "author": "jaeheeMin",
+      "title": "AI 리뷰 러너에서 저장소 MCP 서버를 띄우지 않기",
+      "text": "## 배경\n\npublic-cloud 에서 AI 리뷰(#125)를 처음 실제로 돌려 보니(public-cloud PR #120, 시험), GitHub Actions 러너의 Claude 가 저장소의 `.mcp.json` 을 읽어 SAP ADT MCP 서버(`mcp-abap-abap-adt-api`) 프로세스를 띄웠다가 종료했다. 러너에는 SAP 로그인 정보가 없고 리뷰 허용 도구에도 MCP 가 없어 결과에는 영향이 없었다. 그래도 PR 코드 리뷰에 SAP 연결은 필요 없고, 비신뢰 입력(PR 코드)을 읽는 자리에서 외부 시스템 연결 프로그램이 뜨는 것은 없애는 게 맞다.\n\n## 해야 할 일\n\n- Claude Code 공식 문서(CLI reference)에서 프로젝트 `.mcp.json` 을 읽지 않게 하는 실행 옵션(예: `--strict-mcp-config`)을 확인한다.\n- `.github/workflows/ai-review.yml` 의 `claude_args` 에 그 옵션을 넣는다. 옵션이 공식 문서로 확인되지 않으면 바꾸지 않고 다른 방법을 보고한다.\n- workflow 구조 테스트에 그 옵션이 있는지 확인을 더한다.\n\n## 완료 조건\n\n- AI 리뷰 실행 로그에 MCP 서버 프로세스가 뜨지 않는다(다음 public-cloud PR 에서 확인).",
+      "url": "https://github.com/jaeheeMin/blueward-harness/issues/144",
+      "date": "2026-10-04T12:16:17Z",
+      "engagement": 1,
+      "query": "abap ai in:title,body",
+      "sentiment": 0,
+      "stance": "neutral",
+      "voice": "practitioner",
+      "pillars": [],
+      "tags": [
+        "competition"
+      ],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.1,
+      "engine": "heuristic",
+      "topics": []
+    },
+    {
+      "id": "gh:5811791958",
+      "source": "github",
+      "sourceLabel": "GitHub",
+      "kind": "pull request",
+      "author": "oblomov-dev",
+      "title": "Update @abaplint/cli to 2.120.75",
+      "text": "CONVENTIONS.md §4 (abap2UI5): `@abaplint/cli` on the same version everywhere - 2.120.75 (2026-10-12) is what abap2UI5, the sample repositories and the other core repos move to in this round.\n\n- `@abaplint/cli` ^2.120.73 -> ^2.120.75, lockfile by npm.\n- Checked locally: `npm run check:examples` (the compile rules over every ABAP fence) passes, `npm test` 291 pass / 0 fail.\n\nDoes not touch #371 (waits for the 1.147.0 tag).\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01Te3BRpRpxNhZAYnrQL6Gdt\n\n---\n_Generated by [Claude Code](https://claude.ai/code/session_01Te3BRpRpxNhZAYnrQL6Gdt)_",
+      "url": "https://github.com/abap2UI5/docs/pull/373",
+      "date": "2026-10-12T09:55:54Z",
+      "engagement": 0,
+      "query": "abap ai in:title,body",
+      "sentiment": 0,
+      "stance": "neutral",
+      "voice": "practitioner",
+      "pillars": [],
+      "tags": [
+        "competition"
+      ],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.1,
+      "engine": "heuristic",
+      "topics": []
+    },
+    {
+      "id": "gh:5812183102",
+      "source": "github",
+      "sourceLabel": "GitHub",
+      "kind": "pull request",
+      "author": "fr0ster",
+      "title": "release: 15.0.1 — the contract ranges at their current releases",
+      "text": "The code is the same as 15.0.0. This release only brings the declared ranges up to the current releases, matching what the auth stack (auth-providers 6.0.2, auth-stores 5.0.1, auth-broker 5.0.6) declares.\n\n| Dependency | 15.0.0 | 15.0.1 |\n|---|---|---|\n| `@mcp-abap-adt/interfaces-utils` | `^1.1.0` | `^1.1.1` |\n| `@mcp-abap-adt/interfaces-network` | `^2.0.0` | `^2.0.1` |\n| `@mcp-abap-adt/auth-errors` | `^2.2.0` | `^2.2.1` |\n| `@mcp-abap-adt/sap-rfc-lite` (optional) | `^0.2.1` | `^0.2.2` |\n| `@mcp-abap-adt/auth-providers` (dev) | `^6.0.0` | `^6.0.2` |\n\n`interfaces-adt-connection`, `interfaces-auth` and `interfaces-auth-sap` were already at their latest releases.\n\n- The lockfile is refreshed from the registry. It has no `\"link\": true`, and one copy each of interfaces-auth, auth-errors, interfaces-adt-connection and interfaces-utils.\n- README, INSTALLATION and USAGE now say connection 13.x to 15.x work with auth-providers 6.\n- Build and `lint:check` are clean. Jest: 485 passed, 12 skipped.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01V3NP1eYKcGJkWYoRMgqKjL",
+      "url": "https://github.com/fr0ster/mcp-abap-connection/pull/84",
+      "date": "2026-10-12T10:27:27Z",
+      "engagement": 0,
+      "query": "abap ai in:title,body",
+      "sentiment": 0,
+      "stance": "neutral",
+      "voice": "practitioner",
+      "pillars": [],
+      "tags": [
+        "licensing",
+        "competition"
+      ],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.1,
+      "engine": "heuristic",
+      "topics": []
+    },
+    {
+      "id": "gh:5811737094",
+      "source": "github",
+      "sourceLabel": "GitHub",
+      "kind": "pull request",
+      "author": "oblomov-dev",
+      "title": "Update @abaplint/cli to 2.120.75 and copy the shared app rule set's eleven new rules",
+      "text": "**Coordinated set - merge together with** abap2UI5/abap2UI5#2899 (the source, `app-rules.json`), abap2UI5/samples, abap2UI5/samples-controls and abap2UI5/samples-stack (same title). abap2UI5's `check:shared` compares `conformance/apps/abaplint.jsonc` with its `app-rules.json`, so that gate there is red until this one is merged.\n\n- `@abaplint/cli` 2.120.73 -> 2.120.75 (exact pin kept, CONVENTIONS.md §4), lockfile by npm. The transpiler pin 2.13.93 is untouched.\n- `conformance/apps/abaplint.jsonc` takes the eleven rules the shared set added (sorted in, as the file is): ten on, `prefer_inline_cast` off (a style rewrite; it would report 1 here, `z2ui5_cl_conf_nav` reading the previous app back).\n\nChecked locally: `npm run lint:abap` 0 issues in 18 files; `npm test` 85 pass, 0 fail.\n\nNo CHANGELOG line: tooling only (as #6).\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01Te3BRpRpxNhZAYnrQL6Gdt\n\n---\n_Generated by [Claude Code](https://claude.ai/code/session_01Te3BRpRpxNhZAYnrQL6Gdt)_",
+      "url": "https://github.com/abap2UI5/protocol/pull/9",
+      "date": "2026-10-12T09:51:27Z",
+      "engagement": 0,
+      "query": "abap ai in:title,body",
+      "sentiment": 0,
+      "stance": "neutral",
+      "voice": "practitioner",
+      "pillars": [],
+      "tags": [
+        "competition"
+      ],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.1,
+      "engine": "heuristic",
+      "topics": []
+    },
+    {
+      "id": "gh:5811736023",
+      "source": "github",
+      "sourceLabel": "GitHub",
+      "kind": "pull request",
+      "author": "oblomov-dev",
+      "title": "Update @abaplint/cli to 2.120.75 and copy the shared app rule set's eleven new rules",
+      "text": "**Coordinated set - merge together with** abap2UI5/abap2UI5#2899 (the source, `app-rules.json`), abap2UI5/samples, abap2UI5/samples-controls and abap2UI5/protocol (same title). `check-app-rules` compares this block with abap2UI5's `main`, so it is red until #2899 is merged (and abap2UI5's `check:shared` is red until this one is).\n\n- `@abaplint/cli` ^2.120.73 -> ^2.120.75 (CONVENTIONS.md §4), lockfile by npm.\n- The rule block takes the eleven rules 2.120.75 added:\n  - **on**, 0 findings in all three corpora and protocol's conformance apps: `abapdoc_html_tag`, `abapdoc_leading_at`, `abapdoc_parameter_names`, `changing_sorted_line`, `delete_index_in_loop`, `final_newline`, `inline_packed_computation`, `range_row_values`, `sort_empty_key`, `subrc_after_assign`\n  - **off**: `prefer_inline_cast` (2 / 0 / 0, all in samples) - a style rewrite. Reason in a comment above it.\n- Counts in the header comment and AGENTS.md: 212 named, 190 on, 22 off.\n- `scripts/check-app-rules.mjs` is abap2UI5's shared source copied byte-equal (count 211).\n\nChecked locally: `npm run check` green (lint 0 issues; `check:app-rules` against the abap2UI5 branch OK).\n\nNote, not changed: abap2UI5's abap-check skill sti…",
+      "url": "https://github.com/abap2UI5/samples-stack/pull/97",
+      "date": "2026-10-12T09:51:22Z",
+      "engagement": 0,
+      "query": "abap ai in:title,body",
+      "sentiment": 0,
+      "stance": "neutral",
+      "voice": "practitioner",
+      "pillars": [
+        "agents"
+      ],
+      "tags": [],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.1,
+      "engine": "heuristic",
+      "topics": []
+    },
+    {
+      "id": "gh:5810070108",
+      "source": "github",
+      "sourceLabel": "GitHub",
+      "kind": "pull request",
+      "author": "oblomov-dev",
+      "title": "check_syntax: RETURN, EXIT, CONTINUE or CHECK that leave a CLEANUP block",
+      "text": "check_syntax accepts this today:\n\n```abap\nDO 2 TIMES.\n  TRY.\n      lo->run( ).\n    CLEANUP.\n      EXIT.\n  ENDTRY.\nENDDO.\n```\n\nThe ABAP keyword documentation for CLEANUP (7.40 and 7.54) says:\n\n> The CLEANUP block must be executed completely and must be exited using ENDTRY so that the exception can be propagated to its handler. If an attempt is made to exit the context of a CLEANUP block prematurely, a runtime error occurs. A CLEANUP block cannot contain any statements where the system can detect (statically) that it cannot return to the CLEANUP block.\n\n(7.31: \"No statements can be listed for which you can see statically that you cannot return to the CLEANUP block.\")\n\nThe sentence does not name statements. The statements that leave a block by their own definition are RETURN (ends the processing block from any control structure), EXIT and CHECK (end the loop pass or loop, or the processing block outside a loop) and CONTINUE (ends the loop pass). When no loop inside the CLEANUP block encloses EXIT, CONTINUE or CHECK, they go to a loop outside the TRY or end the processing block, so it is known statically that control does not come back. I only know the refusal from the documentation, n…",
+      "url": "https://github.com/abaplint/abaplint/pull/4431",
+      "date": "2026-10-12T07:35:48Z",
+      "engagement": 3,
+      "query": "abap ai in:title,body",
+      "sentiment": 0,
+      "stance": "mixed",
+      "voice": "practitioner",
+      "pillars": [],
+      "tags": [
+        "partners"
+      ],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.29000000000000004,
+      "engine": "heuristic",
+      "topics": []
+    },
+    {
+      "id": "gh:5745796007",
+      "source": "github",
+      "sourceLabel": "GitHub",
+      "kind": "pull request",
+      "author": "fr0ster",
+      "title": "feat!: 2.0.0 — interfaces-auth 7: renewal-declined, invalid-value, renewal operations",
+      "text": "## Summary\n\nauth-errors moves to `@mcp-abap-adt/interfaces-auth` 7.0.0 (published), the contract of auth-providers 6.0.0's renewal and persistence strategies.\n\n- **New kind `renewal-declined`** (facts `{ trigger }`): reason \"the renewal strategy declined to renew the credential\", no hint, blames no credential; builder, `matchKind` case, fact check, guard `isRenewalTrigger`.\n- **New configuration case `invalid-value`**: \"a configured value cannot be used: <fields>\", fields rendered as `required-fields-missing`; no hint.\n- **Operations:** `renewal-strategy` (\"the renewal strategy\"); `on-tokens-hook` renamed `persisting-tokens` (\"persisting the tokens\").\n- **Removed:** the `browser-launch-failed` outcome, its words and hint (a launcher's failure no longer ends a login in auth-providers 6.0.0).\n- Tests: a foreign trigger (and, closing a pre-existing gap, a foreign `renewal-unchanged` source) is refused by the builder and classified `unknown`; each check proven load-bearing.\n- README: kinds table regenerated, guard list current. CHANGELOG 2.0.0 with a migration note — the new kind breaks exhaustive `switch` / `matchKind` consumers.\n- Biome: config migrated to 2.5, `tools/__fixtures__` (…",
+      "url": "https://github.com/fr0ster/mcp-abap-adt-auth-errors/pull/3",
+      "date": "2026-10-07T13:28:40Z",
+      "engagement": 0,
+      "query": "abap ai in:title,body",
+      "sentiment": -1,
+      "stance": "negative",
+      "voice": "practitioner",
+      "pillars": [],
+      "tags": [
+        "licensing"
+      ],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.5,
+      "engine": "heuristic",
+      "topics": [
+        "s4hana_ai",
+        "risks_gaps"
+      ]
+    },
+    {
+      "id": "gh:5755039612",
+      "source": "github",
+      "sourceLabel": "GitHub",
+      "kind": "pull request",
+      "author": "fr0ster",
+      "title": "feat: 2.1.0 — words for interfaces-auth 7.4.0 (consumer strategy, two operations)",
+      "text": "## Summary\n\nauth-errors moves to `@mcp-abap-adt/interfaces-auth` 7.4.0 (published), the contracts of auth-providers 6.0.0's composed authorization strategies.\n\n- `interactive-login` with `strategy: 'consumer'`: `aborted` → \"the login was aborted\" (no ignored-callbacks clause: a consumer channel has no listener); `disposed` → \"the authorization strategy was disposed\".\n- Operations: `presenting-authorization-url` → \"presenting the authorization URL\", `judging-answer` → \"judging an answer\".\n- `ANSWER_REFUSALS` gets no words here — the provider's listener words each reason itself (spec §6d.8); listed in `NOT_ALLOWLISTS`.\n- README tables regenerated; CHANGELOG 2.1.0.\n\n## Checks\n\nbuild, test:check (the renderer's completeness check failed until the words existed), lint:check, test (2677), `biome check .` — green; lockfile registry-only. Task review approved; Codex adversarial review: approve.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_013FwzVzuPQdYVh3bHZmipzj",
+      "url": "https://github.com/fr0ster/mcp-abap-adt-auth-errors/pull/5",
+      "date": "2026-10-08T02:49:36Z",
+      "engagement": 0,
+      "query": "abap ai in:title,body",
+      "sentiment": -0.667,
+      "stance": "negative",
+      "voice": "practitioner",
+      "pillars": [],
+      "tags": [
+        "licensing",
+        "competition"
+      ],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.22,
+      "engine": "heuristic",
+      "topics": [
+        "risks_gaps"
+      ]
+    },
+    {
+      "id": "npm:@sap-ai-sdk/orchestration:2026-10-11",
+      "source": "npm",
+      "sourceLabel": "npm Registry",
+      "kind": "telemetry",
+      "author": "npm registry",
+      "title": "@sap-ai-sdk/orchestration: 132,131 downloads in the last week",
+      "text": "Official SAP AI SDK package @sap-ai-sdk/orchestration recorded 132,131 downloads between 2026-10-05 and 2026-10-11. This measures real enterprise developer adoption for SAP AI Core, Joule, and Orchestration services.",
+      "url": "https://www.npmjs.com/package/@sap-ai-sdk/orchestration",
+      "date": "2026-10-11T00:00:00Z",
+      "engagement": 132131,
+      "metric": {
+        "package": "@sap-ai-sdk/orchestration",
+        "downloads": 132131,
+        "start": "2026-10-05",
+        "end": "2026-10-11"
+      },
+      "sentiment": 0,
+      "stance": "neutral",
+      "voice": "practitioner",
+      "pillars": [
+        "joule"
+      ],
+      "tags": [],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.1,
+      "engine": "heuristic",
+      "topics": [
+        "joule_sentiment",
+        "btp_ai"
+      ]
+    },
+    {
+      "id": "npm:@sap-ai-sdk/core:2026-10-11",
+      "source": "npm",
+      "sourceLabel": "npm Registry",
+      "kind": "telemetry",
+      "author": "npm registry",
+      "title": "@sap-ai-sdk/core: 137,500 downloads in the last week",
+      "text": "Official SAP AI SDK package @sap-ai-sdk/core recorded 137,500 downloads between 2026-10-05 and 2026-10-11. This measures real enterprise developer adoption for SAP AI Core, Joule, and Orchestration services.",
+      "url": "https://www.npmjs.com/package/@sap-ai-sdk/core",
+      "date": "2026-10-11T00:00:00Z",
+      "engagement": 137500,
+      "metric": {
+        "package": "@sap-ai-sdk/core",
+        "downloads": 137500,
+        "start": "2026-10-05",
+        "end": "2026-10-11"
+      },
+      "sentiment": 0,
+      "stance": "neutral",
+      "voice": "practitioner",
+      "pillars": [
+        "joule"
+      ],
+      "tags": [],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.1,
+      "engine": "heuristic",
+      "topics": [
+        "joule_sentiment",
+        "btp_ai"
+      ]
+    },
+    {
+      "id": "npm:@sap-ai-sdk/ai-api:2026-10-11",
+      "source": "npm",
+      "sourceLabel": "npm Registry",
+      "kind": "telemetry",
+      "author": "npm registry",
+      "title": "@sap-ai-sdk/ai-api: 105,567 downloads in the last week",
+      "text": "Official SAP AI SDK package @sap-ai-sdk/ai-api recorded 105,567 downloads between 2026-10-05 and 2026-10-11. This measures real enterprise developer adoption for SAP AI Core, Joule, and Orchestration services.",
+      "url": "https://www.npmjs.com/package/@sap-ai-sdk/ai-api",
+      "date": "2026-10-11T00:00:00Z",
+      "engagement": 105567,
+      "metric": {
+        "package": "@sap-ai-sdk/ai-api",
+        "downloads": 105567,
+        "start": "2026-10-05",
+        "end": "2026-10-11"
+      },
+      "sentiment": 0,
+      "stance": "neutral",
+      "voice": "practitioner",
+      "pillars": [
+        "joule"
+      ],
+      "tags": [],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.1,
+      "engine": "heuristic",
+      "topics": [
+        "joule_sentiment",
+        "btp_ai"
+      ]
+    },
+    {
+      "id": "npm:@sap-ai-sdk/foundation-models:2026-10-11",
+      "source": "npm",
+      "sourceLabel": "npm Registry",
+      "kind": "telemetry",
+      "author": "npm registry",
+      "title": "@sap-ai-sdk/foundation-models: 93,049 downloads in the last week",
+      "text": "Official SAP AI SDK package @sap-ai-sdk/foundation-models recorded 93,049 downloads between 2026-10-05 and 2026-10-11. This measures real enterprise developer adoption for SAP AI Core, Joule, and Orchestration services.",
+      "url": "https://www.npmjs.com/package/@sap-ai-sdk/foundation-models",
+      "date": "2026-10-11T00:00:00Z",
+      "engagement": 93049,
+      "metric": {
+        "package": "@sap-ai-sdk/foundation-models",
+        "downloads": 93049,
+        "start": "2026-10-05",
+        "end": "2026-10-11"
+      },
+      "sentiment": 0,
+      "stance": "neutral",
+      "voice": "practitioner",
+      "pillars": [
+        "joule"
+      ],
+      "tags": [],
+      "theme": "",
+      "quote": "",
+      "confidence": 0.1,
+      "engine": "heuristic",
+      "topics": [
+        "joule_sentiment",
+        "btp_ai"
+      ]
+    },
+    {
+      "id": "npm:@sap-ai-sdk/langchain:2026-10-11",
+      "source": "npm",
+      "sourceLabel": "npm Registry",
+      "kind": "telemetry",
+      "author": "npm registry",
+      "title": "@sap-ai-sdk/langchain: 12,827 downloads in the last week",
+      "text": "Official SAP AI SDK package @sap-ai-sdk/langchain recorded 12,827 downloads between 2026-10-05 and 2026-10-11. This measures real enterprise developer adoption for SAP AI Core, Joule, and Orchestration services.",
+      "url": "https://www.npmjs.com/package/@sap-ai-sdk/langchain",
+      "date": "2026-10-11T00:00:00Z",
+      "engagement": 12827,
+      "metric": {
+        "package": "@sap-ai-sdk/langchain",
+        "downloads": 12827,
+        "start": "2026-10-05",
+        "end": "2026-10-11"
       },
       "sentiment": 0,
       "stance": "neutral",
