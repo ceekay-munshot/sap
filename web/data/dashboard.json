@@ -1,12 +1,12 @@
 {
-  "version": 1792053977452,
-  "runId": "38708032173",
-  "generatedAt": "2026-10-15T08:46:17.452Z",
+  "version": 1793867261990,
+  "runId": "41994597824",
+  "generatedAt": "2026-11-05T08:27:41.990Z",
   "engine": "claude",
   "model": "anthropic.claude-opus-5",
   "policy": {
     "frame": {
-      "evaluatedAt": "2026-10-15T08:46:17.452Z",
+      "evaluatedAt": "2026-11-05T08:27:41.990Z",
       "currentYear": 2026,
       "priorYear": 2025,
       "legacyBefore": 2025,
@@ -1101,116 +1101,132 @@
       "category": "product",
       "score": 2.8,
       "sub": {
-        "adoption": 2.1,
-        "maturity": 3,
-        "satisfaction": 3.2,
-        "competitive": 3.4
+        "adoption": 2,
+        "maturity": 2.7,
+        "satisfaction": 3.4,
+        "competitive": 3.5
       },
       "recencyMix": {
-        "current": 5,
-        "prior": 3,
+        "current": 4,
+        "prior": 4,
         "legacy": 0
       },
-      "confidence": 0.42,
-      "summary": "The pages show that RPT-1 is not a prompt-template or assistant framework at all: it is SAP-RPT, a \"relational pretrained transformer\" that predicts values in business tables, launched at TechEd Berlin in November 2025 and now shipping as versions 1.5 and 1.6 through SAP AI Core. Vendor and community material is enthusiastic about removing the need to train a separate model per forecasting task, and the only independent benchmark found, by a Microsoft practitioner in February 2026, says the open variant matches tuned XGBoost on small classification problems with zero training time but loses on regression and larger datasets. Genuine customer deployment stories are absent from these pages, so adoption reads as playground-and-pilot rather than production, and confidence in any satisfaction score is low.",
+      "confidence": 0.47,
+      "summary": "SAP-RPT-1 is a genuinely new kind of model, pretrained on business tables so it can predict things like late payments or won deals without anyone training a model first, and it moved from TechEd announcement in November 2025 to purchasable service inside SAP AI Core by December 2025. Practitioner reaction is enthusiastic about the concept but the only independent benchmark available, published by a Microsoft engineer in February 2026, found it matches tuned gradient-boosted trees only on small classification problems and loses on regression and larger datasets. The visible evidence base is launch blogs, playground experiments and vendor material, with almost no named customer running it in production, so adoption and maturity must be scored low despite strong positive sentiment.",
       "findings": [
-        "SAP-RPT-1.6 reached general availability through the AI Core model library, with tabular orchestration and a playground API, indicating the product has moved past announcement stage (2026).",
-        "The first independent practitioner benchmark, published February 2026 by a Microsoft author, found RPT-1-OSS within 2 to 4 percent AUC-ROC of tuned XGBoost on small classification tasks.",
-        "The same February 2026 study reports RPT-1 falling behind gradient boosted trees on regression tasks and larger datasets, tempering SAP's accuracy claims.",
-        "SAP markets up to 2X prediction quality versus narrow AI models and 3.5X versus language models, figures that carry a footnote and no named customer corroboration in these pages.",
-        "Hard technical ceilings are published: the small variant takes 2,048 context rows and 100 columns, the large one 65,536 rows and 256 columns, with 128 prediction rows per request.",
-        "No named customer, consultant, or reviewer describes a live production rollout in any page retrieved, so real-world deployment success cannot be verified from this evidence."
+        "SAP's own launch blog from November 2025 drew 36,665 views and 90 likes but only six comments, a sign of curiosity rather than hands-on deployment.",
+        "By December 2025 both sap-rpt-1-small, with a 2,000-row context, and sap-rpt-1-large, with a 64,000-row context, were offered for productive use in SAP's generative AI hub.",
+        "The first independent evaluation, published February 2026, found the open-source variant came within 2 to 4 percent AUC-ROC of tuned XGBoost on small classification tasks with zero training time.",
+        "That same study found gradient boosted trees keep a clear advantage on regression and larger datasets, so RPT-1 is a complement rather than a replacement for existing machine learning.",
+        "The benchmark used synthetic datasets mirroring SAP sales, materials and finance tables rather than real customer systems, which the author flags as a remaining gap between benchmarks and enterprise reality.",
+        "SAP training material now describes version SAP-RPT-1.6 requiring as few as two complete context rows and a [PREDICT] placeholder, indicating fast iteration but a still-shifting interface for developers."
       ],
       "quotes": [
         {
-          "text": "Our experiments, deployed as interactive Hugging Face Spaces, reveal that RPT-1-OSS achieves competitive performance on small-sample classification tasks (within 2–4% AUC-ROC of tuned XGBoost) while requiring zero training time, but falls behind on regression tasks and larger datasets where gradient boosted trees maintain a clear advantage.",
+          "text": "RPT-1-OSS achieves competitive performance on small-sample classification tasks (within 2–4% AUC-ROC of tuned XGBoost) while requiring zero training time, but falls behind on regression tasks and larger datasets where gradient boosted trees maintain a clear advantage.",
           "name": "Amit Lal",
-          "title": "Author, SAP and AI research",
+          "title": "Engineer and independent researcher",
           "company": "Microsoft Corporation",
           "platform": "arXiv preprint",
           "date": "2026-02-01",
-          "context": "The first independent practitioner-led evaluation of RPT-1 on SAP-like business process prediction tasks.",
+          "context": "The first practitioner-led independent benchmark of RPT-1 against XGBoost, LightGBM and CatBoost on SAP-shaped data.",
           "url": "https://arxiv.org/pdf/2602.19237",
           "verified": true,
+          "attributionVerified": true,
+          "dateVerified": true,
           "relocated": false
         },
         {
-          "text": "However, a critical gap exists between benchmark performance and enterprise applicability. The ConTextTab evaluation used standardized academic datasets that differ substantially from real SAP business tables in terms of schema complexity, feature cardinality, temporal dependencies, and missing data patterns.",
-          "name": "Amit Lal",
-          "title": "Author, SAP and AI research",
-          "company": "Microsoft Corporation",
-          "platform": "arXiv preprint",
-          "date": "2026-02-01",
-          "context": "Explains why published NeurIPS results should not be read as proof of enterprise readiness.",
-          "url": "https://arxiv.org/pdf/2602.19237",
-          "verified": true,
-          "relocated": false
-        },
-        {
-          "text": "Until now organizations needed one model to forecast demand; another one to predict late payments; a third one for identifying sales opportunities; and so on. Each model required a time-consuming and expensive investment with dedicated teams, lengthy training cycles, and constant maintenance.",
+          "text": "Announced at SAP TechEd and now available in our generative AI hub, you can leverage the sap-rpt-1-small and sap-rpt-1-large models out of the box and for productive use. This comes in addition to the playground and the open-source version on GitHub and Hugging Face released in November.",
           "name": "Philipp Herzig",
           "title": "Chief AI Officer",
           "company": "SAP",
-          "platform": "SAP Community, Technology Blog Posts by SAP",
-          "date": "2025-11-04",
-          "context": "SAP's launch post framing the problem RPT-1 is meant to remove, which drew 88 likes and over 35,000 views.",
-          "url": "https://community.sap.com/t5/technology-blog-posts-by-sap/a-new-paradigm-for-enterprise-ai-in-context-learning-for-relational-data/ba-p/14260221",
+          "platform": "LinkedIn",
+          "date": "2025-12-15",
+          "context": "SAP's AI leader announcing that the model moved from playground to a commercially consumable service.",
+          "url": "https://www.linkedin.com/posts/philipp-herzig_welcome-to-sap-ai-core-sap-rpt-1-announced-activity-7404164541078708230-jyU8",
           "verified": true,
+          "attributionVerified": true,
+          "dateVerified": false,
           "relocated": false
         },
         {
-          "text": "Thus, introducing RPT-1 fits well to the SAP vision of introducing low-code solutions to enable business or non-data scientist users to quickly get up to speed with AI-powered business solutions that go beyond LLM capabilities.",
-          "name": "",
-          "title": "SAP associate and community blogger, posting as TheAIMachine",
-          "company": "SAP",
-          "platform": "SAP Community, Artificial Intelligence Blogs Posts",
-          "date": "2025-11-13",
-          "context": "A TechEd Berlin attendee assessing what RPT-1 means for data scientists and whether narrow AI is now obsolete.",
-          "url": "https://community.sap.com/t5/artificial-intelligence-blogs-posts/is-narrow-ai-dead-the-implications-of-sap-rpt-1-for-business-ai-amp-data/ba-p/14262984",
+          "text": "Great News, really this model have a high capabilities, in scenarios of test, I’m execute comparison with similar model, for instance with Tabpfn, Rpt-1 achieve more deep contextual knowledge, is a big change in short!",
+          "name": "Manuel Beltran",
+          "title": "Practitioner commenting on the launch",
+          "company": "",
+          "platform": "LinkedIn",
+          "date": "2025-12-15",
+          "context": "A hands-on tester comparing RPT-1 against the TabPFN tabular model it is derived from.",
+          "url": "https://www.linkedin.com/posts/philipp-herzig_welcome-to-sap-ai-core-sap-rpt-1-announced-activity-7404164541078708230-jyU8",
           "verified": true,
+          "attributionVerified": true,
+          "dateVerified": false,
           "relocated": false
         },
         {
-          "text": "We've been working on a tabular model, which is basically different from language models in the sense that language models train off of natural language, whereas tabular models trained off of transactions like an Excel spreadsheet",
-          "name": "Walter Sun",
-          "title": "Global Head of AI",
-          "company": "SAP",
-          "platform": "The AI Economy (Substack), interview with Ken Yeung",
-          "date": "2025-11-04",
-          "context": "SAP's AI leader explaining at TechEd why a table-native model was built instead of relying on language models.",
-          "url": "https://theaieconomy.substack.com/p/sap-rpt-1-enterprise-intelligence",
+          "text": "SAP releasing models on GitHub/Hugging Face is the right direction. Open-source enables ownership. But here’s the question: if enterprises can run sap-rpt-1 locally for “productive use,” why are they still sending their relational business data to SAP’s cloud for processing?",
+          "name": "Kyle Brockley",
+          "title": "Founder",
+          "company": "BrockBox",
+          "platform": "LinkedIn",
+          "date": "2025-12-15",
+          "context": "A sceptical reply raising data sovereignty concerns about running predictions on business tables in SAP's cloud.",
+          "url": "https://www.linkedin.com/posts/philipp-herzig_welcome-to-sap-ai-core-sap-rpt-1-announced-activity-7404164541078708230-jyU8",
           "verified": true,
+          "attributionVerified": true,
+          "dateVerified": false,
           "relocated": false
         },
         {
-          "text": "With as few as 500-2000 example rows, SAP-RPT-1 can often outperform traditional narrow AI models trained on millions of records. That's the power of large-scale pre-training on relational data.",
+          "text": "Table-native models solving relational prediction problems feel much closer to where real enterprise value sits. Most organisations struggle not with text generation but with extracting timely, actionable signals from structured operational data.",
+          "name": "Mark Huisman",
+          "title": "Practitioner commenting on the launch",
+          "company": "",
+          "platform": "LinkedIn",
+          "date": "2026-01-10",
+          "context": "A commenter arguing RPT-1 targets a more valuable problem than generative text tools.",
+          "url": "https://www.linkedin.com/posts/philipp-herzig_welcome-to-sap-ai-core-sap-rpt-1-announced-activity-7404164541078708230-jyU8",
+          "verified": true,
+          "attributionVerified": true,
+          "dateVerified": false,
+          "relocated": false
+        },
+        {
+          "text": "With as few as 500-2000 example rows, SAP-RPT-1 can often outperform traditional narrow AI models trained on millions of records. That’s the power of large-scale pre-training on relational data.",
           "name": "Alma TA",
           "title": "SAP AI trainer and author",
           "company": "Zequance AI",
           "platform": "Zequance AI blog",
           "date": "2026-02-07",
-          "context": "A consultant-facing explainer walking through a sales deal prediction example with no model training or feature engineering.",
+          "context": "An SAP training provider explaining the practical appeal of in-context learning to consultants.",
           "url": "https://zequance.ai/sap-rpt-1-explained-saps-ai-model-for-predicting-outcomes-from-structured-business-data/",
           "verified": true,
+          "attributionVerified": true,
+          "dateVerified": true,
           "relocated": false
         }
       ],
       "sources": [
         {
-          "title": "SAP-RPT-1.5 | relational pretrained transformer model | SAP AI",
+          "title": "SAP-RPT | relational pretrained transformer model | SAP AI",
           "url": "https://www.sap.com/products/artificial-intelligence/sap-rpt.html"
         },
         {
-          "title": "Introduction to SAP-RPT-1",
-          "url": "https://learning.sap.com/courses/genai-lpad-gnd/bt-sap-rpt-1"
+          "title": "A New Paradigm for Enterprise AI: In-Context Learn... - SAP Community",
+          "url": "https://community.sap.com/t5/technology-blog-posts-by-sap/a-new-paradigm-for-enterprise-ai-in-context-learning-for-relational-data/ba-p/14260221"
         },
         {
           "title": "One Model to Rule Them All? SAP-RPT-1 and the Future of ...",
           "url": "https://towardsdatascience.com/one-model-to-rule-them-all-sap-rpt-1-and-the-future-of-tabular-foundation-models/"
         },
         {
-          "title": "A New Paradigm for Enterprise AI: In-Context Learn... - SAP Community",
-          "url": "https://community.sap.com/t5/technology-blog-posts-by-sap/a-new-paradigm-for-enterprise-ai-in-context-learning-for-relational-data/ba-p/14260221"
+          "title": "Compare Relational Foundation Models - AIMultiple",
+          "url": "https://aimultiple.com/relational-foundation-model"
+        },
+        {
+          "title": "SAP RPT-1 Explained: SAP's AI Model for Structured Data - Zequance AI",
+          "url": "https://zequance.ai/sap-rpt-1-explained-saps-ai-model-for-predicting-outcomes-from-structured-business-data/"
         },
         {
           "title": "Is “narrow” AI dead? The implications of SAP-RPT-1... - SAP Community",
@@ -1221,33 +1237,31 @@
           "url": "https://www.youtube.com/watch?v=CbUDRgEO0yI"
         },
         {
-          "title": "SAP's RPT-1 Turns Tabular Enterprise Data into Predictive Insights",
-          "url": "https://theaieconomy.substack.com/p/sap-rpt-1-enterprise-intelligence"
+          "title": "SAP's AI Model “sap-rpt-1” is a Research Project, Not a Revolution",
+          "url": "https://pub.towardsai.net/saps-ai-model-sap-rpt-1-is-a-research-project-not-a-revolution-d9107c0d88cd"
         },
         {
-          "title": "SAP-RPT-1.5",
-          "url": "https://www.sap.com/assetdetail/2026/04/e22efac4-4b7f-0010-bca6-c68f7e60039b.html"
-        },
-        {
-          "title": "SAP RPT-1 Explained: SAP's AI Model for Structured Data - Zequance AI",
-          "url": "https://zequance.ai/sap-rpt-1-explained-saps-ai-model-for-predicting-outcomes-from-structured-business-data/"
+          "title": "Welcome to SAP AI Core: sap-rpt-1 | Dr. Philipp Herzig - LinkedIn",
+          "url": "https://www.linkedin.com/posts/philipp-herzig_welcome-to-sap-ai-core-sap-rpt-1-announced-activity-7404164541078708230-jyU8"
         },
         {
           "title": "[PDF] Evaluating SAP RPT-1 for Enterprise Business Process Prediction - arXiv",
           "url": "https://arxiv.org/pdf/2602.19237"
+        },
+        {
+          "title": "Introduction to SAP-RPT and Prior Labs TabPFN - SAP Learning",
+          "url": "https://learning.sap.com/courses/genai-lpad-gnd/introduction-to-sap-rpt-1_fdfa9798-3733-48fe-85af-6c84292c5594"
         }
       ],
-      "ranAt": "2026-09-19T15:25:25.712Z",
+      "ranAt": "2026-11-05T08:27:41.990Z",
       "model": "anthropic.claude-opus-5",
       "evidence": {
-        "pagesFetched": 10,
+        "pagesFetched": 11,
         "quotesVerified": 6,
         "quotesRejected": 0,
-        "searchErrors": [
-          "scrape https://www.linkedin.com/posts/philipp-herzig_welcome-to-sap-ai-core-sap-rpt-1-announced-activity-7404164541078708230-jyU8: v1/scrape → HTTP 403: {\"success\":false,\"error\":\"We apologize for the inconvenience but we do not support this site. If you are part of an enterprise and want to have a further conversation about this, please fill out our intake form here: https://fk4bvu0n5qp.typeform.com/to/Ej6oydlg\"}",
-          "scrape https://www.reddit.com/r/SAP/comments/1ozghfr/rpt1_is_gonna_changue_everything/: v1/scrape → HTTP 403: {\"success\":false,\"error\":\"We apologize for the inconvenience but we do not support this site. If you are part of an enterprise and want to have a further conversation about this, please fill out our intake form here: https://fk4bvu0n5qp.typeform.com/to/Ej6oydlg\"}"
-        ]
-      }
+        "searchErrors": []
+      },
+      "runId": "41994597824"
     },
     "vs_competitors": {
       "id": "vs_competitors",
@@ -1437,6 +1451,10 @@
       {
         "date": "2026-09-19",
         "score": 2.8
+      },
+      {
+        "date": "2026-11-05",
+        "score": 2.8
       }
     ],
     "vs_competitors": [
@@ -1447,18 +1465,18 @@
     ]
   },
   "run": {
-    "startedAt": "2026-10-15T08:46:17.452Z",
+    "startedAt": "2026-11-05T08:27:41.990Z",
     "topics": [
       {
-        "id": "btp_ai",
+        "id": "rpt1",
         "status": "ok",
         "score": 2.8,
-        "ms": 98438
+        "ms": 82545
       }
     ],
-    "runId": "38708032173",
-    "finishedAt": "2026-10-15T08:47:55.984Z",
-    "durationMs": 98532,
+    "runId": "41994597824",
+    "finishedAt": "2026-11-05T08:29:04.677Z",
+    "durationMs": 82687,
     "succeeded": 1,
     "failed": 0
   }
